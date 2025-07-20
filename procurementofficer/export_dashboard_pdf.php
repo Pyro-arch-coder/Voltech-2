@@ -102,4 +102,7 @@ if (isset($_POST['chart_image']) && !empty($_POST['chart_image'])) {
     unlink($imgFile);
 }
 
+$pdf->SetY(-90); // Move up to fit a larger image
+$pdf->Image('../uploads/signature.jpg', ($pdf->GetPageWidth()-80)/2, $pdf->GetPageHeight()-85, 80); // Centered, 80mm wide
+
 $pdf->Output('D', 'dashboard_summary.pdf'); 

@@ -51,26 +51,12 @@ $pdf->AddPage();
 // Logo (left)
 $pdf->Image('../uploads/voltech_logo_transparent.png', 10, 10, 28);
 // Business name and info (right)
-$pdf->SetXY(40, 12);
-$pdf->SetFont('Arial','B',15);
-$pdf->Cell(0,7,'VOLTECH ELECTRICAL CONSTRUCTION',0,1);
-$pdf->SetX(40);
-$pdf->SetFont('Arial','B',10);
-$pdf->SetTextColor(90,90,90);
-$pdf->Cell(0,6,'CONTRACTORS    ENGINEERS    DESIGNERS    CONSULTANTS',0,1);
-$pdf->SetX(40);
-$pdf->SetFont('Arial','',8);
-$pdf->SetTextColor(60,60,60);
-$pdf->Cell(0,5,'Office: 60 AT Reyes St., Pag-asa Mandaluyong City',0,1);
-$pdf->SetX(40);
-$pdf->Cell(0,5,'Prov. Address: 729 Malapit, San Isidro Nueva Ecija',0,1);
-$pdf->SetX(40);
-$pdf->Cell(0,5,'Contact Nos.: 0917 418 8456  •  0923 966 2079',0,1);
-$pdf->SetTextColor(0,0,0);
-$pdf->Ln(6);
-$pdf->SetDrawColor(120,120,120);
-$pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
-$pdf->Ln(6);
+$pdf = new FPDF();
+$pdf->AddPage();
+$pdf->Image('../uploads/logo.jpg', 10, 10, 190, 40); // 40mm tall header image
+$pdf->SetY(55); // 10 (top) + 40 (image) + 5 (space)
+// Header Section
+
 $pdf->SetFont('Arial','B',16);
 $pdf->Cell(0,10,'Project Details',0,1,'C');
 $pdf->SetFont('Arial','',12);
@@ -186,5 +172,8 @@ $pdf->Ln(10);
 // Update Grand Total
 $pdf->SetFont('Arial','B',14);
 $pdf->Cell(0,10,'Grand Total: PHP '.number_format($emp_total + $mat_total + $equip_total,2),0,1,'R');
+
+$pdf->SetY(-90); // Move up to fit a larger image
+$pdf->Image('../uploads/signature.jpg', ($pdf->GetPageWidth()-80)/2, $pdf->GetPageHeight()-85, 80); // Centered, 80mm wide
 
 $pdf->Output('D', 'project_details_'.$project_id.'.pdf'); 

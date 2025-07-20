@@ -27,7 +27,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_supplier_material
     $status = isset($_POST['status']) ? trim($_POST['status']) : 'Available';
     $material_price = isset($_POST['material_price']) ? floatval($_POST['material_price']) : 0;
     $low_stock_threshold = isset($_POST['low_stock_threshold']) ? intval($_POST['low_stock_threshold']) : 10;
-    $max_stock = isset($_POST['max_stock']) ? intval($_POST['max_stock']) : 100;
     $lead_time = isset($_POST['lead_time']) ? intval($_POST['lead_time']) : 0;
     $labor_other = isset($_POST['labor_other']) ? floatval($_POST['labor_other']) : 0;
     
@@ -44,10 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_supplier_material
         $response['message'] = 'Material price must be greater than 0.';
     } elseif ($low_stock_threshold < 0) {
         $response['message'] = 'Low stock threshold cannot be negative.';
-    } elseif ($max_stock <= 0) {
-        $response['message'] = 'Max stock must be greater than 0.';
-    } elseif ($low_stock_threshold >= $max_stock) {
-        $response['message'] = 'Low stock threshold must be less than max stock.';
     } elseif ($lead_time < 0) {
         $response['message'] = 'Lead time cannot be negative.';
     } else {
@@ -62,9 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_supplier_material
             $response['message'] = 'This material already exists for this supplier.';
         } else {
             // Insert into suppliers_materials table with new fields
-            $insert_sql = "INSERT INTO suppliers_materials (supplier_id, material_name, quantity, unit, status, material_price, labor_other, low_stock_threshold, max_stock, lead_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $insert_sql = "INSERT INTO suppliers_materials (supplier_id, material_name, quantity, unit, status, material_price, labor_other, low_stock_threshold, lead_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $insert_stmt = $con->prepare($insert_sql);
-            $insert_stmt->bind_param("isissddiii", $supplier_id, $material_name, $quantity, $unit, $status, $material_price, $labor_other, $low_stock_threshold, $max_stock, $lead_time);
+            $insert_stmt->bind_param("isissddii", $supplier_id, $material_name, $quantity, $unit, $status, $material_price, $labor_other, $low_stock_threshold, $lead_time);
             
             if ($insert_stmt->execute()) {
                 $response['success'] = true;
@@ -104,6 +99,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_supplier_mater
         $delete_stmt->close();
     }
     
+    echo json_encode($response);
+    exit();
+}
+
+// --- Handle Edit Supplier Material (AJAX) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_supplier_material'])) {
+    header('Content-Type: application/json');
+    $response = ['success' => false, 'message' => ''];
+    $material_id = isset($_POST['material_id']) ? intval($_POST['material_id']) : 0;
+    $material_name = isset($_POST['material_name']) ? trim($_POST['material_name']) : '';
+    $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 0;
+    $unit = isset($_POST['unit']) ? trim($_POST['unit']) : '';
+    $status = isset($_POST['status']) ? trim($_POST['status']) : 'Available';
+    $material_price = isset($_POST['material_price']) ? floatval($_POST['material_price']) : 0;
+    $low_stock_threshold = isset($_POST['low_stock_threshold']) ? intval($_POST['low_stock_threshold']) : 10;
+    $lead_time = isset($_POST['lead_time']) ? intval($_POST['lead_time']) : 0;
+    $labor_other = isset($_POST['labor_other']) ? floatval($_POST['labor_other']) : 0;
+    if (!$material_id) {
+        $response['message'] = 'Invalid material ID.';
+    } elseif (empty($material_name) || strlen($material_name) < 2) {
+        $response['message'] = 'Material name must be at least 2 characters long.';
+    } elseif ($quantity < 0) {
+        $response['message'] = 'Quantity cannot be negative.';
+    } elseif (empty($unit)) {
+        $response['message'] = 'Please select a unit.';
+    } elseif ($material_price <= 0) {
+        $response['message'] = 'Material price must be greater than 0.';
+    } elseif ($low_stock_threshold < 0) {
+        $response['message'] = 'Low stock threshold cannot be negative.';
+    } elseif ($lead_time < 0) {
+        $response['message'] = 'Lead time cannot be negative.';
+    } else {
+        $update_sql = "UPDATE suppliers_materials SET material_name=?, quantity=?, unit=?, status=?, material_price=?, labor_other=?, low_stock_threshold=?, lead_time=? WHERE id=?";
+        $update_stmt = $con->prepare($update_sql);
+        $update_stmt->bind_param("sissddiii", $material_name, $quantity, $unit, $status, $material_price, $labor_other, $low_stock_threshold, $lead_time, $material_id);
+        if ($update_stmt->execute()) {
+            $response['success'] = true;
+            $response['message'] = 'Material updated successfully!';
+        } else {
+            $response['message'] = 'Failed to update material: ' . $con->error;
+        }
+        $update_stmt->close();
+    }
     echo json_encode($response);
     exit();
 }
@@ -403,7 +441,7 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                               </div>
                               <div class="form-group mb-3">
                                 <label>Status *</label>
-                                <select class="form-control" name="status" id="edit_status" required>
+                                <select class="form-control" name="status" id="edit_supplier_status" required>
                                   <option value="Active">Active</option>
                                   <option value="Inactive">Inactive</option>
                                 </select>
@@ -599,7 +637,6 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                     <th>Status</th>
                                     <th>Price</th>
                                     <th>Low Stock</th>
-                                    <th>Max Stock</th>
                                     <th>Lead Time</th>
                                     <th class="text-center">Actions</th>
                                 </tr>
@@ -669,10 +706,7 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                 <div class="form-group mb-3">
                                     <label>Status</label>
                                     <select class="form-control" name="status">
-                                        <option value="Available">Available</option>
-                                        <option value="In Use">In Use</option>
-                                        <option value="Damaged">Damaged</option>
-                                        <option value="Low Stock">Low Stock</option>
+                                        <option value="Available" selected>Available</option>
                                     </select>
                                 </div>
                             </div>
@@ -689,11 +723,6 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                     <label>Low Stock Threshold</label>
                                     <input type="number" min="0" max="999999" class="form-control" name="low_stock_threshold" value="10">
                                     <div class="invalid-feedback">Low stock threshold must be between 0 and 999,999.</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Max Stock</label>
-                                    <input type="number" min="1" max="999999" class="form-control" name="max_stock" value="100">
-                                    <div class="invalid-feedback">Max stock must be between 1 and 999,999.</div>
                                 </div>
                                 <div class="form-group mb-3">
                                     <label>Lead Time (Days)</label>
@@ -714,6 +743,101 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-success">Add Material</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Material Modal -->
+    <div class="modal fade" id="editMaterialModal" tabindex="-1" aria-labelledby="editMaterialModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editMaterialModalLabel">Edit Material</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editMaterialForm" novalidate>
+                    <input type="hidden" id="edit_material_id" name="material_id">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label>Material Name *</label>
+                                    <input type="text" class="form-control" name="material_name" id="edit_material_name" required minlength="2" maxlength="100" pattern="[A-Za-z0-9\s\-\.]+" title="Material name can only contain letters, numbers, spaces, hyphens, and dots">
+                                    <div class="invalid-feedback">Please enter a valid material name (2-100 characters).</div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Quantity</label>
+                                    <input type="number" min="0" max="999999" class="form-control" name="quantity" id="edit_quantity" value="0">
+                                    <div class="invalid-feedback">Quantity must be between 0 and 999,999.</div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Unit *</label>
+                                    <select class="form-control" name="unit" id="edit_unit" required>
+                                        <option value="">Select Unit</option>
+                                        <option value="kg">Kilogram (kg)</option>
+                                        <option value="g">Gram (g)</option>
+                                        <option value="t">Ton (t)</option>
+                                        <option value="m³">Cubic Meter (m³)</option>
+                                        <option value="ft³">Cubic Feet (ft³)</option>
+                                        <option value="L">Liter (L)</option>
+                                        <option value="mL">Milliliter (mL)</option>
+                                        <option value="m">Meter (m)</option>
+                                        <option value="mm">Millimeter (mm)</option>
+                                        <option value="cm">Centimeter (cm)</option>
+                                        <option value="ft">Feet (ft)</option>
+                                        <option value="in">Inch (in)</option>
+                                        <option value="pcs">Pieces (pcs)</option>
+                                        <option value="bndl">Bundle (bndl)</option>
+                                        <option value="rl">Roll (rl)</option>
+                                        <option value="set">Set</option>
+                                        <option value="sack/bag">Sack/Bag</option>
+                                        <option value="m²">Square Meter (m²)</option>
+                                        <option value="ft²">Square Feet (ft²)</option>
+                                    </select>
+                                    <div class="invalid-feedback">Please select a unit.</div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Status</label>
+                                    <select class="form-control" name="status" id="edit_material_status">
+                                        <option value="Available">Available</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label>Material Price *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">₱</span>
+                                        <input type="number" step="0.01" min="0.01" max="999999.99" class="form-control" name="material_price" id="edit_material_price" required>
+                                    </div>
+                                    <div class="invalid-feedback">Please enter a valid price (greater than 0).</div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Low Stock Threshold</label>
+                                    <input type="number" min="0" max="999999" class="form-control" name="low_stock_threshold" id="edit_low_stock_threshold" value="10">
+                                    <div class="invalid-feedback">Low stock threshold must be between 0 and 999,999.</div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Lead Time (Days)</label>
+                                    <input type="number" min="0" max="365" class="form-control" name="lead_time" id="edit_lead_time" value="0">
+                                    <div class="invalid-feedback">Lead time must be between 0 and 365 days.</div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Labor/Other Cost</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">₱</span>
+                                        <input type="number" step="0.01" min="0" max="999999.99" class="form-control" name="labor_other" id="edit_labor_other" value="0">
+                                    </div>
+                                    <div class="invalid-feedback">Please enter a valid cost (0-999,999.99).</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Update Material</button>
                     </div>
                 </form>
             </div>
@@ -908,29 +1032,14 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
             
             // Validate low stock threshold
             const lowStockThreshold = parseInt(formData.get('low_stock_threshold'));
-            const maxStock = parseInt(formData.get('max_stock'));
             const lowStockInput = this.querySelector('[name="low_stock_threshold"]');
-            const maxStockInput = this.querySelector('[name="max_stock"]');
             
             if (lowStockThreshold < 0) {
                 lowStockInput.classList.add('is-invalid');
                 isValid = false;
-            } else if (lowStockThreshold >= maxStock) {
-                lowStockInput.classList.add('is-invalid');
-                lowStockInput.nextElementSibling.textContent = 'Low stock threshold must be less than max stock.';
-                isValid = false;
             } else {
                 lowStockInput.classList.remove('is-invalid');
                 lowStockInput.classList.add('is-valid');
-            }
-            
-            // Validate max stock
-            if (maxStock <= 0) {
-                maxStockInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                maxStockInput.classList.remove('is-invalid');
-                maxStockInput.classList.add('is-valid');
             }
             
             // Validate lead time
@@ -991,6 +1100,111 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
             });
         });
 
+        // Handle Edit Material form submission
+        document.getElementById('editMaterialForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            this.classList.remove('was-validated');
+            let isValid = true;
+            const formData = new FormData(this);
+            // Validate material name
+            const materialName = formData.get('material_name');
+            const materialNameInput = this.querySelector('[name="material_name"]');
+            if (!materialName || materialName.trim().length < 2) {
+                materialNameInput.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                materialNameInput.classList.remove('is-invalid');
+                materialNameInput.classList.add('is-valid');
+            }
+            // Validate unit
+            const unit = formData.get('unit');
+            const unitSelect = this.querySelector('[name="unit"]');
+            if (!unit) {
+                unitSelect.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                unitSelect.classList.remove('is-invalid');
+                unitSelect.classList.add('is-valid');
+            }
+            // Validate material price
+            const materialPrice = parseFloat(formData.get('material_price'));
+            const materialPriceInput = this.querySelector('[name="material_price"]');
+            if (!materialPrice || materialPrice <= 0) {
+                materialPriceInput.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                materialPriceInput.classList.remove('is-invalid');
+                materialPriceInput.classList.add('is-valid');
+            }
+            // Validate quantity
+            const quantity = parseInt(formData.get('quantity'));
+            const quantityInput = this.querySelector('[name="quantity"]');
+            if (quantity < 0) {
+                quantityInput.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                quantityInput.classList.remove('is-invalid');
+                quantityInput.classList.add('is-valid');
+            }
+            // Validate low stock threshold
+            const lowStockThreshold = parseInt(formData.get('low_stock_threshold'));
+            const lowStockInput = this.querySelector('[name="low_stock_threshold"]');
+            if (lowStockThreshold < 0) {
+                lowStockInput.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                lowStockInput.classList.remove('is-invalid');
+                lowStockInput.classList.add('is-valid');
+            }
+            // Validate lead time
+            const leadTime = parseInt(formData.get('lead_time'));
+            const leadTimeInput = this.querySelector('[name="lead_time"]');
+            if (leadTime < 0) {
+                leadTimeInput.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                leadTimeInput.classList.remove('is-invalid');
+                leadTimeInput.classList.add('is-valid');
+            }
+            // Validate labor/other cost
+            const laborOther = parseFloat(formData.get('labor_other'));
+            const laborOtherInput = this.querySelector('[name="labor_other"]');
+            if (laborOther < 0) {
+                laborOtherInput.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                laborOtherInput.classList.remove('is-invalid');
+                laborOtherInput.classList.add('is-valid');
+            }
+            if (!isValid) {
+                this.classList.add('was-validated');
+                return;
+            }
+            // Add the AJAX flag
+            formData.append('edit_supplier_material', '1');
+            fetch('', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showFeedbackModal(true, data.message);
+                    // Close modal
+                    const editMaterialModal = bootstrap.Modal.getInstance(document.getElementById('editMaterialModal'));
+                    editMaterialModal.hide();
+                    // Reload materials table
+                    const supplierId = document.getElementById('supplierId').value;
+                    loadSupplierMaterials(supplierId);
+                } else {
+                    showFeedbackModal(false, data.message);
+                }
+            })
+            .catch(error => {
+                showFeedbackModal(false, 'An error occurred. Please try again.');
+            });
+        });
+
         // Handle delete material
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('delete-material-btn')) {
@@ -1034,7 +1248,7 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                 tbody.innerHTML = '';
                 
                 if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="text-center">No materials found for this supplier</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No materials found for this supplier</td></tr>';
                 } else {
                     data.forEach(material => {
                         const row = `
@@ -1045,9 +1259,11 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                 <td>${material.status}</td>
                                 <td>₱ ${parseFloat(material.material_price).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                                 <td>${material.low_stock_threshold}</td>
-                                <td>${material.max_stock}</td>
                                 <td>${material.lead_time} days</td>
                                 <td class="text-center">
+                                    <button type="button" class="btn btn-warning btn-sm edit-material-btn" data-id="${material.id}" data-name="${material.material_name}" data-quantity="${material.quantity}" data-unit="${material.unit}" data-status="${material.status}" data-price="${material.material_price}" data-low_stock="${material.low_stock_threshold}" data-lead_time="${material.lead_time}" data-labor_other="${material.labor_other !== undefined && material.labor_other !== null ? material.labor_other : 0}">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
                                     <button type="button" class="btn btn-danger btn-sm delete-material-btn" data-id="${material.id}">
                                         <i class="fas fa-trash"></i> Delete
                                     </button>
@@ -1061,7 +1277,7 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
             .catch(error => {
                 console.error('Error loading materials:', error);
                 document.getElementById('materialsTableBody').innerHTML = 
-                    '<tr><td colspan="8" class="text-center text-danger">Error loading materials</td></tr>';
+                    '<tr><td colspan="7" class="text-center text-danger">Error loading materials</td></tr>';
             });
     }
 </script>
@@ -1100,6 +1316,31 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.body.addEventListener('click', function(e) {
+    var btn = e.target.closest('.edit-material-btn');
+    if (btn) {
+      document.getElementById('edit_material_id').value = btn.getAttribute('data-id');
+      document.getElementById('edit_material_name').value = btn.getAttribute('data-name');
+      document.getElementById('edit_quantity').value = btn.getAttribute('data-quantity');
+      document.getElementById('edit_unit').value = btn.getAttribute('data-unit');
+      document.getElementById('edit_material_status').value = btn.getAttribute('data-status');
+      document.getElementById('edit_material_price').value = btn.getAttribute('data-price');
+      document.getElementById('edit_low_stock_threshold').value = btn.getAttribute('data-low_stock');
+      document.getElementById('edit_lead_time').value = btn.getAttribute('data-lead_time');
+      let laborOther = btn.getAttribute('data-labor_other');
+      document.getElementById('edit_labor_other').value = (laborOther !== null && laborOther !== '') ? laborOther : 0;
+      console.log('labor_other:', btn.getAttribute('data-labor_other'));
+      var modal = new bootstrap.Modal(document.getElementById('editMaterialModal'));
+      modal.show();
+    }
+  });
+});
+</script>
+
 </body>
 
 </html>

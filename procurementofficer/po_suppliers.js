@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('edit_contact_number').value = this.getAttribute('data-number');
       document.getElementById('edit_email').value = this.getAttribute('data-email');
       document.getElementById('edit_address').value = this.getAttribute('data-address');
-      document.getElementById('edit_status').value = this.getAttribute('data-status');
+      document.getElementById('edit_supplier_status').value = this.getAttribute('data-status');
       var modal = new bootstrap.Modal(document.getElementById('editSupplierModal'));
       modal.show();
     });

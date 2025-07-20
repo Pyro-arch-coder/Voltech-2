@@ -11,27 +11,9 @@ $result = $con->query($sql);
 
 $pdf = new FPDF();
 $pdf->AddPage();
-// Voltech Letterhead
-$pdf->Image('../uploads/voltech_logo_transparent.png', 10, 10, 28);
-$pdf->SetXY(40, 12);
-$pdf->SetFont('Arial','B',15);
-$pdf->Cell(0,7,'VOLTECH ELECTRICAL CONSTRUCTION',0,1);
-$pdf->SetX(40);
-$pdf->SetFont('Arial','B',10);
-$pdf->SetTextColor(90,90,90);
-$pdf->Cell(0,6,'CONTRACTORS    ENGINEERS    DESIGNERS    CONSULTANTS',0,1);
-$pdf->SetX(40);
-$pdf->SetFont('Arial','',8);
-$pdf->SetTextColor(60,60,60);
-$pdf->Cell(0,5,'Office: 60 AT Reyes St., Pag-asa Mandaluyong City',0,1);
-$pdf->SetX(40);
-$pdf->Cell(0,5,'Prov. Address: 729 Malapit, San Isidro Nueva Ecija',0,1);
-$pdf->SetX(40);
-$pdf->Cell(0,5,'Contact Nos.: 0917 418 8456  •  0923 966 2079',0,1);
-$pdf->SetTextColor(0,0,0);
-$pdf->Ln(6);
+$pdf->Image('../uploads/logo.jpg', 10, 10, 190, 40); // 40mm tall header image
+$pdf->SetY(55); // 10 (top) + 40 (image) + 5 (space)
 $pdf->SetDrawColor(120,120,120);
-$pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
 $pdf->Ln(2);
 $pdf->SetFont('Arial','B',12);
 $pdf->Cell(0,7,'Procurement Officer',0,1,'L');
@@ -84,6 +66,9 @@ while ($row = $result->fetch_assoc()) {
     }
     $pdf->Ln();
 }
+
+$pdf->SetY(-90); // Move up to fit a larger image
+$pdf->Image('../uploads/signature.jpg', ($pdf->GetPageWidth()-80)/2, $pdf->GetPageHeight()-85, 80); // Centered, 80mm wide
 
 $pdf->Output('D', 'equipment.pdf');
 exit; 
