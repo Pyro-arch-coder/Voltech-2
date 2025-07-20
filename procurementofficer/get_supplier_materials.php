@@ -1,0 +1,41 @@
+<?php
+session_start();
+if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user_level'] != 4) {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Unauthorized access']);
+    exit();
+}
+
+$con = new mysqli("localhost", "root", "", "voltech2");
+if ($con->connect_error) {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Database connection failed']);
+    exit();
+}
+
+$supplier_id = isset($_GET['supplier_id']) ? intval($_GET['supplier_id']) : 0;
+
+if (!$supplier_id) {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Invalid supplier ID']);
+    exit();
+}
+
+// Fetch materials for the specific supplier
+$sql = "SELECT id, material_name, quantity, unit, status, material_price, low_stock_threshold, max_stock, lead_time FROM suppliers_materials WHERE supplier_id = ? ORDER BY material_name";
+$stmt = $con->prepare($sql);
+$stmt->bind_param("i", $supplier_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$materials = [];
+while ($row = $result->fetch_assoc()) {
+    $materials[] = $row;
+}
+
+$stmt->close();
+$con->close();
+
+header('Content-Type: application/json');
+echo json_encode($materials);
+?> 
