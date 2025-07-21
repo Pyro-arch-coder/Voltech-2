@@ -77,14 +77,22 @@ $project = mysqli_fetch_assoc($project_query);
 if (isset($_POST['update_project'])) {
     $projectname = $_POST['projectname'];
     $projectlocation = $_POST['projectlocation'];
+    $projectbudget = floatval($_POST['projectbudget']);
     $projectdeadline = $_POST['projectdeadline'];
     $projectstatus = $_POST['projectstatus'];
     $old_status = $project['io'];
     // Update project
-    $update_query = "UPDATE projects SET project='$projectname', location='$projectlocation', deadline='$projectdeadline', io='$projectstatus' WHERE project_id='$project_id' AND user_id='$userid'";
+    $update_query = "UPDATE projects SET project='$projectname', location='$projectlocation', budget='$projectbudget', deadline='$projectdeadline', io='$projectstatus' WHERE project_id='$project_id' AND user_id='$userid'";
     mysqli_query($con, $update_query) or die(mysqli_error($con));
     // If changing from Estimating (4) to On going (1), transfer reserved to quantity
     if ($old_status == '4' && $projectstatus == '1') {
+        // Deduct all assigned materials from inventory
+        $materials = mysqli_query($con, "SELECT material_id, quantity FROM project_add_materials WHERE project_id='$project_id'");
+        while ($row = mysqli_fetch_assoc($materials)) {
+            $material_id = intval($row['material_id']);
+            $qty = intval($row['quantity']);
+            mysqli_query($con, "UPDATE materials SET quantity = GREATEST(quantity - $qty, 0) WHERE id = '$material_id'");
+        }
         $equipments = mysqli_query($con, "SELECT equipment_id FROM project_add_equipment WHERE project_id='$project_id' AND status='Planning'");
         while ($row = mysqli_fetch_assoc($equipments)) {
             $equipment_id = intval($row['equipment_id']);
@@ -112,7 +120,7 @@ if (isset($_POST['update_project'])) {
             $mat_total += floatval($mrow['total']);
         }
         $equip_total = 0;
-        $equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.equipment_price AS price, e.depreciation, e.rental_fee, pae.status FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
+        $equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.rental_fee, pae.status FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
         while ($row = mysqli_fetch_assoc($equip_query)) {
             $equip_total += floatval($row['total']);
             // Show all equipment for On going or Finished
@@ -191,12 +199,12 @@ $mat_total = 0;
 $mat_query = mysqli_query($con, "SELECT pam.*, m.supplier_name, m.material_price, m.labor_other, m.unit, m.material_name FROM project_add_materials pam LEFT JOIN materials m ON pam.material_id = m.id WHERE pam.project_id = '$project_id'");
 while ($row = mysqli_fetch_assoc($mat_query)) {
     $proj_mats[] = $row;
-    $mat_total += floatval($row['total']);
+    $mat_total += floatval($row['total']) + (isset($row['additional_cost']) ? floatval($row['additional_cost']) : 0);
 }
 // Fetch project equipments
 $proj_equipments = [];
 $equip_total = 0;
-$equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.equipment_price AS price, e.depreciation, e.rental_fee, pae.status FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
+$equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.rental_fee, pae.status FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
 while ($row = mysqli_fetch_assoc($equip_query)) {
     $equip_total += floatval($row['total']);
     // Show all equipment for On going or Finished
@@ -318,7 +326,7 @@ if ($userid) {
                                 <li><a class="dropdown-item" href="pm_profile.php">Profile</a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -337,7 +345,7 @@ if ($userid) {
                   <a href="projects.php" class="btn btn-light btn-sm">
                     <i class="fa fa-arrow-left"></i> Back 
                   </a>
-                  <a href="export_project_pdf.php?id=<?php echo $project_id; ?>" class="btn btn-danger btn-sm" target="_blank">
+                  <a href="#" class="btn btn-danger btn-sm" id="exportProjectPdfBtn">
                     <i class="fas fa-file-export"></i> Generate
                   </a>
                 </div>
@@ -358,6 +366,7 @@ if ($userid) {
                           <div class="col-md-6 mb-2">
                             <div class="mb-2"><strong>Project Name:</strong> <?php echo htmlspecialchars($project['project']); ?></div>
                             <div class="mb-2"><strong>Location:</strong> <?php echo htmlspecialchars($project['location']); ?></div>
+                            <div class="mb-2"><strong>Budget:</strong> <span class="text-success fw-bold">₱<?php echo number_format($project['budget'], 2); ?></span></div>
                             <div class="mb-2"><strong>Deadline:</strong> <span class="text-danger"><?php echo date("F d, Y", strtotime($project['deadline'])); ?></span></div>
                           </div>
                           <div class="col-md-6 mb-2">
@@ -497,6 +506,7 @@ if ($userid) {
                                 <th>Labor/Other</th>
                                 <th>Quantity</th>
                                 <th>Supplier</th>
+                                <th>Additional Cost</th>
                                 <th>Total</th>
                                 <th>Action</th>
                               </tr>
@@ -511,7 +521,12 @@ if ($userid) {
                                 <td><?php echo number_format($mat['labor_other'], 2); ?></td>
                                 <td><?php echo $mat['quantity']; ?></td>
                                 <td><?php echo isset($mat['supplier_name']) && $mat['supplier_name'] ? htmlspecialchars($mat['supplier_name']) : 'N/A'; ?></td>
-                                <td style="font-weight:bold;color:#222;">₱<?php echo number_format(floatval($mat['total']), 2); ?></td>
+                                <td>
+                                  <?php $add_cost = isset($mat['additional_cost']) ? floatval($mat['additional_cost']) : 0; ?>
+                                  <span class="text-primary">₱<?php echo number_format($add_cost, 2); ?></span>
+                                  <button type="button" class="btn btn-link btn-sm p-0 ms-1" data-bs-toggle="modal" data-bs-target="#addCostModal<?php echo $mat['id']; ?>" title="Add/Edit Additional Cost"><i class="fas fa-plus-circle"></i></button>
+                                </td>
+                                <td style="font-weight:bold;color:#222;">₱<?php echo number_format(floatval($mat['total']) + $add_cost, 2); ?></td>
                                 <td>
                                   <?php if ($project['io'] == '4'): ?>
                                     <form method="post" style="display:inline;">
@@ -525,18 +540,42 @@ if ($userid) {
                                   <?php endif; ?>
                                 </td>
                               </tr>
+                              <!-- Add/Edit Additional Cost Modal -->
+                              <div class="modal fade" id="addCostModal<?php echo $mat['id']; ?>" tabindex="-1" aria-labelledby="addCostModalLabel<?php echo $mat['id']; ?>" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                  <div class="modal-content">
+                                    <form method="post">
+                                      <div class="modal-header">
+                                        <h5 class="modal-title" id="addCostModalLabel<?php echo $mat['id']; ?>">Add/Edit Additional Cost</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                      </div>
+                                      <div class="modal-body">
+                                        <input type="hidden" name="add_cost_row_id" value="<?php echo $mat['id']; ?>">
+                                        <div class="form-group mb-3">
+                                          <label for="additionalCostInput<?php echo $mat['id']; ?>">Additional Cost (₱)</label>
+                                          <input type="number" step="0.01" min="0" class="form-control" id="additionalCostInput<?php echo $mat['id']; ?>" name="additional_cost" value="<?php echo $add_cost; ?>" required>
+                                          <div class="form-text">Enter any extra cost incurred for this material (e.g. rush fee, extra delivery, etc).</div>
+                                        </div>
+                                      </div>
+                                      <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" name="save_additional_cost" class="btn btn-success">Save</button>
+                                      </div>
+                                    </form>
+                                  </div>
+                                </div>
+                              </div>
                               <?php endforeach; else: ?>
-                              <tr><td colspan="9" class="text-center">No materials added</td></tr>
+                              <tr><td colspan="10" class="text-center">No materials added</td></tr>
                               <?php endif; ?>
                             </tbody>
                             <tfoot>
                               <tr>
-                                <th colspan="7" class="text-right">Total</th>
+                                <th colspan="8" class="text-right">Total</th>
                                 <th colspan="2" style="font-weight:bold;color:#222;">₱<?php
                                   $mat_total = 0;
                                   foreach ($proj_mats as $mat) {
-                                    // Use the stored total value from the database instead of recalculating
-                                    $mat_total += floatval($mat['total']);
+                                    $mat_total += floatval($mat['total']) + (isset($mat['additional_cost']) ? floatval($mat['additional_cost']) : 0);
                                   }
                                   echo number_format($mat_total, 2);
                                 ?></th>
@@ -562,6 +601,7 @@ if ($userid) {
                               <tr>
                                 <th>No.</th>
                                 <th>Name</th>
+                                <th>Location</th>
                                 <th>Price</th>
                                 <th>Depreciation</th>
                                 <th>Category</th>
@@ -584,6 +624,7 @@ if ($userid) {
                               <tr>
                                 <td><?php echo $i++; ?></td>
                                 <td><?php echo htmlspecialchars($eq['equipment_name']); ?></td>
+                                <td><?php echo htmlspecialchars($eq['location'] ?? 'N/A'); ?></td>
                                 <td><?php
                                     if (isset($eq['rental_fee']) && $eq['rental_fee'] !== null && $eq['rental_fee'] !== '' && $eq['rental_fee'] > 0) {
                                       echo number_format($eq['rental_fee'], 2);
@@ -634,12 +675,12 @@ if ($userid) {
                                 </td>
                               </tr>
                               <?php endforeach; else: ?>
-                              <tr><td colspan="8" class="text-center">No equipment added</td></tr>
+                              <tr><td colspan="9" class="text-center">No equipment added</td></tr>
                               <?php endif; ?>
                             </tbody>
                             <tfoot>
                               <tr>
-                                <th colspan="6" class="text-right">Total</th>
+                                <th colspan="7" class="text-right">Total</th>
                                 <th colspan="2" style="font-weight:bold;color:#222;">₱<?php
                                   $equip_total = 0;
                                   foreach ($proj_equipments as $eq) {
@@ -683,6 +724,10 @@ if ($userid) {
           <div class="form-group">
             <label for="projectlocation">Location</label>
             <input type="text" class="form-control" id="projectlocation" name="projectlocation" value="<?php echo $project['location']; ?>" required>
+          </div>
+          <div class="form-group">
+            <label for="projectbudget">Budget (₱)</label>
+            <input type="number" step="0.01" class="form-control" id="projectbudget" name="projectbudget" value="<?php echo $project['budget']; ?>" required>
           </div>
           <div class="form-group">
             <label for="projectstartdate">Start Date</label>
@@ -1782,6 +1827,80 @@ document.addEventListener('DOMContentLoaded', function() {
       maxInfo.textContent = 'Max: ' + maxQty;
     });
   });
+});
+</script>
+<!-- Logout Confirmation Modal -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to log out?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="../logout.php" class="btn btn-danger">Logout</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<?php
+// Handle save additional cost
+if (isset($_POST['save_additional_cost']) && isset($_POST['add_cost_row_id'])) {
+  $row_id = intval($_POST['add_cost_row_id']);
+  $additional_cost = floatval($_POST['additional_cost']);
+  mysqli_query($con, "UPDATE project_add_materials SET additional_cost='$additional_cost' WHERE id='$row_id'");
+  // Optionally, update the total column as well if you want to store it
+  echo '<script>window.location.href = "project_details.php?id=' . $project_id . '&addmat=1";</script>';
+  exit();
+}
+?>
+
+<!-- Export Project PDF Confirmation Modal -->
+<div class="modal fade" id="exportProjectPdfModal" tabindex="-1" aria-labelledby="exportProjectPdfModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exportProjectPdfModalLabel">Export Project as PDF</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to export this project as PDF?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="#" id="confirmExportProjectPdf" class="btn btn-danger">Export</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var exportBtn = document.getElementById('exportProjectPdfBtn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var modal = new bootstrap.Modal(document.getElementById('exportProjectPdfModal'));
+      modal.show();
+    });
+  }
+  var confirmExportBtn = document.getElementById('confirmExportProjectPdf');
+  if (confirmExportBtn) {
+    confirmExportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var modalEl = document.getElementById('exportProjectPdfModal');
+      var modalInstance = bootstrap.Modal.getInstance(modalEl);
+      if (modalInstance) modalInstance.hide();
+      setTimeout(function() {
+        window.open('export_project_pdf.php?id=<?php echo $project_id; ?>', '_blank');
+        setTimeout(function() { location.reload(); }, 1000);
+      }, 300);
+    });
+  }
 });
 </script>
 </body>

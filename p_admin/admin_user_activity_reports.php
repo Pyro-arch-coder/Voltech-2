@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user_level'] != 4) {
+if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user_level'] != 2) {
     header("Location: ../login.php");
     exit();
 }
@@ -52,7 +52,44 @@ $success_message = isset($_SESSION['success_message']) ? $_SESSION['success_mess
 $error_message = isset($_SESSION['error_message']) ? $_SESSION['error_message'] : '';
 unset($_SESSION['success_message'], $_SESSION['error_message']);
 
-
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Handle AJAX password change
+    if (isset($_POST['change_password'])) {
+        $response = ['success' => false, 'message' => ''];
+        $current = isset($_POST['current_password']) ? $_POST['current_password'] : '';
+        $new = isset($_POST['new_password']) ? $_POST['new_password'] : '';
+        $confirm = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
+        if (!$current || !$new || !$confirm) {
+            $response['message'] = 'All fields are required.';
+        } elseif ($new !== $confirm) {
+            $response['message'] = 'New passwords do not match.';
+        } elseif (strlen($new) < 6) {
+            $response['message'] = 'New password must be at least 6 characters.';
+        } else {
+            // Check current password
+            $user_row = $con->query("SELECT password FROM users WHERE id = '$userid'");
+            if ($user_row && $user_row->num_rows > 0) {
+                $user_data = $user_row->fetch_assoc();
+                if (password_verify($current, $user_data['password'])) {
+                    $hashed = password_hash($new, PASSWORD_DEFAULT);
+                    $update = $con->query("UPDATE users SET password = '$hashed' WHERE id = '$userid'");
+                    if ($update) {
+                        $response['success'] = true;
+                        $response['message'] = 'Password changed successfully!';
+                    } else {
+                        $response['message'] = 'Failed to update password.';
+                    }
+                } else {
+                    $response['message'] = 'Current password is incorrect.';
+                }
+            } else {
+                $response['message'] = 'User not found.';
+            }
+        }
+        header('Content-Type: application/json');
+        echo json_encode($response);
+        exit();
+    }
     if (isset($_POST['save'])) {
         $fname = trim($_POST['first_name']);
         $lname = trim($_POST['last_name']);
@@ -138,6 +175,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
         $user_email = $user['email'];
         $userprofile = isset($user['profile_path']) && $user['profile_path'] ? '../uploads/' . $user['profile_path'] : '../uploads/default_profile.png';
     }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -150,7 +188,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
     <link rel="stylesheet" href="po_styles.css" />
     <!-- Cropper.js CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
-    <title>Procurement Officer Profile</title>
+    <title>User Activities</title>
     <style>
         #profilepic-preview {
             width: 200px;
@@ -171,30 +209,18 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             <hr style="border-top: 1px solid #fff; opacity: 0.3; margin: 12px 0 0 0;">
         </div>
         <div class="list-group list-group-flush ">
-                <a href="po_dashboard.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'po_dashboard.php' ? 'active' : ''; ?>">
+                <a href="admin_dashboard.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'admin_dashboard.php' ? 'active' : ''; ?>">
                     <i class="fas fa-home"></i>Dashboard
                 </a>
-                <a href="po_orders.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'po_orders.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-file-invoice"></i>Orders
+                <a href="admin_manage_users.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'admin_manage_users.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-users"></i> Manage Users
                 </a>
-                <a class="list-group-item list-group-item-action bg-transparent second-text d-flex justify-content-between align-items-center <?php echo ($current_page == 'po_equipment.php' || $current_page == 'po_materials.php' || $current_page == 'po_warehouse_materials.php') ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#inventoryCollapse" role="button" aria-expanded="<?php echo ($current_page == 'po_equipment.php' || $current_page == 'po_materials.php' || $current_page == 'po_warehouse_materials.php') ? 'true' : 'false'; ?>" aria-controls="inventoryCollapse">
-                    <span><i class="fas fa-boxes"></i>Inventory</span>
-                    <i class="fas fa-caret-down"></i>
+                <a href="admin_user_activity_reports.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'admin_user_activity_reports.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-chart-line"></i> User Activity Reports
                 </a>
-                <div class="collapse <?php echo ($current_page == 'po_equipment.php' || $current_page == 'po_materials.php' || $current_page == 'po_warehouse_materials.php') ? 'show' : ''; ?>" id="inventoryCollapse">
-                    <a href="po_equipment.php" class="list-group-item list-group-item-action bg-transparent second-text ps-5 <?php echo $current_page == 'po_equipment.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-wrench"></i> Equipment
-                    </a>
-                    <a href="po_materials.php" class="list-group-item list-group-item-action bg-transparent second-text ps-5 <?php echo $current_page == 'po_materials.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-cubes"></i> Materials
-                    </a>
-                    <a href="po_warehouse_materials.php" class="list-group-item list-group-item-action bg-transparent second-text ps-5 <?php echo $current_page == 'po_warehouse_materials.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-warehouse"></i> Warehouse
-                    </a>
-                </div>
-                <a href="po_suppliers.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'po_suppliers.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-truck"></i>Suppliers
-                </a>
+                <a href="admin_approval_requests.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'admin_approval_requests.php' ? 'active' : ''; ?>">
+                <i class="fas fa-clipboard-check"></i> Approval of Requests
+            </a>
             </div>
     </div>
     <!-- /#sidebar-wrapper -->
@@ -212,15 +238,15 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                <?php include 'po_notification.php'; ?>
+                    <?php include 'admin_notification.php'; ?>
                     <li class="nav-item dropdown">
-                         <a class="nav-link dropdown-toggle second-text fw-bold" href="#" id="navbarDropdown"
+                        <a class="nav-link dropdown-toggle second-text fw-bold" href="#" id="navbarDropdown"
                             role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <?php echo htmlspecialchars($user_name); ?>
                             <img src="<?php echo $userprofile; ?>" alt="User" class="rounded-circle" width="30" height="30" style="margin-left: 8px;">
                         </a>
-                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="po_profile.php">Profile</a></li>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="admin_profile.php">Profile</a></li>
                             <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
@@ -230,90 +256,51 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             </div>
         </nav>
         <div class="container-fluid px-4 py-4">
-            <div class="row justify-content-center">
-                <div class="col-12 col-md-6 mb-4">
-                    <!-- Profile Card -->
-                    <div class="card shadow rounded-3 h-100">
-                        <div class="card-body p-4">
-                            <h4 class="mb-4 text-center">Profile</h4>
-                            <form class="form mb-4" method="post" action="" enctype="multipart/form-data">
-                                <div class="text-center mb-3">
-                                    <label for="profilepic" style="cursor:pointer;">
-                                        <img src="<?php echo $userprofile; ?>" class="img img-fluid rounded-circle avatar" width="200" height="200" alt="Profile Picture" id="profilepic-preview">
-                                    </label>
-                                    <input type="file" name="file" class="form-control d-none" id="profilepic" accept="image/*">
-                                    <input type="hidden" name="cropped_image" id="cropped_image">
-                                </div>
-                                <div class="input-group mb-3 justify-content-center">
-                                    <button class="btn btn-secondary d-none" id="uploadPicBtn" type="submit" name="but_upload">Upload Picture</button>
-                                </div>
-                            </form>
-                            <!-- Cropper Modal -->
-                            <div class="modal fade" id="cropperModal" tabindex="-1" aria-labelledby="cropperModalLabel" aria-hidden="true">
-                              <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                  <div class="modal-header">
-                                    <h5 class="modal-title" id="cropperModalLabel">Crop Profile Picture</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                  </div>
-                                  <div class="modal-body text-center">
-                                    <div style="max-width:100%; max-height:400px;">
-                                      <img id="cropper-image" style="max-width:100%; max-height:400px;">
-                                    </div>
-                                  </div>
-                                  <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="button" class="btn btn-success" id="cropImageBtn">Crop & Preview</button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <hr class="mb-4">
-                            <!-- User Info Card -->
-                            <div class="card shadow rounded-3 mb-4">
-                              <div class="card-body d-flex flex-column flex-md-row align-items-center justify-content-between p-4">
-                                <div class="mb-3 mb-md-0">
-                                  <h5 class="mb-2">User Information</h5>
-                                  <p class="mb-1"><strong>First Name:</strong> <span class="badge bg-info text-dark"> <?php echo htmlspecialchars($user_firstname); ?> </span></p>
-                                  <p class="mb-1"><strong>Last Name:</strong> <span class="badge bg-info text-dark"> <?php echo htmlspecialchars($user_lastname); ?> </span></p>
-                                  <p class="mb-1"><strong>Email:</strong> <span class="badge bg-secondary"> <?php echo htmlspecialchars($user_email); ?> </span></p>
-                                  <p class="mb-1"><strong>Position:</strong> <span class="badge bg-primary"> <?php echo htmlspecialchars($user_position); ?> </span></p>
-                                  <p class="mb-1"><strong>Projects Managed:</strong> <span class="badge bg-success"> <?php echo $project_count; ?> </span></p>
-                                </div>
-                                <div class="d-flex align-items-center gap-3">
-                                  <i class="fas fa-user-tie fa-2x text-primary"></i>
-                                  <i class="fas fa-clipboard-list fa-2x text-success"></i>
-                                </div>
-                              </div>
-                            </div>
-                        </div>
+            <div class="card mb-5 shadow rounded-3">
+                <div class="card-body">
+                    <div class="mb-3 d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                        <h4 class="mb-0">User Activity Reports</h4>
+                        
                     </div>
-                </div>
-                <div class="col-12 col-md-6 mb-4">
-                    <!-- Update Info Card -->
-                    <div class="card shadow rounded-3 h-100">
-                        <div class="card-body p-4">
-                            <h4 class="mb-4 text-center">Update Information</h4>
-                            <form class="form" method="post" action="">
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="first_name" class="form-label">First Name</label>
-                                        <input type="text" class="form-control" name="first_name" id="first_name" value="<?php echo htmlspecialchars($user_firstname); ?>" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="last_name" class="form-label">Last Name</label>
-                                        <input type="text" class="form-control" name="last_name" id="last_name" value="<?php echo htmlspecialchars($user_lastname); ?>" required>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="email" class="form-label">Email</label>
-                                    <input type="email" class="form-control" name="email" id="email" value="<?php echo htmlspecialchars($user_email); ?>" disabled>
-                                </div>
-                                <div class="d-flex justify-content-end">
-                                    <button class="btn btn-success" name="save" type="submit">Save Changes</button>
-                                </div>
-                            </form>
-                        </div>
+                    <hr>
+                    <div class="table-responsive mb-0">
+                        <table class="table table-bordered table-striped mb-0">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Full Name</th>
+                                    <th>User Level</th>
+                                    <th>Latest Activity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $query = "SELECT * FROM users WHERE user_level IN (3,4) ORDER BY firstname, lastname";
+                                $result = mysqli_query($con, $query);
+                                $no = 1;
+                                while ($user = mysqli_fetch_assoc($result)) {
+                                    $fullName = htmlspecialchars($user['firstname'] . ' ' . $user['lastname']);
+                                    $userLevel = '';
+                                    switch ($user['user_level']) {
+                                        case 3:
+                                            $userLevel = '<span class="badge bg-success">Project Manager</span>';
+                                            break;
+                                        case 4:
+                                            $userLevel = '<span class="badge bg-warning text-dark">Procurement Officer</span>';
+                                            break;
+                                        default:
+                                            $userLevel = '<span class="badge bg-secondary">Unknown</span>';
+                                    }
+                                    echo "<tr>";
+                                    echo "<td>" . $no++ . "</td>";
+                                    echo "<td>$fullName</td>";
+                                    echo "<td>$userLevel</td>";
+                                    echo '<td><button class="btn btn-info btn-sm view-activity-btn" data-userid="' . $user['id'] . '" data-userlevel="' . $user['user_level'] . '">View</button></td>';
+                                    echo "</tr>";
+                                }
+                                ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -362,30 +349,46 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
             </div>
           </div>
         </div>
-    </div>
-
-    <!-- Logout Confirmation Modal -->
-    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <p>Are you sure you want to log out?</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <a href="../logout.php" class="btn btn-danger">Logout</a>
+        
+        <!-- Activity Modal -->
+        <div class="modal fade" id="activityModal" tabindex="-1" aria-labelledby="activityModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="activityModalLabel">User Activities</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <div id="activityModalContent">Loading...</div>
+              </div>
+            </div>
           </div>
         </div>
+    </div>
+</div>
+
+<!-- Logout Confirmation Modal -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to log out?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="../logout.php" class="btn btn-danger">Logout</a>
       </div>
     </div>
+  </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
     var el = document.getElementById("wrapper");
     var toggleButton = document.getElementById("menu-toggle");
     toggleButton.onclick = function () {
@@ -485,7 +488,7 @@ document.addEventListener('DOMContentLoaded', function() {
       feedbackDiv.innerHTML = '';
       var formData = new FormData(changePasswordForm);
       var xhr = new XMLHttpRequest();
-      xhr.open('POST', 'change_password.php', true);
+      xhr.open('POST', 'po_profile.php', true);
       xhr.onload = function() {
         try {
           var res = JSON.parse(xhr.responseText);
@@ -507,6 +510,28 @@ document.addEventListener('DOMContentLoaded', function() {
       xhr.send(formData);
     });
   }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.view-activity-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var userId = this.getAttribute('data-userid');
+      var userLevel = this.getAttribute('data-userlevel');
+      var modal = new bootstrap.Modal(document.getElementById('activityModal'));
+      var contentDiv = document.getElementById('activityModalContent');
+      contentDiv.innerHTML = 'Loading...';
+      fetch('fetch_user_notifications.php?user_id=' + userId + '&user_level=' + userLevel)
+        .then(response => response.text())
+        .then(html => {
+          contentDiv.innerHTML = html;
+        })
+        .catch(() => {
+          contentDiv.innerHTML = '<div class="alert alert-danger">Failed to load activities.</div>';
+        });
+      modal.show();
+    });
+  });
 });
 </script>
 </body>

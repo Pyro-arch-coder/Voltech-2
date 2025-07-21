@@ -221,7 +221,7 @@ function short_number_format($num, $precision = 1) {
                                 <li><a class="dropdown-item" href="po_profile.php">Profile</a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -456,7 +456,7 @@ function short_number_format($num, $precision = 1) {
                             </script>
                     
                         <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
+                            <table class="table table-bordered table-striped small-table">
                                 <thead class="thead-dark">
                                     <tr>
                                         <th>No</th>
@@ -835,182 +835,203 @@ function short_number_format($num, $precision = 1) {
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <!-- Supplier Comparison Section (Top) -->
-            <div class="card mb-4">
-              <div class="card-header bg-primary text-white">
-                <h6 class="mb-0"><i class="fas fa-balance-scale me-2"></i>Compare Suppliers</h6>
-              </div>
-              <div class="card-body">
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label for="materialNameSelect" class="form-label">Select Material:</label>
-                    <select class="form-control" id="materialNameSelect">
-                      <option value="">Choose a material...</option>
-                    </select>
-                  </div>
-                  <div class="col-md-3">
-                    <label for="quantityInput" class="form-label">Quantity:</label>
-                    <input type="number" class="form-control" id="quantityInput" value="1" min="1">
-                  </div>
-                  <div class="col-md-3">
-                    <label class="form-label">&nbsp;</label>
-                    <button type="button" class="btn btn-info w-100" id="compareSuppliersBtn">
-                      <i class="fas fa-search"></i> Find Suppliers
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Supplier Comparison Results -->
-                <div id="supplierComparisonSection" style="display: none;">
-                  <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
-                      <thead class="table-light">
-                        <tr>
-                          <th>
-                            <input type="checkbox" id="selectAllSuppliers">
-                            <label for="selectAllSuppliers" class="ms-1">All</label>
-                          </th>
-                          <th>Supplier</th>
-                          <th>Material Price</th>
-                          <th>Lead Time</th>
-                          <th>Total Cost</th>
-                          <th>Best Deal</th>
-                        </tr>
-                      </thead>
-                      <tbody id="supplierTableBody">
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Material Details Form -->
-            <div id="materialDetailsForm" style="display: none;">
-              <div class="card mb-4">
-                <div class="card-header bg-success text-white">
-                  <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Material Details</h6>
-                </div>
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-md-6">
-                      <div class="form-group mb-3">
-                        <label>Material Name</label>
-                        <input type="text" class="form-control" id="materialNameInput" readonly>
-                      </div>
-                      <div class="form-group mb-3">
-                        <label>Category <span class="text-danger">*</span></label>
-                        <select class="form-control" id="categorySelect" required>
-                          <option value="">Select Category</option>
-                          <?php if ($all_categories) { while($cat = $all_categories->fetch_assoc()): ?>
-                            <option value="<?php echo htmlspecialchars($cat['category']); ?>">
-                              <?php echo htmlspecialchars($cat['category']); ?>
-                            </option>
-                          <?php endwhile; } ?>
-                        </select>
-                        <div class="invalid-feedback">
-                          Please select a category.
+            <!-- WIZARD PAGE 1: ADDING MATERIALS -->
+            <div id="add-material-page-1">
+              <div class="row">
+                <!-- Column 1: Compare Suppliers -->
+                <div class="col-lg-6">
+                  <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                      <h6 class="mb-0"><i class="fas fa-balance-scale me-2"></i>Compare Suppliers</h6>
+                    </div>
+                    <div class="card-body">
+                      <div class="row mb-3">
+                        <div class="col-md-6">
+                          <label for="materialNameSelect" class="form-label">Select Material:</label>
+                          <select class="form-control" id="materialNameSelect">
+                            <option value="">Choose a material...</option>
+                          </select>
+                        </div>
+                        <div class="col-md-3">
+                          <label for="quantityInput" class="form-label">Quantity:</label>
+                          <input type="number" class="form-control" id="quantityInput" value="1" min="1">
+                        </div>
+                        <div class="col-md-3">
+                          <label class="form-label">&nbsp;</label>
+                          <button type="button" class="btn btn-info w-100" id="compareSuppliersBtn">
+                            <i class="fas fa-search"></i> Find
+                          </button>
                         </div>
                       </div>
-                      <div class="form-group mb-3">
-                        <label>Location</label>
-                        <select class="form-control" id="locationSelect">
-                          <option value="">Select Location</option>
-                          <?php if ($all_warehouses) { while($wh = $all_warehouses->fetch_assoc()): ?>
-                            <option value="<?php echo htmlspecialchars($wh['warehouse']); ?>">
-                              <?php echo htmlspecialchars($wh['warehouse']); ?>
-                            </option>
-                          <?php endwhile; } ?>
-                        </select>
+
+                      <!-- Supplier Comparison Results -->
+                      <div id="supplierComparisonSection" style="display: none;">
+                        <div class="table-responsive">
+                          <table class="table table-bordered table-striped">
+                            <thead class="table-light">
+                              <tr>
+                                <th>
+                                  <input type="checkbox" id="selectAllSuppliers">
+                                  <label for="selectAllSuppliers" class="ms-1">All</label>
+                                </th>
+                                <th>Supplier</th>
+                                <th>Price</th>
+                                <th>Lead Time</th>
+                                <th>Best Deal</th>
+                              </tr>
+                            </thead>
+                            <tbody id="supplierTableBody">
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
-                      <div class="row">
-                        <div class="col-6">
-                          <div class="form-group mb-3">
-                            <label>Quantity <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" id="finalQuantityInput" min="1" max="999999" required>
-                            <div class="invalid-feedback">
-                              Please enter a valid quantity (1-999,999).
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Column 2: Material Details -->
+                <div class="col-lg-6">
+                  <!-- Material Details Form -->
+                  <div id="materialDetailsForm" style="display: none;">
+                    <div class="card mb-4">
+                      <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Material Details</h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="form-group mb-3">
+                              <label>Material Name</label>
+                              <input type="text" class="form-control" id="materialNameInput" readonly>
+                            </div>
+                            <div class="form-group mb-3">
+                              <label>Category <span class="text-danger">*</span></label>
+                              <select class="form-control" id="categorySelect" required>
+                                <option value="">Select Category</option>
+                                <?php if ($all_categories) { $all_categories->data_seek(0); while($cat = $all_categories->fetch_assoc()): ?>
+                                  <option value="<?php echo htmlspecialchars($cat['category']); ?>">
+                                    <?php echo htmlspecialchars($cat['category']); ?>
+                                  </option>
+                                <?php endwhile; } ?>
+                              </select>
+                              <div class="invalid-feedback">
+                                Please select a category.
+                              </div>
+                            </div>
+                            <div class="form-group mb-3">
+                              <label>Location</label>
+                              <select class="form-control" id="locationSelect">
+                                <option value="">Select Location</option>
+                                <?php if ($all_warehouses) { $all_warehouses->data_seek(0); while($wh = $all_warehouses->fetch_assoc()): ?>
+                                  <option value="<?php echo htmlspecialchars($wh['warehouse']); ?>">
+                                    <?php echo htmlspecialchars($wh['warehouse']); ?>
+                                  </option>
+                                <?php endwhile; } ?>
+                              </select>
+                            </div>
+                            <div class="row">
+                              <div class="col-6">
+                                <div class="form-group mb-3">
+                                  <label>Quantity <span class="text-danger">*</span></label>
+                                  <input type="number" class="form-control" id="finalQuantityInput" min="1" max="999999" required>
+                                  <div class="invalid-feedback">
+                                    Please enter a valid quantity (1-999,999).
+                                  </div>
+                                </div>
+                              </div>
+                              <div class="col-6">
+                                <div class="form-group mb-3">
+                                  <label>Unit</label>
+                                  <input type="text" class="form-control" id="unitInput" readonly>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="form-group mb-3">
+                              <label>Selected Supplier</label>
+                              <input type="text" class="form-control" id="selectedSupplierInput" readonly>
+                            </div>
+                            <div class="form-group mb-3">
+                              <label>Material Price</label>
+                              <input type="number" step="0.01" class="form-control" id="materialPriceInput" readonly>
+                            </div>
+                            <div class="form-group mb-3">
+                              <label>Labor/Other Cost</label>
+                              <input type="number" step="0.01" class="form-control" id="laborOtherInput" value="0" min="0" max="999999.99">
+                              <div class="invalid-feedback">
+                                Please enter a valid cost (0-999,999.99).
+                              </div>
+                            </div>
+                            <div class="form-group mb-3">
+                              <label>Status <span class="text-danger">*</span></label>
+                              <select class="form-control" id="statusSelect" required>
+                                <option value="Available" selected>Available</option>
+                              </select>
+                              <div class="invalid-feedback">
+                                Please select a status.
+                              </div>
                             </div>
                           </div>
                         </div>
-                        <div class="col-6">
-                          <div class="form-group mb-3">
-                            <label>Unit</label>
-                            <input type="text" class="form-control" id="unitInput" readonly>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-6">
-                      <div class="form-group mb-3">
-                        <label>Selected Supplier</label>
-                        <input type="text" class="form-control" id="selectedSupplierInput" readonly>
-                      </div>
-                      <div class="form-group mb-3">
-                        <label>Material Price</label>
-                        <input type="number" step="0.01" class="form-control" id="materialPriceInput" readonly>
-                      </div>
-                      <div class="form-group mb-3">
-                        <label>Labor/Other Cost</label>
-                        <input type="number" step="0.01" class="form-control" id="laborOtherInput" value="0" min="0" max="999999.99">
-                        <div class="invalid-feedback">
-                          Please enter a valid cost (0-999,999.99).
-                        </div>
-                      </div>
-                      <div class="form-group mb-3">
-                        <label>Status <span class="text-danger">*</span></label>
-                        <select class="form-control" id="statusSelect" required>
-                          <option value="Available" selected>Available</option>
-                        </select>
-                        <div class="invalid-feedback">
-                          Please select a status.
-                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-
-            <!-- Materials Selection Cart -->
-            <div id="materialsCart" style="display: none;">
-              <div class="card">
-                <div class="card-header bg-warning text-dark">
-                  <h6 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Selected Materials</h6>
-                </div>
-                <div class="card-body">
-                  <div class="table-responsive">
-                    <table class="table table-bordered table-striped">
-                      <thead class="table-light">
-                        <tr>
-                          <th>Material</th>
-                          <th>Supplier</th>
-                          <th>Quantity</th>
-                          <th>Unit</th>
-                          <th>Price</th>
-                          <th>Total</th>
-                          <th>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody id="cartTableBody">
-                      </tbody>
-                    </table>
+            
+            <!-- WIZARD PAGE 2: VIEWING CART -->
+            <div id="add-material-page-2" style="display: none;">
+              <!-- Materials Selection Cart -->
+              <div id="materialsCart">
+                <div class="card">
+                  <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Selected Materials</h6>
                   </div>
-                  <div class="text-end">
-                    <strong>Total Items: <span id="cartTotalItems">0</span></strong>
+                  <div class="card-body">
+                    <div class="table-responsive">
+                      <table class="table table-bordered table-striped">
+                        <thead class="table-light">
+                          <tr>
+                            <th>Material</th>
+                            <th>Supplier</th>
+                            <th>Quantity</th>
+                            <th>Unit</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody id="cartTableBody">
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="d-flex justify-content-end align-items-center mt-2">
+                      <div class="text-end">
+                        <strong>Total Items: <span id="cartTotalItems">0</span></strong>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-warning" id="addToCartBtn" style="display: none;">
-              <i class="fas fa-cart-plus"></i> Add to Cart
-            </button>
-            <button type="button" class="btn btn-success" id="saveAllMaterialsBtn" style="display: none;">
-              <i class="fas fa-save"></i> Save All Materials
-            </button>
+          <div class="modal-footer d-flex justify-content-between">
+            <div>
+              <button type="button" class="btn btn-outline-secondary" id="wizardPrevBtn" disabled><i class="fas fa-chevron-left"></i> Back to Add</button>
+            </div>
+            <div>
+              <button type="button" class="btn btn-warning" id="addToCartBtn" style="display: none;">
+                <i class="fas fa-cart-plus"></i> Add to Cart
+              </button>
+              <button type="button" class="btn btn-success" id="saveAllMaterialsBtn" style="display: none;">
+                <i class="fas fa-save"></i> Save All Materials
+              </button>
+            </div>
+            <div>
+              <button type="button" class="btn btn-outline-secondary" id="wizardNextBtn">View Cart <i class="fas fa-chevron-right"></i></button>
+            </div>
           </div>
         </div>
       </div>
@@ -1097,6 +1118,25 @@ function short_number_format($num, $precision = 1) {
       </div>
     </div>
 
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to log out?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <a href="../logout.php" class="btn btn-danger">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="po_materials.js"></script>
@@ -1163,12 +1203,30 @@ document.addEventListener('DOMContentLoaded', function() {
       modal.show();
     });
   });
+  var exportBtn = document.getElementById('confirmExportPdf');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var modalEl = document.getElementById('exportPdfModal');
+      var modalInstance = bootstrap.Modal.getInstance(modalEl);
+      if (modalInstance) modalInstance.hide();
+      setTimeout(function() {
+        window.open('export_materials_pdf.php', '_blank');
+      }, 300);
+    });
+  }
 });
 </script>
 
 <script>
 // Enhanced Add Material Modal Functionality
 document.addEventListener('DOMContentLoaded', function() {
+    const addMaterialModal = document.getElementById('addMaterialModal');
+    const wizardPage1 = document.getElementById('add-material-page-1');
+    const wizardPage2 = document.getElementById('add-material-page-2');
+    const wizardPrevBtn = document.getElementById('wizardPrevBtn');
+    const wizardNextBtn = document.getElementById('wizardNextBtn');
+
     const materialNameSelect = document.getElementById('materialNameSelect');
     const quantityInput = document.getElementById('quantityInput');
     const compareSuppliersBtn = document.getElementById('compareSuppliersBtn');
@@ -1180,18 +1238,49 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let selectedSupplier = null;
     let materialsCartArray = [];
+    let currentWizardPage = 1;
+    
+    // --- Wizard Navigation ---
+    function showWizardPage(page) {
+        currentWizardPage = page;
+        if (page === 1) {
+            wizardPage1.style.display = 'block';
+            wizardPage2.style.display = 'none';
+            wizardPrevBtn.disabled = true;
+            wizardNextBtn.disabled = false;
+            
+            // Show Add to Cart if details form is visible, otherwise hide
+            addToCartBtn.style.display = materialDetailsForm.style.display === 'block' ? 'inline-block' : 'none';
+            saveAllMaterialsBtn.style.display = 'none';
+
+        } else if (page === 2) {
+            wizardPage1.style.display = 'none';
+            wizardPage2.style.display = 'block';
+            wizardPrevBtn.disabled = false;
+            wizardNextBtn.disabled = true;
+
+            addToCartBtn.style.display = 'none';
+            // Show Save button only if cart has items
+            saveAllMaterialsBtn.style.display = materialsCartArray.length > 0 ? 'inline-block' : 'none';
+        }
+    }
+
+    wizardNextBtn.addEventListener('click', function() {
+        if (currentWizardPage < 2) {
+            showWizardPage(currentWizardPage + 1);
+        }
+    });
+
+    wizardPrevBtn.addEventListener('click', function() {
+        if (currentWizardPage > 1) {
+            showWizardPage(currentWizardPage - 1);
+        }
+    });
     
     // Load materials when add modal opens
-    document.getElementById('addMaterialModal').addEventListener('show.bs.modal', function() {
+    addMaterialModal.addEventListener('show.bs.modal', function() {
         loadMaterialsForAdd();
-        resetForm();
-        
-        // Debug: Check if elements exist
-        console.log('Modal opened');
-        console.log('materialNameSelect:', document.getElementById('materialNameSelect'));
-        console.log('compareSuppliersBtn:', document.getElementById('compareSuppliersBtn'));
-        console.log('supplierComparisonSection:', document.getElementById('supplierComparisonSection'));
-        console.log('materialDetailsForm:', document.getElementById('materialDetailsForm'));
+        resetForm(); // This will also reset the wizard to page 1
     });
     
     // Load available materials for add modal
@@ -1218,12 +1307,11 @@ document.addEventListener('DOMContentLoaded', function() {
         quantityInput.value = '1';
         supplierComparisonSection.style.display = 'none';
         materialDetailsForm.style.display = 'none';
-        materialsCart.style.display = 'none';
-        addToCartBtn.style.display = 'none';
-        saveAllMaterialsBtn.style.display = 'none';
+        
         selectedSupplier = null;
         materialsCartArray = [];
-        updateCartDisplay();
+        updateCartDisplay(); // This will hide save button too
+        showWizardPage(1); // Reset to first page
     }
     
     // Compare suppliers button click
@@ -1288,7 +1376,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <td><strong>${supplier.supplier_name}</strong></td>
                 <td>₱ ${supplier.material_price.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
                 <td>${supplier.lead_time} days</td>
-                <td><strong>₱ ${supplier.total_cost.toLocaleString('en-US', {minimumFractionDigits: 2})}</strong></td>
                 <td>
                     ${supplier.best_deal ? `<span class="badge bg-success">${supplier.best_deal}</span>` : ''}
                 </td>
@@ -1747,48 +1834,54 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('selectAllSuppliers').checked = false;
         
         showFeedbackModal(true, `${selectedCheckboxes.length} material(s) added to cart!`);
+        
+        // Automatically move to cart page
+        showWizardPage(2);
     }
     
     // Update cart display
     function updateCartDisplay() {
-        const tbody = document.getElementById('cartTableBody');
-        tbody.innerHTML = '';
-        
-        materialsCartArray.forEach((material, index) => {
-            const total = (material.material_price + material.labor_other) * material.quantity;
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${material.material_name}</td>
-                <td>${material.supplier_name}</td>
-                <td>${material.quantity}</td>
-                <td>${material.unit}</td>
-                <td>₱ ${material.material_price.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                <td>₱ ${total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                <td>
-                    <button type="button" class="btn btn-danger btn-sm" onclick="removeFromCart(${index})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-        
-        document.getElementById('cartTotalItems').textContent = materialsCartArray.length;
-        
+        const cartTableBody = document.getElementById('cartTableBody');
+        const cartTotalItems = document.getElementById('cartTotalItems');
+
+        cartTableBody.innerHTML = '';
+        cartTotalItems.textContent = materialsCartArray.length;
+
         if (materialsCartArray.length > 0) {
-            materialsCart.style.display = 'block';
-            saveAllMaterialsBtn.style.display = 'inline-block';
+            materialsCartArray.forEach((item, index) => {
+                const total = (item.material_price + item.labor_other) * item.quantity;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.material_name}</td>
+                    <td>${item.supplier_name}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.unit}</td>
+                    <td>₱ ${item.material_price.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td>₱ ${total.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td>
+                        <button type="button" class="btn btn-danger btn-sm remove-cart-item" data-index="${index}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                cartTableBody.appendChild(row);
+            });
+            materialsCart.style.display = 'block'; // Ensure cart container is visible if it has items
         } else {
             materialsCart.style.display = 'none';
-            saveAllMaterialsBtn.style.display = 'none';
         }
+        
+        // Re-evaluate button visibility based on current page and cart status
+        showWizardPage(currentWizardPage);
+
+        document.querySelectorAll('.remove-cart-item').forEach(button => {
+            button.addEventListener('click', function() {
+                const itemIndex = parseInt(this.getAttribute('data-index'));
+                materialsCartArray.splice(itemIndex, 1);
+                updateCartDisplay();
+            });
+        });
     }
-    
-    // Remove from cart (global function)
-    window.removeFromCart = function(index) {
-        materialsCartArray.splice(index, 1);
-        updateCartDisplay();
-    };
     
     // Save all materials button click
     saveAllMaterialsBtn.addEventListener('click', function() {

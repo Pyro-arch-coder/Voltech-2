@@ -105,17 +105,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_project_material'
     $unit = mysqli_real_escape_string($con, $_POST['materialUnit']);
     $material_price = floatval($_POST['materialPrice']);
     $quantity = intval($_POST['materialQty']);
-    
+    $additional_cost = isset($_POST['additional_cost']) ? floatval($_POST['additional_cost']) : 0;
     // Get labor_other from materials table
     $mat_res = mysqli_query($con, "SELECT quantity, location, labor_other FROM materials WHERE id = '$material_id' LIMIT 1");
     $mat_row = mysqli_fetch_assoc($mat_res);
     $current_qty = intval($mat_row['quantity']);
     $warehouse = mysqli_real_escape_string($con, $mat_row['location']);
     $labor_other = floatval($mat_row['labor_other']);
-    
     // Calculate total including both material_price and labor_other
     $total = ($material_price + $labor_other) * $quantity;
-    
     // Fetch project status (io)
     $proj_status_res = mysqli_query($con, "SELECT io FROM projects WHERE project_id='$project_id' LIMIT 1");
     $proj_status_row = mysqli_fetch_assoc($proj_status_res);
@@ -125,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_project_material'
         header("Location: project_details.php?id=$project_id&error=insufficient_stock&left=$current_qty");
         exit();
     }
-    $sql = "INSERT INTO project_add_materials (project_id, material_id, material_name, unit, material_price, quantity, total) VALUES ('$project_id', '$material_id', '$material_name', '$unit', '$material_price', '$quantity', '$total')";
+    $sql = "INSERT INTO project_add_materials (project_id, material_id, material_name, unit, material_price, quantity, total, additional_cost) VALUES ('$project_id', '$material_id', '$material_name', '$unit', '$material_price', '$quantity', '$total', '$additional_cost')";
     mysqli_query($con, $sql);
     // Subtract the quantity from the main materials table only if On going
     if ($project_io == '1') {

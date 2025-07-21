@@ -153,7 +153,19 @@ $pdf->Ln(12);
 $materials_total_count = $total_orders + $total_reorders + $total_backorders;
 $materials_total_amt = $total_orders_amt + $reorder_exp + $backorder_exp;
 
-$pdf->SetY(-90); // Move up to fit a larger image
-$pdf->Image('../uploads/signature.jpg', ($pdf->GetPageWidth()-80)/2, $pdf->GetPageHeight()-85, 80); // Centered, 80mm wide
+
+$pdf->Ln(20); // Add some space after the tables
+$pdf->SetFont('Arial','B',10); // Smaller font
+$pdf->Cell(0,6,'SUBMITTED BY:',0,1,'L');
+$pdf->SetFont('Arial','B',11);
+$pdf->Cell(0,6,'VOLTECH ELECTRICAL CONST.',0,1,'L');
+$pdf->Ln(6);
+// No image
+$pdf->SetFont('Arial','B',10);
+$pdf->Cell(0,6,'BY: _______________',0,1,'L');
+$pdf->Cell(0,6,'ENGR. ROMEO MATIAS',0,1,'L');
+$pdf->SetFont('Arial','',9);
+$pdf->Cell(0,6,'General Manager',0,1,'L');
+
 
 $pdf->Output('D', 'dashboard_summary.pdf'); 

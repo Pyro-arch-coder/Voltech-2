@@ -15,6 +15,13 @@ $user_lastname = isset($_SESSION['lastname']) ? $_SESSION['lastname'] : '';
 $user_name = trim($user_firstname . ' ' . $user_lastname);
 $current_page = basename($_SERVER['PHP_SELF']);
 
+// Fetch warehouses for dropdown
+$warehouses_query = $con->query("SELECT DISTINCT warehouse FROM warehouses WHERE warehouse IS NOT NULL AND warehouse != '' ORDER BY warehouse ASC");
+$warehouses = [];
+while ($w_row = $warehouses_query->fetch_assoc()) {
+    $warehouses[] = $w_row['warehouse'];
+}
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     header('Content-Type: application/json');
@@ -122,7 +129,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['equipment_id'])) {
     $status = mysqli_real_escape_string($con, $_POST['status']);
     $depreciation = isset($_POST['depreciation']) && $_POST['depreciation'] !== '' ? floatval($_POST['depreciation']) : null;
     $equipment_price = isset($_POST['equipment_price']) && $_POST['equipment_price'] !== '' ? floatval($_POST['equipment_price']) : null;
-    $insert_query = "INSERT INTO equipment (equipment_name, usage_purpose, borrow_time, return_time, status, depreciation, equipment_price) VALUES ('$equipment_name', '$usage_purpose', " . ($borrow_time ? "'$borrow_time'" : "NULL") . ", " . ($return_time ? "'$return_time'" : "NULL") . ", '$status', " . ($depreciation !== null ? "'$depreciation'" : "NULL") . ", " . ($equipment_price !== null ? "'$equipment_price'" : "NULL") . ")";
+    $location = mysqli_real_escape_string($con, $_POST['location']);
+    $insert_query = "INSERT INTO equipment (equipment_name, usage_purpose, borrow_time, return_time, status, depreciation, equipment_price, location) VALUES ('$equipment_name', '$usage_purpose', " . ($borrow_time ? "'$borrow_time'" : "NULL") . ", " . ($return_time ? "'$return_time'" : "NULL") . ", '$status', " . ($depreciation !== null ? "'$depreciation'" : "NULL") . ", " . ($equipment_price !== null ? "'$equipment_price'" : "NULL") . ", '$location')";
     if ($con->query($insert_query)) {
         header('Location: equipment.php?success=add');
         exit();
@@ -143,7 +151,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['equipment_id'])) {
     $status = mysqli_real_escape_string($con, $_POST['status']);
     $depreciation = isset($_POST['depreciation']) && $_POST['depreciation'] !== '' ? floatval($_POST['depreciation']) : null;
     $equipment_price = isset($_POST['equipment_price']) && $_POST['equipment_price'] !== '' ? floatval($_POST['equipment_price']) : null;
-    $update_query = "UPDATE equipment SET equipment_name='$equipment_name', usage_purpose='$usage_purpose', borrow_time=" . ($borrow_time ? "'$borrow_time'" : "NULL") . ", return_time=" . ($return_time ? "'$return_time'" : "NULL") . ", status='$status', depreciation=" . ($depreciation !== null ? "'$depreciation'" : "NULL") . ", equipment_price=" . ($equipment_price !== null ? "'$equipment_price'" : "NULL") . " WHERE id=$equipment_id";
+    $location = mysqli_real_escape_string($con, $_POST['location']);
+    $update_query = "UPDATE equipment SET equipment_name='$equipment_name', usage_purpose='$usage_purpose', borrow_time=" . ($borrow_time ? "'$borrow_time'" : "NULL") . ", return_time=" . ($return_time ? "'$return_time'" : "NULL") . ", status='$status', depreciation=" . ($depreciation !== null ? "'$depreciation'" : "NULL") . ", equipment_price=" . ($equipment_price !== null ? "'$equipment_price'" : "NULL") . ", location='$location' WHERE id=$equipment_id";
     if ($con->query($update_query)) {
         header('Location: equipment.php?success=edit');
         exit();
@@ -325,7 +334,7 @@ $result = $con->query($sql);
                                 <li><a class="dropdown-item" href="po_profile.php">Profile</a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -387,6 +396,7 @@ $result = $con->query($sql);
                                     <tr>
                                         <th>No.</th>
                                         <th>Equipment Name</th>
+                                        <th>Location</th>
                                         <th>Equipment Price</th>
                                         <th>Depreciation / Rental Fee</th>
                                         <th>Status</th>
@@ -401,6 +411,7 @@ $result = $con->query($sql);
                                     <tr>
                                         <td><?php echo $no++; ?></td>
                                                 <td><?php echo htmlspecialchars($row['equipment_name']); ?></td>
+                                                <td><?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></td>
                                                 <td>
                                                     <?php
                                                     if ($row['category'] == 'Company') {
@@ -440,7 +451,7 @@ $result = $con->query($sql);
                                         <?php endwhile; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="6" class="text-center">No equipment found</td>
+                                            <td colspan="7" class="text-center">No equipment found</td>
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>
@@ -491,6 +502,15 @@ $result = $con->query($sql);
                                     <label for="equipmentNameInput">Equipment Name *</label>
                                     <input type="text" class="form-control" id="equipmentNameInput" name="equipment_name" required>
                                 </div>
+                                <div class="form-group mb-3">
+                                    <label for="addLocationSelect">Location (Warehouse)</label>
+                                    <select class="form-control" name="location" id="addLocationSelect">
+                                        <option value="" selected>None</option>
+                                        <?php foreach ($warehouses as $wh): ?>
+                                            <option value="<?php echo htmlspecialchars($wh); ?>"><?php echo htmlspecialchars($wh); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
                                 <div class="form-group mb-3" id="equipmentPriceField">
                                     <label for="equipmentPriceInput">Equipment Price</label>
                                     <input type="number" step="0.01" min="0" class="form-control" id="equipmentPriceInput" name="equipment_price">
@@ -535,6 +555,7 @@ $result = $con->query($sql);
                         <div class="row mb-3">
                             <div class="col-md-6 mb-2">
                                 <h4 class="fw-bold mb-0 text-primary"><i class="fas fa-wrench me-2"></i><?php echo htmlspecialchars($row['equipment_name']); ?></h4>
+                                <div class="text-muted small"><i class="fas fa-map-marker-alt me-1"></i>Location: <?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></div>
                             </div>
                             <div class="col-md-6 mb-2 text-md-end">
                                 <span class="fw-bold text-secondary"><i class="fas fa-info-circle me-1"></i>Status:</span> <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : (($row['status'] == 'In Use') ? 'warning' : (($row['status'] == 'Maintenance') ? 'info' : 'secondary')); ?>"><?php echo htmlspecialchars($row['status']); ?></span>
@@ -593,6 +614,17 @@ $result = $con->query($sql);
                                 <div class="form-group mb-3">
                                     <label>Equipment Name *</label>
                                     <input type="text" class="form-control" name="equipment_name" value="<?php echo htmlspecialchars($row['equipment_name']); ?>" required>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Location (Warehouse)</label>
+                                    <select class="form-control" name="location">
+                                        <option value="">None</option>
+                                        <?php foreach ($warehouses as $wh): ?>
+                                            <option value="<?php echo htmlspecialchars($wh); ?>" <?php if (isset($row['location']) && $row['location'] == $wh) echo 'selected'; ?>>
+                                                <?php echo htmlspecialchars($wh); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                                 <div class="form-group mb-3">
                                     <label>Category</label>
@@ -663,6 +695,26 @@ $result = $con->query($sql);
     <!-- /#page-content-wrapper -->
     </div>
 
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to log out?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <a href="../logout.php" class="btn btn-danger">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
     <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -706,7 +758,7 @@ $result = $con->query($sql);
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <a href="export_equipment_pdf.php" id="confirmExportPdf" class="btn btn-danger">Export</a>
+            <a href="#" id="confirmExportPdf" class="btn btn-danger">Export</a>
           </div>
         </div>
       </div>
@@ -878,6 +930,30 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       formData.append('change_password', '1');
       xhr.send(formData);
+    });
+  }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var exportBtn = document.getElementById('exportPdfBtn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var modal = new bootstrap.Modal(document.getElementById('exportPdfModal'));
+      modal.show();
+    });
+  }
+  var confirmExportBtn = document.getElementById('confirmExportPdf');
+  if (confirmExportBtn) {
+    confirmExportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var modalEl = document.getElementById('exportPdfModal');
+      var modalInstance = bootstrap.Modal.getInstance(modalEl);
+      if (modalInstance) modalInstance.hide();
+      setTimeout(function() {
+        window.open('export_equipment_pdf.php', '_blank');
+      }, 300);
     });
   }
 });

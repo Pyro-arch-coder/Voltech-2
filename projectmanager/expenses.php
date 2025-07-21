@@ -302,7 +302,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
                                 <li><a class="dropdown-item" href="pm_profile.php">Profile</a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -318,7 +318,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
                         <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
                           <i class="fas fa-plus"></i> Add Expense
                         </button>
-                        <a href="export_expenses_pdf.php" class="btn btn-danger">
+                        <a href="#" class="btn btn-danger" id="exportPdfBtn">
                           <i class="fas fa-file-pdf"></i> Export as PDF
                         </a>
                       </div>
@@ -556,6 +556,44 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     <!-- /#page-content-wrapper -->
     </div>
 
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to log out?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <a href="../logout.php" class="btn btn-danger">Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export PDF Confirmation Modal -->
+    <div class="modal fade" id="exportPdfModal" tabindex="-1" aria-labelledby="exportPdfModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exportPdfModalLabel">Export as PDF</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to export the expenses as PDF?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <a href="#" id="confirmExportPdf" class="btn btn-danger">Export</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -743,6 +781,31 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       formData.append('change_password', '1');
       xhr.send(formData);
+    });
+  }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var exportBtn = document.getElementById('exportPdfBtn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var modal = new bootstrap.Modal(document.getElementById('exportPdfModal'));
+      modal.show();
+    });
+  }
+  var confirmExportBtn = document.getElementById('confirmExportPdf');
+  if (confirmExportBtn) {
+    confirmExportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var modalEl = document.getElementById('exportPdfModal');
+      var modalInstance = bootstrap.Modal.getInstance(modalEl);
+      if (modalInstance) modalInstance.hide();
+      setTimeout(function() {
+        window.open('export_expenses_pdf.php', '_blank');
+        setTimeout(function() { location.reload(); }, 1000);
+      }, 300);
     });
   }
 });

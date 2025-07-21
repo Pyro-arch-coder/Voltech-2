@@ -23,7 +23,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $depreciation = null;
         $rental_fee = isset($_POST['rental_fee']) && $_POST['rental_fee'] !== '' ? floatval($_POST['rental_fee']) : null;
     }
-    $insert_query = "INSERT INTO equipment (equipment_name, status, approval, category, depreciation, rental_fee, equipment_price, user_id) VALUES ('$equipment_name', '$status', 'Pending', '$category', " . ($depreciation !== null ? "'$depreciation'" : "NULL") . ", " . ($rental_fee !== null ? "'$rental_fee'" : "NULL") . ", " . ($equipment_price !== null ? "'$equipment_price'" : "NULL") . ", $user_id)";
+
+    $location = isset($_POST['location']) ? mysqli_real_escape_string($con, $_POST['location']) : null;
+
+    $insert_query = "INSERT INTO equipment (equipment_name, location, status, approval, category, depreciation, rental_fee, equipment_price, user_id) VALUES ('$equipment_name', " . ($location ? "'$location'" : "NULL") . ", '$status', 'Pending', '$category', " . ($depreciation !== null ? "'$depreciation'" : "NULL") . ", " . ($rental_fee !== null ? "'$rental_fee'" : "NULL") . ", " . ($equipment_price !== null ? "'$equipment_price'" : "NULL") . ", $user_id)";
+    
     if ($con->query($insert_query)) {
         // Notification logic (like add_materials.php)
         $notif_type = "Add Equipment";

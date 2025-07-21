@@ -317,7 +317,7 @@ if ($userid) {
                                 <li><a class="dropdown-item" href="pm_profile.php">Profile</a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -339,7 +339,7 @@ if ($userid) {
                         <input type="date" class="form-control" id="end_date" name="end_date" required>
                       </div>
                       <div class="col-auto">
-                        <button type="submit" class="btn btn-success mt-2 mt-md-0">
+                        <button type="button" class="btn btn-success mt-2 mt-md-0">
                           <i class="fas fa-file-pdf"></i> Export as PDF
                         </button>
                       </div>
@@ -511,6 +511,43 @@ if ($userid) {
     <!-- /#page-content-wrapper -->
     </div>
 
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to log out?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <a href="../logout.php" class="btn btn-danger">Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Export PDF Confirmation Modal -->
+    <div class="modal fade" id="exportDashboardPdfModal" tabindex="-1" aria-labelledby="exportDashboardPdfModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exportDashboardPdfModalLabel">Export as PDF</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to export the dashboard as PDF for the selected date range?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" id="confirmExportDashboardPdf" class="btn btn-danger">Export</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -870,6 +907,30 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       formData.append('change_password', '1');
       xhr.send(formData);
+    });
+  }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var exportForm = document.querySelector('form[action="export_dashboard_pdf.php"]');
+  var exportBtn = exportForm.querySelector('.btn-success');
+  var confirmExportBtn = document.getElementById('confirmExportDashboardPdf');
+  var exportModal = new bootstrap.Modal(document.getElementById('exportDashboardPdfModal'));
+  if (exportBtn) {
+    exportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      exportModal.show();
+    });
+  }
+  if (confirmExportBtn) {
+    confirmExportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      exportModal.hide();
+      setTimeout(function() {
+        exportForm.submit();
+        setTimeout(function() { location.reload(); }, 1000);
+      }, 300);
     });
   }
 });

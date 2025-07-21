@@ -161,7 +161,7 @@ $total_pages = ceil($total_users / $limit);
                             <li><a class="dropdown-item" href="admin_profile.php">Profile</a></li>
                             <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
+                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -249,169 +249,187 @@ $total_pages = ceil($total_users / $limit);
             </div>
         </div>
     </div>
-</div>
-<!-- Add User Modal -->
-<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="addUserModalLabel">Add New User</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="POST" action="admin_add_user.php">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label>First Name</label>
-                        <input type="text" class="form-control" name="firstname" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>Last Name</label>
-                        <input type="text" class="form-control" name="lastname" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>Email</label>
-                        <input type="email" class="form-control" name="email" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>Password</label>
-                        <input type="password" class="form-control" name="password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label>User Level</label>
-                        <select class="form-control" name="user_level" required>
-                            <option value="3">Project Manager</option>
-                            <option value="4">Procurement Officer</option>
-                            <option value="2">Admin</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check form-switch">
-                            <input type="hidden" name="is_verified" value="0">
-                            <input class="form-check-input" type="checkbox" id="add_is_verified" name="is_verified" value="1">
-                            <label class="form-check-label" for="add_is_verified">Account Active</label>
+    <!-- Add User Modal -->
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addUserModalLabel">Add New User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="admin_add_user.php">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label>First Name</label>
+                            <input type="text" class="form-control" name="firstname" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Last Name</label>
+                            <input type="text" class="form-control" name="lastname" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Password</label>
+                            <input type="password" class="form-control" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>User Level</label>
+                            <select class="form-control" name="user_level" required>
+                                <option value="3">Project Manager</option>
+                                <option value="4">Procurement Officer</option>
+                                <option value="2">Admin</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input type="hidden" name="is_verified" value="0">
+                                <input class="form-check-input" type="checkbox" id="add_is_verified" name="is_verified" value="1">
+                                <label class="form-check-label" for="add_is_verified">Account Active</label>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Add User</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-<!-- Edit User Modal -->
-<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="editUserForm" method="POST">
-                <div class="modal-body">
-                    <input type="hidden" name="user_id" id="edit_user_id">
-                    <div class="mb-3">
-                        <label>First Name</label>
-                        <input type="text" class="form-control" name="firstname" id="edit_firstname" required autocomplete="off">
-                    </div>
-                    <div class="mb-3">
-                        <label>Last Name</label>
-                        <input type="text" class="form-control" name="lastname" id="edit_lastname" required autocomplete="off">
-                    </div>
-                    <div class="mb-3">
-                        <label>Email</label>
-                        <input type="email" class="form-control" name="email" id="edit_email" required autocomplete="off">
-                    </div>
-                    <div class="mb-3">
-                        <label>New Password (leave blank to keep current)</label>
-                        <input type="password" class="form-control" name="password" id="edit_password" autocomplete="off">
-                        <small class="form-text text-muted">Only fill this if you want to change the password</small>
-                    </div>
-                    <div class="mb-3">
-                        <label>User Level</label>
-                        <select class="form-control" name="user_level" id="edit_user_level" required>
-                            <option value="3">Project Manager</option>
-                            <option value="4">Procurement Officer</option>
-                            <option value="2">Admin</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <div class="form-check form-switch">
-                            <input type="hidden" name="is_verified" value="0">
-                            <input class="form-check-input" type="checkbox" id="edit_is_verified" name="is_verified" value="1">
-                            <label class="form-check-label" for="edit_is_verified">Account Active</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Update User</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteConfirmModalLabel">Delete User</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to delete this user? This action cannot be undone.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Feedback Modal (Unified for Success/Error) -->
-<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content text-center">
-      <div class="modal-body">
-        <span id="feedbackIcon" style="font-size: 3rem;"></span>
-        <h4 id="feedbackTitle"></h4>
-        <p id="feedbackMessage"></p>
-        <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- Change Password Modal -->
-<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="changePasswordForm">
-                    <div class="mb-3">
-                        <label for="current_password" class="form-label">Current Password</label>
-                        <input type="password" class="form-control" id="current_password" name="current_password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="new_password" class="form-label">New Password</label>
-                        <input type="password" class="form-control" id="new_password" name="new_password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="confirm_password" class="form-label">Confirm New Password</label>
-                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-                    </div>
-                    <div id="changePasswordFeedback" class="mb-2"></div>
-                    <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-success">Change Password</button>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Add User</button>
                     </div>
                 </form>
             </div>
         </div>
+    </div>
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editUserForm" method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" name="user_id" id="edit_user_id">
+                        <div class="mb-3">
+                            <label>First Name</label>
+                            <input type="text" class="form-control" name="firstname" id="edit_firstname" required autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <label>Last Name</label>
+                            <input type="text" class="form-control" name="lastname" id="edit_lastname" required autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <label>Email</label>
+                            <input type="email" class="form-control" name="email" id="edit_email" required autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <label>New Password (leave blank to keep current)</label>
+                            <input type="password" class="form-control" name="password" id="edit_password" autocomplete="off">
+                            <small class="form-text text-muted">Only fill this if you want to change the password</small>
+                        </div>
+                        <div class="mb-3">
+                            <label>User Level</label>
+                            <select class="form-control" name="user_level" id="edit_user_level" required>
+                                <option value="3">Project Manager</option>
+                                <option value="4">Procurement Officer</option>
+                                <option value="2">Admin</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input type="hidden" name="is_verified" value="0">
+                                <input class="form-check-input" type="checkbox" id="edit_is_verified" name="is_verified" value="1">
+                                <label class="form-check-label" for="edit_is_verified">Account Active</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Update User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteConfirmModalLabel">Delete User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this user? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Feedback Modal (Unified for Success/Error) -->
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center">
+          <div class="modal-body">
+            <span id="feedbackIcon" style="font-size: 3rem;"></span>
+            <h4 id="feedbackTitle"></h4>
+            <p id="feedbackMessage"></p>
+            <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changePasswordForm">
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                        <div id="changePasswordFeedback" class="mb-2"></div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-success">Change Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to log out?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <a href="../logout.php" class="btn btn-danger">Logout</a>
+          </div>
+        </div>
+      </div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>

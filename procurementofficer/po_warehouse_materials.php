@@ -64,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_warehouse'])) {
         if ($check_result->num_rows > 0) {
             $add_error = 'This warehouse and category combination already exists.';
         } else {
-            $stmt = $con->prepare("INSERT INTO warehouses (warehouse, category, slots, used_slots, approval, user_id, created_at) VALUES (?, ?, ?, 0, 'Pending', ?, NOW())");
-            $stmt->bind_param('ssii', $warehouse, $category, $slots, $user_id);
+            $stmt = $con->prepare("INSERT INTO warehouses (warehouse, category, approval, user_id, created_at) VALUES (?, ?, 'Pending', ?, NOW())");
+            $stmt->bind_param('ssi', $warehouse, $category, $user_id);
             if ($stmt->execute()) {
                 // Insert notification for admin if Procurement Officer
                 if (isset($_SESSION['user_level']) && $_SESSION['user_level'] == 4) {
@@ -196,7 +196,7 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                         <li><a class="dropdown-item" href="po_profile.php">Profile</a></li>
                         <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
                       </ul>
                 </li>
             </ul>
@@ -341,11 +341,7 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                                               </div>
                                             </div>
                                             <div class="col-md-6">
-                                              <div class="form-group mb-3">
-                                                <label>Slots *</label>
-                                                <input type="number" class="form-control" name="slots" value="<?php echo $row['slots']; ?>" min="1" max="999999" required>
-                                                <div class="invalid-feedback">Please enter a valid number of slots (1-999,999).</div>
-                                              </div>
+                                              
                                             </div>
                                           </div>
                                         </div>
@@ -674,6 +670,25 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <a href="#" id="confirmDeleteWarehouse" class="btn btn-danger">Delete</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Logout Confirmation Modal -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to log out?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="../logout.php" class="btn btn-danger">Logout</a>
             </div>
         </div>
     </div>

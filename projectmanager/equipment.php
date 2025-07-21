@@ -212,7 +212,7 @@ $result = $con->query($sql);
                                 <li><a class="dropdown-item" href="pm_profile.php">Profile</a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -269,6 +269,7 @@ $result = $con->query($sql);
                                     <tr>
                                         <th>No.</th>
                                         <th>Equipment Name</th>
+                                        <th>Location</th>
                                         <th>Equipment Price</th>
                                         <th>Depreciation / Rental Fee</th>
                                         <th>Status</th>
@@ -283,6 +284,7 @@ $result = $con->query($sql);
                                     <tr>
                                         <td><?php echo $no++; ?></td>
                                                 <td><?php echo htmlspecialchars($row['equipment_name']); ?></td>
+                                                <td><?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></td>
                                                 <td>
                                                     <?php
                                                     if (isset($row['category']) && $row['category'] == 'Company') {
@@ -322,7 +324,7 @@ $result = $con->query($sql);
                                         <?php endwhile; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="6" class="text-center">No equipment found</td>
+                                            <td colspan="7" class="text-center">No equipment found</td>
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>
@@ -369,6 +371,7 @@ $result = $con->query($sql);
                         <div class="row mb-3">
                             <div class="col-md-6 mb-2">
                                 <h4 class="fw-bold mb-0 text-primary"><i class="fas fa-wrench me-2"></i><?php echo htmlspecialchars($row['equipment_name']); ?></h4>
+                                <div class="text-muted small"><i class="fas fa-map-marker-alt me-1"></i>Location: <?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></div>
                             </div>
                             <div class="col-md-6 mb-2 text-md-end">
                                 <span class="fw-bold text-secondary"><i class="fas fa-info-circle me-1"></i>Status:</span> <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : (($row['status'] == 'In Use') ? 'warning' : (($row['status'] == 'Maintenance') ? 'info' : 'secondary')); ?>"><?php echo htmlspecialchars($row['status']); ?></span>
@@ -423,6 +426,25 @@ $result = $con->query($sql);
         </div>
     </div>
     <!-- /#page-content-wrapper -->
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to log out?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <a href="../logout.php" class="btn btn-danger">Logout</a>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Feedback Modal (Unified for Success/Error) -->

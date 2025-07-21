@@ -209,7 +209,7 @@ $result = mysqli_query($con, $query);
                                 <li><a class="dropdown-item" href="po_profile.php">Profile</a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -456,162 +456,56 @@ $result = mysqli_query($con, $query);
     <!-- /#page-content-wrapper -->
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <script>
-        var el = document.getElementById("wrapper");
-        var toggleButton = document.getElementById("menu-toggle");
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to log out?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <a href="../logout.php" class="btn btn-danger">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        toggleButton.onclick = function () {
-            el.classList.toggle("toggled");
-        };
-    </script>
-    <style>
-    .custom-pagination-green .page-item.active .page-link,
-    .custom-pagination-green .page-item .page-link:hover {
-        background-color: #009d63;
-        border-color: #009d63;
-        color: #fff;
-    }
-    .custom-pagination-green .page-link {
-        color: #009d63;
-    }
-    </style>
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var searchInput1 = document.getElementById('searchInput1');
-    var searchForm1 = document.getElementById('searchFilterForm'); // Changed from searchForm1 to searchFilterForm
-    var typeFilter = document.getElementById('typeFilter');
-    var dateRangeFilter = document.getElementById('dateRangeFilter');
-    var searchForm2 = document.getElementById('searchForm2'); // This variable is no longer used
-    if (searchInput1 && searchForm1) {
-        var searchTimeout;
-        searchInput1.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(function() {
-                searchForm1.submit();
-            }, 400);
-        });
-    }
-    // Removed typeFilter and dateRangeFilter event listeners as they are no longer in the form
-});
-</script>
-<script>
-function removeQueryParam(param) {
-  const url = new URL(window.location);
-  url.searchParams.delete(param);
-  window.history.replaceState({}, document.title, url.pathname + url.search);
-}
-function showFeedbackModal(success, message, reason = '', paramToRemove = null) {
-  var icon = document.getElementById('feedbackIcon');
-  var title = document.getElementById('feedbackTitle');
-  var msg = document.getElementById('feedbackMessage');
-  if (success) {
-    icon.innerHTML = '<i class="fas fa-check-circle" style="color:#28a745"></i>';
-    title.textContent = 'Success!';
-    msg.textContent = message;
-  } else {
-    icon.innerHTML = '<i class="fas fa-times-circle" style="color:#dc3545"></i>';
-    title.textContent = 'Error!';
-    msg.textContent = message + (reason ? ' Reason: ' + reason : '');
-  }
-  var feedbackModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
-  feedbackModal.show();
-  // Remove the query param after showing the modal
-  if (paramToRemove) {
-    removeQueryParam(paramToRemove);
-  }
-}
-// Show feedback modal if redirected after add, update, delete, or error
-<?php if (isset($_GET['success'])): ?>
-document.addEventListener('DOMContentLoaded', function() {
-  showFeedbackModal(true, 'Expense added successfully!', '', 'success');
-});
-<?php elseif (isset($_GET['updated'])): ?>
-document.addEventListener('DOMContentLoaded', function() {
-  showFeedbackModal(true, 'Expense updated successfully!', '', 'updated');
-});
-<?php elseif (isset($_GET['deleted'])): ?>
-document.addEventListener('DOMContentLoaded', function() {
-  showFeedbackModal(true, 'Expense deleted successfully!', '', 'deleted');
-});
-<?php elseif (isset($_GET['error'])): ?>
-document.addEventListener('DOMContentLoaded', function() {
-  showFeedbackModal(false, 'An error occurred. Please try again.', '', 'error');
-});
-<?php endif; ?>
-<?php if (isset($_GET['error']) && $_GET['error'] === 'validation'): ?>
-document.addEventListener('DOMContentLoaded', function() {
-  showFeedbackModal(false, 'All fields are required and amount must be greater than zero.', '', 'error');
-});
-<?php endif; ?>
-</script>
-<div class="modal fade" id="deleteExpenseModal" tabindex="-1" aria-labelledby="deleteExpenseModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="deleteExpenseModalLabel">Confirm Delete</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p>Are you sure you want to delete <strong id="expenseName"></strong>?</p>
-        <p class="text-danger">This action cannot be undone.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <a href="#" id="confirmDeleteExpense" class="btn btn-danger" data-delete-url="delete_order_expense.php?id=<?php echo $row['expense_id']; ?>">Delete</a>
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="changePasswordForm">
+              <div class="mb-3">
+                <label for="current_password" class="form-label">Current Password</label>
+                <input type="password" class="form-control" id="current_password" name="current_password" required>
+              </div>
+              <div class="mb-3">
+                <label for="new_password" class="form-label">New Password</label>
+                <input type="password" class="form-control" id="new_password" name="new_password" required>
+              </div>
+              <div class="mb-3">
+                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+              </div>
+              <div id="changePasswordFeedback" class="mb-2"></div>
+              <div class="d-flex justify-content-end">
+                <button type="submit" class="btn btn-success">Change Password</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.delete-expense-btn').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.preventDefault();
-      var expId = this.getAttribute('data-id');
-      var expName = this.getAttribute('data-name');
-      document.getElementById('expenseName').textContent = expName;
-      var confirmDelete = document.getElementById('confirmDeleteExpense');
-      confirmDelete.setAttribute('href', 'delete_order_expense.php?id=' + expId);
-      var modal = new bootstrap.Modal(document.getElementById('deleteExpenseModal'));
-      modal.show();
-    });
-  });
-});
-</script>
-<!-- Change Password Modal -->
-<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form id="changePasswordForm">
-          <div class="mb-3">
-            <label for="current_password" class="form-label">Current Password</label>
-            <input type="password" class="form-control" id="current_password" name="current_password" required>
-          </div>
-          <div class="mb-3">
-            <label for="new_password" class="form-label">New Password</label>
-            <input type="password" class="form-control" id="new_password" name="new_password" required>
-          </div>
-          <div class="mb-3">
-            <label for="confirm_password" class="form-label">Confirm New Password</label>
-            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
-          </div>
-          <div id="changePasswordFeedback" class="mb-2"></div>
-          <div class="d-flex justify-content-end">
-            <button type="submit" class="btn btn-success">Change Password</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
 
 
 <div class="modal fade" id="exportPdfModal" tabindex="-1" aria-labelledby="exportPdfModalLabel" aria-hidden="true">
@@ -626,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <a href="export_expenses_pdf.php" id="confirmExportPdf" class="btn btn-danger">Export</a>
+        <a href="#" id="confirmExportPdf" class="btn btn-danger">Export</a>
       </div>
     </div>
   </div>
@@ -678,7 +572,27 @@ document.addEventListener('DOMContentLoaded', function() {
       modal.show();
     });
   }
+  var confirmExportBtn = document.getElementById('confirmExportPdf');
+  if (confirmExportBtn) {
+    confirmExportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var modalEl = document.getElementById('exportPdfModal');
+      var modalInstance = bootstrap.Modal.getInstance(modalEl);
+      if (modalInstance) modalInstance.hide();
+      setTimeout(function() {
+        window.open('export_expenses_pdf.php', '_blank');
+      }, 300);
+    });
+  }
 });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    var el = document.getElementById("wrapper");
+    var toggleButton = document.getElementById("menu-toggle");
+    toggleButton.onclick = function () {
+        el.classList.toggle("toggled");
+    };
 </script>
 </body>
 

@@ -163,7 +163,7 @@ $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
                                 <li><a class="dropdown-item" href="pm_profile.php">Profile</a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -285,27 +285,79 @@ new Chart(ctx, config);
 <?php endif; ?>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- Export Confirmation Modal -->
+<div class="modal fade" id="exportConfirmModal" tabindex="-1" aria-labelledby="exportConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exportConfirmModalLabel">Export</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="exportConfirmMsg">Are you sure you want to export?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="#" id="confirmExportBtn" class="btn btn-danger">Export</a>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
-document.getElementById('exportImgBtn').onclick = function() {
-    html2canvas(document.getElementById('ganttTable')).then(function(canvas) {
-        var link = document.createElement('a');
-        link.download = 'gantt_chart.png';
-        link.href = canvas.toDataURL();
-        link.click();
+document.addEventListener('DOMContentLoaded', function() {
+  var exportType = '';
+  var exportImgBtn = document.getElementById('exportImgBtn');
+  var exportPdfBtn = document.getElementById('exportPdfBtn');
+  var confirmExportBtn = document.getElementById('confirmExportBtn');
+  var exportConfirmMsg = document.getElementById('exportConfirmMsg');
+  var exportConfirmModal = new bootstrap.Modal(document.getElementById('exportConfirmModal'));
+
+  if (exportImgBtn) {
+    exportImgBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      exportType = 'image';
+      exportConfirmMsg.textContent = 'Are you sure you want to export the Gantt chart as an image?';
+      exportConfirmModal.show();
     });
-};
-document.getElementById('exportPdfBtn').onclick = function() {
-    html2canvas(document.getElementById('ganttTable')).then(function(canvas) {
-        var imgData = canvas.toDataURL('image/png');
-        var pdf = new window.jspdf.jsPDF({orientation: 'landscape'});
-        var pageWidth = pdf.internal.pageSize.getWidth();
-        var pageHeight = pdf.internal.pageSize.getHeight();
-        var imgWidth = pageWidth - 20;
-        var imgHeight = canvas.height * imgWidth / canvas.width;
-        pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-        pdf.save('gantt_chart.pdf');
+  }
+  if (exportPdfBtn) {
+    exportPdfBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      exportType = 'pdf';
+      exportConfirmMsg.textContent = 'Are you sure you want to export the Gantt chart as PDF?';
+      exportConfirmModal.show();
     });
-};
+  }
+  if (confirmExportBtn) {
+    confirmExportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      exportConfirmModal.hide();
+      setTimeout(function() {
+        if (exportType === 'image') {
+          html2canvas(document.getElementById('ganttTable')).then(function(canvas) {
+            var link = document.createElement('a');
+            link.download = 'gantt_chart.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            setTimeout(function() { location.reload(); }, 1000);
+          });
+        } else if (exportType === 'pdf') {
+          html2canvas(document.getElementById('ganttTable')).then(function(canvas) {
+            var imgData = canvas.toDataURL('image/png');
+            var pdf = new window.jspdf.jsPDF({orientation: 'landscape'});
+            var pageWidth = pdf.internal.pageSize.getWidth();
+            var pageHeight = pdf.internal.pageSize.getHeight();
+            var imgWidth = pageWidth - 20;
+            var imgHeight = canvas.height * imgWidth / canvas.width;
+            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+            pdf.save('gantt_chart.pdf');
+            setTimeout(function() { location.reload(); }, 1000);
+          });
+        }
+      }, 300);
+    });
+  }
+});
 </script>
 <!-- Change Password Modal -->
 <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
@@ -373,6 +425,24 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
+<!-- Logout Confirmation Modal -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to log out?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="../logout.php" class="btn btn-danger">Logout</a>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 
 </html>

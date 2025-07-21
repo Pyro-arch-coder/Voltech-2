@@ -296,7 +296,7 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                 <li><a class="dropdown-item" href="po_profile.php">Profile</a></li>
                                 <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="../logout.php">Logout</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
                             </ul>
                         </li>
                     </ul>
@@ -307,9 +307,14 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                     <div class="card-body">
                         <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-2">
                             <h4 class="mb-0">Supplier Management</h4>
-                            <button type="button" class="btn btn-success ms-auto" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
-                                <i class="fas fa-plus"></i> Add New Supplier
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-success ms-auto" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+                                    <i class="fas fa-plus"></i> Add New Supplier
+                                </button>
+                                <button type="button" class="btn btn-danger exportSuppliersPdfBtn">
+                                    <i class="fas fa-file-pdf"></i> Export as PDF
+                                </button>
+                            </div>
                         </div>
                         <hr>
                         <form class="mb-3" method="get" action="" id="searchForm" style="max-width:400px;">
@@ -571,6 +576,25 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
         </div>
     </div>
     <!-- /#page-content-wrapper -->
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to log out?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <a href="../logout.php" class="btn btn-danger">Logout</a>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Change Password Modal -->
@@ -1338,6 +1362,52 @@ document.addEventListener('DOMContentLoaded', function() {
       modal.show();
     }
   });
+});
+</script>
+
+<!-- Export PDF Confirmation Modal (only one per page) -->
+<div class="modal fade" id="exportSuppliersPdfModal" tabindex="-1" aria-labelledby="exportSuppliersPdfModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exportSuppliersPdfModalLabel">Export as PDF</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to export the suppliers list and their materials as PDF?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="#" id="confirmExportSuppliersPdf" class="btn btn-danger">Export</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.exportSuppliersPdfBtn').forEach(function(exportBtn) {
+    exportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var modal = new bootstrap.Modal(document.getElementById('exportSuppliersPdfModal'));
+      modal.show();
+    });
+  });
+
+  // Add handler for Export button in confirmation modal
+  var exportBtn = document.getElementById('confirmExportSuppliersPdf');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      // Close the modal first
+      var modalEl = document.getElementById('exportSuppliersPdfModal');
+      var modalInstance = bootstrap.Modal.getInstance(modalEl);
+      if (modalInstance) modalInstance.hide();
+      // Open the PDF in a new tab after a short delay to allow modal to close
+      setTimeout(function() {
+        window.open('export_suppliers_pdf.php', '_blank');
+      }, 300);
+    });
+  }
 });
 </script>
 
