@@ -39,7 +39,7 @@ while ($row = mysqli_fetch_assoc($top_res)) {
 // --- Estimate Expense Comparison Data ---
 $est_labels = [];
 $est_totals = [];
-$proj_sql = "SELECT project_id, project FROM projects WHERE user_id='$userid' AND (io='1' OR io='4') ORDER BY project_id DESC";
+$proj_sql = "SELECT project_id, project FROM projects WHERE user_id='$userid' ORDER BY project_id DESC";
 $proj_res = mysqli_query($con, $proj_sql);
 while ($proj = mysqli_fetch_assoc($proj_res)) {
     $pid = $proj['project_id'];
@@ -118,7 +118,7 @@ $cat_est_query = mysqli_query($con, "SELECT category, SUM(
     (SELECT IFNULL(SUM(total),0) FROM project_add_employee WHERE project_id=p.project_id) +
     (SELECT IFNULL(SUM(total),0) FROM project_add_materials WHERE project_id=p.project_id) +
     (SELECT IFNULL(SUM(total),0) FROM project_add_equipment WHERE project_id=p.project_id)
-) as total FROM projects p WHERE user_id='$userid' AND (io='1' OR io='4') GROUP BY category");
+) as total FROM projects p WHERE user_id='$userid' GROUP BY category");
 while ($row = mysqli_fetch_assoc($cat_est_query)) {
     $cat_est_labels[] = $row['category'];
     $cat_est_totals[] = round($row['total'], 2);
@@ -136,7 +136,7 @@ $totals_by_category = [
     'Renovation' => 0,
     'Building' => 0
 ];
-$proj_sql = "SELECT project_id, project, category FROM projects WHERE user_id='$userid' AND (io='1' OR io='4') ORDER BY project_id DESC";
+$proj_sql = "SELECT project_id, project, category FROM projects WHERE user_id='$userid' ORDER BY project_id DESC";
 $proj_res = mysqli_query($con, $proj_sql);
 while ($proj = mysqli_fetch_assoc($proj_res)) {
     $pid = $proj['project_id'];

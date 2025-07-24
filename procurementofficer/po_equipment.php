@@ -130,7 +130,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['equipment_id'])) {
     $depreciation = isset($_POST['depreciation']) && $_POST['depreciation'] !== '' ? floatval($_POST['depreciation']) : null;
     $equipment_price = isset($_POST['equipment_price']) && $_POST['equipment_price'] !== '' ? floatval($_POST['equipment_price']) : null;
     $location = mysqli_real_escape_string($con, $_POST['location']);
-    $insert_query = "INSERT INTO equipment (equipment_name, usage_purpose, borrow_time, return_time, status, depreciation, equipment_price, location) VALUES ('$equipment_name', '$usage_purpose', " . ($borrow_time ? "'$borrow_time'" : "NULL") . ", " . ($return_time ? "'$return_time'" : "NULL") . ", '$status', " . ($depreciation !== null ? "'$depreciation'" : "NULL") . ", " . ($equipment_price !== null ? "'$equipment_price'" : "NULL") . ", '$location')";
+    $category = 'Company';
+    $insert_query = "INSERT INTO equipment (equipment_name, usage_purpose, borrow_time, return_time, status, depreciation, equipment_price, location, category) VALUES ('$equipment_name', '$usage_purpose', " . ($borrow_time ? "'$borrow_time'" : "NULL") . ", " . ($return_time ? "'$return_time'" : "NULL") . ", '$status', " . ($depreciation !== null ? "'$depreciation'" : "NULL") . ", " . ($equipment_price !== null ? "'$equipment_price'" : "NULL") . ", '$location', '$category')";
     if ($con->query($insert_query)) {
         header('Location: equipment.php?success=add');
         exit();
@@ -152,7 +153,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['equipment_id'])) {
     $depreciation = isset($_POST['depreciation']) && $_POST['depreciation'] !== '' ? floatval($_POST['depreciation']) : null;
     $equipment_price = isset($_POST['equipment_price']) && $_POST['equipment_price'] !== '' ? floatval($_POST['equipment_price']) : null;
     $location = mysqli_real_escape_string($con, $_POST['location']);
-    $update_query = "UPDATE equipment SET equipment_name='$equipment_name', usage_purpose='$usage_purpose', borrow_time=" . ($borrow_time ? "'$borrow_time'" : "NULL") . ", return_time=" . ($return_time ? "'$return_time'" : "NULL") . ", status='$status', depreciation=" . ($depreciation !== null ? "'$depreciation'" : "NULL") . ", equipment_price=" . ($equipment_price !== null ? "'$equipment_price'" : "NULL") . ", location='$location' WHERE id=$equipment_id";
+    $category = 'Company';
+    $update_query = "UPDATE equipment SET equipment_name='$equipment_name', usage_purpose='$usage_purpose', borrow_time=" . ($borrow_time ? "'$borrow_time'" : "NULL") . ", return_time=" . ($return_time ? "'$return_time'" : "NULL") . ", status='$status', depreciation=" . ($depreciation !== null ? "'$depreciation'" : "NULL") . ", equipment_price=" . ($equipment_price !== null ? "'$equipment_price'" : "NULL") . ", location='$location', category='$category' WHERE id=$equipment_id";
     if ($con->query($update_query)) {
         header('Location: equipment.php?success=edit');
         exit();
@@ -398,7 +400,7 @@ $result = $con->query($sql);
                                         <th>Equipment Name</th>
                                         <th>Location</th>
                                         <th>Equipment Price</th>
-                                        <th>Depreciation / Rental Fee</th>
+                                        <th>Depreciation</th>
                                         <th>Status</th>
                                         <th class="text-center">Actions</th>
                                     </tr>
@@ -414,30 +416,26 @@ $result = $con->query($sql);
                                                 <td><?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></td>
                                                 <td>
                                                     <?php
-                                                    if ($row['category'] == 'Company') {
-                                                        echo isset($row['equipment_price']) && $row['equipment_price'] !== '' ? '₱ ' . number_format($row['equipment_price'], 2) : 'N/A';
+                                                    if (isset($row['equipment_price']) && $row['equipment_price'] !== '') {
+                                                        echo '₱ ' . number_format($row['equipment_price'], 2);
                                                     } else {
-                                                        echo '—';
+                                                        echo 'N/A';
                                                     }
                                                     ?>
                                                 </td>
                                                 <td>
                                                     <?php
-                                                    if ($row['category'] == 'Rental') {
-                                                        echo isset($row['rental_fee']) && $row['rental_fee'] !== '' ? '₱ ' . number_format($row['rental_fee'], 2) : 'N/A';
+                                                    if (isset($row['depreciation']) && $row['depreciation'] !== '') {
+                                                        $depr = $row['depreciation'];
+                                                        echo (intval($depr) == floatval($depr)) ? intval($depr) . ' years' : number_format($depr, 2) . ' years';
                                                     } else {
-                                                        if (isset($row['depreciation']) && $row['depreciation'] !== '') {
-                                                            $depr = $row['depreciation'];
-                                                            echo (intval($depr) == floatval($depr)) ? intval($depr) . ' years' : number_format($depr, 2) . ' years';
-                                                        } else {
-                                                            echo 'N/A';
-                                                        }
+                                                        echo 'N/A';
                                                     }
                                                     ?>
                                                 </td>
                                                 <td>
-                                                    <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : 'warning'; ?>">
-                                                        <?php echo htmlspecialchars($row['status']); ?> (Actual: <?php echo intval($row['quantity']); ?>, Reserved: <?php echo intval($row['reserved_quantity']); ?>)
+                                                    <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : (($row['status'] == 'In Use') ? 'warning' : (($row['status'] == 'Maintenance') ? 'info' : 'secondary')); ?>">
+                                                        <?php echo htmlspecialchars($row['status']); ?>
                                                     </span>
                                                 </td>
                                         <td class="text-center">
@@ -487,17 +485,10 @@ $result = $con->query($sql);
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form action="add_equipment.php" method="POST">
-                    <input type="hidden" name="status" value="Available">
+                    <input type="hidden" name="category" value="Company">
                     <div class="modal-body">
                         <div class="row g-3">
                             <div class="col-md-12">
-                                <div class="form-group mb-3">
-                                    <label for="categorySelect">Category</label>
-                                    <select class="form-control" name="category" id="categorySelect" required>
-                                        <option value="Company">Company</option>
-                                        <option value="Rental">Rental</option>
-                                    </select>
-                                </div>
                                 <div class="form-group mb-3">
                                     <label for="equipmentNameInput">Equipment Name *</label>
                                     <input type="text" class="form-control" id="equipmentNameInput" name="equipment_name" required>
@@ -511,17 +502,13 @@ $result = $con->query($sql);
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
-                                <div class="form-group mb-3" id="equipmentPriceField">
+                                <div class="form-group mb-3">
                                     <label for="equipmentPriceInput">Equipment Price</label>
                                     <input type="number" step="0.01" min="0" class="form-control" id="equipmentPriceInput" name="equipment_price">
                                 </div>
-                                <div class="form-group mb-3" id="depreciationField">
+                                <div class="form-group mb-3">
                                     <label for="depreciationInput">Depreciation (Years)</label>
                                     <input type="number" step="0.01" min="0" class="form-control" id="depreciationInput" name="depreciation">
-                                </div>
-                                <div class="form-group mb-3" id="rentalFeeField" style="display:none;">
-                                    <label for="rentalFeeInput">Rental Fee</label>
-                                    <input type="number" step="0.01" min="0" class="form-control" id="rentalFeeInput" name="rental_fee">
                                 </div>
                             </div>
                         </div>
@@ -563,11 +550,7 @@ $result = $con->query($sql);
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6 mb-2">
-                                <?php if ($row['category'] == 'Rental') { ?>
-                                    <span class="fw-bold text-secondary"><i class="fas fa-coins me-1"></i>Rental Fee:</span> <?php echo isset($row['rental_fee']) && $row['rental_fee'] !== '' ? '₱ ' . number_format($row['rental_fee'], 2) : 'N/A'; ?>
-                                <?php } else { ?>
-                                    <span class="fw-bold text-secondary"><i class="fas fa-hourglass-half me-1"></i>Depreciation:</span> <?php if (isset($row['depreciation']) && $row['depreciation'] !== '') { $depr = $row['depreciation']; echo (intval($depr) == floatval($depr)) ? intval($depr) . ' years' : number_format($depr, 2) . ' years'; } else { echo 'N/A'; } ?>
-                                <?php } ?>
+                                <span class="fw-bold text-secondary"><i class="fas fa-hourglass-half me-1"></i>Depreciation:</span> <?php if (isset($row['depreciation']) && $row['depreciation'] !== '') { $depr = $row['depreciation']; echo (intval($depr) == floatval($depr)) ? intval($depr) . ' years' : number_format($depr, 2) . ' years'; } else { echo 'N/A'; } ?>
                             </div>
                         </div>
                         <div class="row justify-content-center">
@@ -575,11 +558,7 @@ $result = $con->query($sql);
                                 <div class="card shadow-sm border-0 mb-2">
                                     <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
                                         <div class="mb-2 flex-fill">
-                                            <?php if ($row['category'] == 'Rental') { ?>
-                                                <span class="fw-bold text-muted"><i class="fas fa-coins me-1"></i>Rental Fee:</span> <?php echo isset($row['rental_fee']) && $row['rental_fee'] !== '' ? '₱ ' . number_format($row['rental_fee'], 2) : 'N/A'; ?>
-                                            <?php } else { ?>
-                                                <span class="fw-bold text-muted"><i class="fas fa-coins me-1"></i>Equipment Price:</span> <?php echo isset($row['equipment_price']) && $row['equipment_price'] !== '' ? '₱ ' . number_format($row['equipment_price'], 2) : 'N/A'; ?>
-                                            <?php } ?>
+                                            <span class="fw-bold text-muted"><i class="fas fa-coins me-1"></i>Equipment Price:</span> <?php echo isset($row['equipment_price']) && $row['equipment_price'] !== '' ? '₱ ' . number_format($row['equipment_price'], 2) : 'N/A'; ?>
                                         </div>
                                     </div>
                                 </div>
@@ -608,6 +587,7 @@ $result = $con->query($sql);
                 </div>
                 <form action="update_equipment.php" method="POST">
                     <input type="hidden" name="equipment_id" value="<?php echo $row['id']; ?>">
+                    <input type="hidden" name="category" value="Company">
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6">
@@ -627,26 +607,12 @@ $result = $con->query($sql);
                                     </select>
                                 </div>
                                 <div class="form-group mb-3">
-                                    <label>Category</label>
-                                    <select class="form-control edit-category-select" name="category" required data-eqid="<?php echo $row['id']; ?>">
-                                        <option value="Company" <?php echo ($row['category'] == 'Company') ? 'selected' : ''; ?>>Company</option>
-                                        <option value="Rental" <?php echo ($row['category'] == 'Rental') ? 'selected' : ''; ?>>Rental</option>
-                                    </select>
-                                </div>
-                                <div class="form-group mb-3 edit-depreciation-field" id="editDepreciationField<?php echo $row['id']; ?>">
-                                    <label>Depreciation (Years)</label>
-                                    <input type="number" step="0.01" min="0" class="form-control" name="depreciation" value="<?php echo isset($row['depreciation']) ? htmlspecialchars($row['depreciation']) : ''; ?>">
-                                </div>
-                                <div class="form-group mb-3 edit-rental-fee-field" id="editRentalFeeField<?php echo $row['id']; ?>" style="display:none;">
-                                    <label>Rental Fee</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="number" step="0.01" min="0" class="form-control" name="rental_fee" value="<?php echo isset($row['rental_fee']) ? htmlspecialchars($row['rental_fee']) : ''; ?>">
-                                    </div>
-                                </div>
-                                <div class="form-group mb-3" id="editEquipmentPriceField<?php echo $row['id']; ?>">
                                     <label>Equipment Price</label>
                                     <input type="number" step="0.01" min="0" class="form-control" name="equipment_price" value="<?php echo isset($row['equipment_price']) ? htmlspecialchars($row['equipment_price']) : ''; ?>">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Depreciation (Years)</label>
+                                    <input type="number" step="0.01" min="0" class="form-control" name="depreciation" value="<?php echo isset($row['depreciation']) ? htmlspecialchars($row['depreciation']) : ''; ?>">
                                 </div>
                                 <div class="form-group mb-3">
                                     <label>Status</label>
@@ -835,61 +801,6 @@ $result = $con->query($sql);
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        var categorySelect = document.getElementById('categorySelect');
-        var depreciationField = document.getElementById('depreciationField');
-        var rentalFeeField = document.getElementById('rentalFeeField');
-        var equipmentPriceField = document.getElementById('equipmentPriceField');
-        function toggleFields() {
-            if (categorySelect.value === 'Company') {
-                depreciationField.style.display = '';
-                equipmentPriceField.style.display = '';
-                rentalFeeField.style.display = 'none';
-                depreciationField.querySelector('input').required = true;
-                equipmentPriceField.querySelector('input').required = true;
-                rentalFeeField.querySelector('input').required = false;
-            } else {
-                depreciationField.style.display = 'none';
-                equipmentPriceField.style.display = 'none';
-                rentalFeeField.style.display = '';
-                depreciationField.querySelector('input').required = false;
-                equipmentPriceField.querySelector('input').required = false;
-                rentalFeeField.querySelector('input').required = true;
-            }
-        }
-        categorySelect.addEventListener('change', toggleFields);
-        toggleFields();
-    });
-    </script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.edit-category-select').forEach(function(select) {
-            var eqid = select.getAttribute('data-eqid');
-            var depreciationField = document.getElementById('editDepreciationField' + eqid);
-            var rentalFeeField = document.getElementById('editRentalFeeField' + eqid);
-            var equipmentPriceField = document.getElementById('editEquipmentPriceField' + eqid);
-            function toggleEditFields() {
-                if (select.value === 'Company') {
-                    depreciationField.style.display = '';
-                    equipmentPriceField.style.display = '';
-                    rentalFeeField.style.display = 'none';
-                    depreciationField.querySelector('input').required = true;
-                    equipmentPriceField.querySelector('input').required = true;
-                    rentalFeeField.querySelector('input').required = false;
-                } else {
-                    depreciationField.style.display = 'none';
-                    equipmentPriceField.style.display = 'none';
-                    rentalFeeField.style.display = '';
-                    depreciationField.querySelector('input').required = false;
-                    equipmentPriceField.querySelector('input').required = false;
-                    rentalFeeField.querySelector('input').required = true;
-                }
-            }
-            select.addEventListener('change', toggleEditFields);
-            toggleEditFields();
-        });
-    });
-    // (same as po_materials.js)
-        document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.exportPdfBtn').forEach(function(exportBtn) {
             exportBtn.addEventListener('click', function(e) {
             e.preventDefault();

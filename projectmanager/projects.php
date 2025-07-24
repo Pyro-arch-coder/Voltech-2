@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     echo json_encode($response);
     exit();
 }
-$io_filter = isset($_GET['io']) ? $_GET['io'] : 'all';
+
 
 if (isset($_GET['archive'])) {
     $archive_id = intval($_GET['archive']);
@@ -151,9 +151,7 @@ $search = isset($_GET['search']) ? mysqli_real_escape_string($con, $_GET['search
 
 // Only show projects where archived=0 in the main list
 $filter_sql = "user_id='$userid' AND archived=0";
-if ($io_filter !== 'all') {
-    $filter_sql .= " AND io='$io_filter'";
-}
+
 if ($search !== '') {
     $filter_sql .= " AND (project LIKE '%$search%' OR location LIKE '%$search%')";
 }
@@ -281,25 +279,13 @@ if ($userid) {
                                     </div>
                                     <hr>
                                     <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                                        <form method="get" id="statusFilterForm" class="mb-0" style="flex:0 0 auto;">
-                                          <div class="form-group mb-0" style="min-width:150px;">
-                                            <select class="form-control" name="io" onchange="document.getElementById('statusFilterForm').submit();">
-                                              <option value="all" <?php if($io_filter == 'all') echo 'selected'; ?>>All</option>
-                                              <option value="1" <?php if($io_filter == '1') echo 'selected'; ?>>On going</option>
-                                              <option value="2" <?php if($io_filter == '2') echo 'selected'; ?>>Finished</option>
-                                              <option value="3" <?php if($io_filter == '3') echo 'selected'; ?>>Canceled</option>
-                                              <option value="4" <?php if($io_filter == '4') echo 'selected'; ?>>Estimating</option>
-                                            </select>
-                                          </div>
-                                          <?php if ($search !== ''): ?><input type="hidden" name="search" value="<?php echo htmlspecialchars($search); ?>"><?php endif; ?>
-                                          <?php if ($page > 1): ?><input type="hidden" name="page" value="<?php echo $page; ?>"><?php endif; ?>
-                                        </form>
+                                        
                                         <form method="get" id="searchForm" class="mb-0" style="width:250px;flex:0 0 auto;">
                                           <div class="search-box position-relative">
                                             <span class="position-absolute" style="left:10px;top:50%;transform:translateY(-50%);color:#aaa;z-index:2;">
                                               <i class="fas fa-search"></i>
                                             </span>
-                                            <input type="hidden" name="io" value="<?php echo $io_filter; ?>">
+                                            
                                             <input type="text" class="form-control pl-4" name="search" placeholder="Search project/location" value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off" style="padding-left:2rem;">
                                           </div>
                                         </form>
@@ -332,7 +318,7 @@ if ($userid) {
                                             <tr>
                                                 <th>No.</th>
                                                 <th>Project</th>
-                                                <th>Status</th>
+                                                
                                                 <th>Location</th>
                                                 <th class="text-center">Action</th>
                                             </tr>
@@ -349,17 +335,7 @@ if ($userid) {
                                             <tr>
                                                 <td><?php echo $no++; ?></td>
                                                 <td><?php echo $row['project']; ?></td>
-                                                <td>
-                                                    <?php
-                                                    $status_labels = [
-                                                        '1' => '<span class="badge bg-success">On going</span>',
-                                                        '2' => '<span class="badge bg-secondary">Finished</span>',
-                                                        '3' => '<span class="badge bg-danger">Canceled</span>',
-                                                        '4' => '<span class="badge bg-warning text-dark">Estimating</span>',
-                                                    ];
-                                                    echo isset($status_labels[$row['io']]) ? $status_labels[$row['io']] : '<span class="badge bg-light">Unknown</span>';
-                                                    ?>
-                                                </td>
+                                                
                                                 <td>
                                                     <?php
                                                     // If location is numeric, show 'Unknown', else show as is
@@ -367,11 +343,11 @@ if ($userid) {
                                                     ?>
                                                 </td>
                                                 <td class="text-center">
-                                                    <a href="project_details.php?id=<?php echo $id; ?>" class="btn btn-sm btn-primary text-white font-weight-bold mr-2">
-                                                        <i fas fa eye></i> View More
-                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-info text-white font-weight-bold view-details-btn" data-bs-toggle="modal" data-bs-target="#projectDetailsModal" data-project-id="<?php echo $id; ?>">
+                                                        <i class="fas fa-eye"></i> Details
+                                                    </button>
                                                     <button class="btn btn-sm btn-danger text-white font-weight-bold archive-project" data-project-id="<?php echo $id; ?>">
-                                                        <i fas fa trash "></i> Archive
+                                                        <i class="fas fa-trash"></i> Archive
                                                     </button>
                                                 </td>
                                             </tr>
@@ -380,7 +356,7 @@ if ($userid) {
                                             } else {
                                             ?>
                                             <tr>
-                                                <td colspan="5" class="text-center">No projects found</td>
+                                                <td colspan="4" class="text-center">No projects found</td>
                                             </tr>
                                             <?php } ?>
                                         </tbody>
@@ -389,15 +365,15 @@ if ($userid) {
                                 <nav aria-label="Page navigation" class="mt-3 mb-3">
                                   <ul class="pagination justify-content-center custom-pagination-green mb-0">
                                     <li class="page-item<?php if($page <= 1) echo ' disabled'; ?>">
-                                      <a class="page-link" href="?page=<?php echo $page-1; ?>&io=<?php echo $io_filter; ?><?php echo $search !== '' ? '&search=' . urlencode($search) : ''; ?>">Previous</a>
+                                      <a class="page-link" href="?page=<?php echo $page-1; ?><?php echo $search !== '' ? '&search=' . urlencode($search) : ''; ?>">Previous</a>
                                     </li>
                                     <?php for($i = 1; $i <= $total_pages; $i++): ?>
                                       <li class="page-item<?php if($i == $page) echo ' active'; ?>">
-                                        <a class="page-link" href="?page=<?php echo $i; ?>&io=<?php echo $io_filter; ?><?php echo $search !== '' ? '&search=' . urlencode($search) : ''; ?>"><?php echo $i; ?></a>
+                                        <a class="page-link" href="?page=<?php echo $i; ?><?php echo $search !== '' ? '&search=' . urlencode($search) : ''; ?>"><?php echo $i; ?></a>
                                       </li>
                                     <?php endfor; ?>
                                     <li class="page-item<?php if($page >= $total_pages) echo ' disabled'; ?>">
-                                      <a class="page-link" href="?page=<?php echo $page+1; ?>&io=<?php echo $io_filter; ?><?php echo $search !== '' ? '&search=' . urlencode($search) : ''; ?>">Next</a>
+                                      <a class="page-link" href="?page=<?php echo $page+1; ?><?php echo $search !== '' ? '&search=' . urlencode($search) : ''; ?>">Next</a>
                                     </li>
                                   </ul>
                                 </nav>
@@ -783,6 +759,47 @@ document.addEventListener('DOMContentLoaded', function() {
       deadlineInput.setCustomValidity('');
     });
   }
+});
+</script>
+
+<!-- View Project Details Modal -->
+<div class="modal fade" id="projectDetailsModal" tabindex="-1" aria-labelledby="projectDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="projectDetailsModalLabel">Project Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="projectDetailsModalBody">
+        <div class="text-center">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var projectDetailsModal = document.getElementById('projectDetailsModal');
+    projectDetailsModal.addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var projectId = button.getAttribute('data-project-id');
+        var modalBody = document.getElementById('projectDetailsModalBody');
+        modalBody.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+        fetch('get_project_details_ajax.php?id=' + projectId)
+            .then(response => response.text())
+            .then(html => {
+                modalBody.innerHTML = html;
+            })
+            .catch(error => {
+                modalBody.innerHTML = '<div class="alert alert-danger">Failed to load project details.</div>';
+                console.error('Error:', error);
+            });
+    });
 });
 </script>
 

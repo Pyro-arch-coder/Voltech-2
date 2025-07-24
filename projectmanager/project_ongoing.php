@@ -80,9 +80,9 @@ if (isset($_POST['update_project'])) {
     $projectbudget = floatval($_POST['projectbudget']);
     $projectdeadline = $_POST['projectdeadline'];
     $projectstatus = $_POST['projectstatus'];
-    $old_status = $project['io'];
+    $old_status = $project['status'];
     // Update project
-    $update_query = "UPDATE projects SET project='$projectname', location='$projectlocation', budget='$projectbudget', deadline='$projectdeadline', io='$projectstatus' WHERE project_id='$project_id' AND user_id='$userid'";
+    $update_query = "UPDATE projects SET project='$projectname', location='$projectlocation', budget='$projectbudget', deadline='$projectdeadline', status='$projectstatus' WHERE project_id='$project_id' AND user_id='$userid'";
     mysqli_query($con, $update_query) or die(mysqli_error($con));
     // If changing from Estimating (4) to On going (1), transfer reserved to quantity
     if ($old_status == '4' && $projectstatus == '1') {
@@ -106,41 +106,32 @@ if (isset($_POST['update_project'])) {
             mysqli_query($con, "UPDATE equipment SET status = '$new_status' WHERE id = '$equipment_id'");
         }
     }
-    // If status is set to Finished (2), insert into expenses
-    if ($projectstatus == '2') {
-        // Calculate grand total for this project
-        $emp_total = 0;
-        $emp_query = mysqli_query($con, "SELECT total FROM project_add_employee WHERE project_id='$project_id'");
-        while ($erow = mysqli_fetch_assoc($emp_query)) {
-            $emp_total += floatval($erow['total']);
-        }
-        $mat_total = 0;
-        $mat_query = mysqli_query($con, "SELECT total FROM project_add_materials WHERE project_id='$project_id'");
-        while ($mrow = mysqli_fetch_assoc($mat_query)) {
-            $mat_total += floatval($mrow['total']);
-        }
-        $equip_total = 0;
-        $equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.rental_fee, pae.status FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
-        while ($row = mysqli_fetch_assoc($equip_query)) {
-            $equip_total += floatval($row['total']);
-            // Show all equipment for On going or Finished
-            if ($project['io'] == '1' || $project['io'] == '2') {
-                $proj_equipments[] = $row;
-            } else if ($row['status'] === 'Planning') {
-                $proj_equipments[] = $row;
-            } else if ($row['status'] === 'In Use') {
-                $proj_equipments[] = $row;
-            }
-        }
-        $grand_total = $emp_total + $mat_total + $equip_total;
-        $today = date('Y-m-d');
-        $expense_sql = "INSERT INTO expenses (user_id, expense, expensedate, expensecategory, project_name, description) VALUES ('$userid', '$grand_total', '$today', 'Project', '$projectname', 'finished ang project')";
-        mysqli_query($con, $expense_sql);
-    }
-    // Refresh the page to show updated data
-    header("Location: project_details.php?id=$project_id&updated=1");
-    exit();
-}
+    // Always insert project total into expenses (no more status check)
+    // Calculate grand total for this project
+      $emp_total = 0;
+      $emp_query = mysqli_query($con, "SELECT total FROM project_add_employee WHERE project_id='$project_id'");
+      while ($erow = mysqli_fetch_assoc($emp_query)) {
+          $emp_total += floatval($erow['total']);
+      }
+      $mat_total = 0;
+      $mat_query = mysqli_query($con, "SELECT total FROM project_add_materials WHERE project_id='$project_id'");
+      while ($mrow = mysqli_fetch_assoc($mat_query)) {
+          $mat_total += floatval($mrow['total']);
+      }
+      $equip_total = 0;
+      $equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.rental_fee FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
+      while ($row = mysqli_fetch_assoc($equip_query)) {
+          $equip_total += floatval($row['total']);
+          $proj_equipments[] = $row;
+      }
+      $grand_total = $emp_total + $mat_total + $equip_total;
+      $today = date('Y-m-d');
+      $expense_sql = "INSERT INTO expenses (user_id, expense, expensedate, expensecategory, project_name, description) VALUES ('$userid', '$grand_total', '$today', 'Project', '$projectname', 'finished ang project')";
+      mysqli_query($con, $expense_sql);
+      // Refresh the page to show updated data
+      header("Location: project_details.php?id=$project_id&updated=1");
+      exit();
+  }
 
 // Handle project deletion
 if (isset($_GET['delete'])) {
@@ -153,13 +144,6 @@ if (isset($_GET['delete'])) {
     exit();
 }
 
-// Status labels
-$status_labels = [
-    '1' => '<span class="badge bg-success">On going</span>',
-    '2' => '<span class="badge bg-secondary">Finished</span>',
-    '3' => '<span class="badge bg-danger">Canceled</span>',
-    '4' => '<span class="badge bg-warning text-dark">Estimating</span>',
-];
 
 // Fetch positions for dropdown
 $positions_result = mysqli_query($con, "SELECT position_id, title FROM positions ORDER BY title ASC");
@@ -204,17 +188,13 @@ while ($row = mysqli_fetch_assoc($mat_query)) {
 // Fetch project equipments
 $proj_equipments = [];
 $equip_total = 0;
-$equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.rental_fee, pae.status FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
+$equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.rental_fee, e.status as equipment_status FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
 while ($row = mysqli_fetch_assoc($equip_query)) {
-    $equip_total += floatval($row['total']);
-    // Show all equipment for On going or Finished
-    if ($project['io'] == '1' || $project['io'] == '2') {
-        $proj_equipments[] = $row;
-    } else if ($row['status'] === 'Planning') {
-        $proj_equipments[] = $row;
-    } else if ($row['status'] === 'In Use') {
-        $proj_equipments[] = $row;
+    // Only add to total if equipment is not damaged
+    if (strtolower($row['equipment_status']) !== 'damaged') {
+        $equip_total += floatval($row['total']);
     }
+    $proj_equipments[] = $row;
 }
 $grand_total = $emp_total + $mat_total + $equip_total;
 
@@ -257,7 +237,7 @@ if ($userid) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
     <link rel="stylesheet" href="style.css" />
-    <title>Project Details</title>
+    <title>Ongoing Project</title>
 </head>
 
 <body>
@@ -303,8 +283,8 @@ if ($userid) {
         <div id="page-content-wrapper">
             <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
                 <div class="d-flex align-items-center">
-                    <i class="fas fa-align-left primary-text fs-4 me-3" id="menu-toggle"></i>
-                    <h2 class="fs-2 m-0">Project Details</h2>
+                    <i class="fas fa-align-left success-text fs-4 me-3" id="menu-toggle"></i>
+                    <h2 class="fs-2 m-0">Ongoing Project</h2>
                 </div>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -337,13 +317,10 @@ if ($userid) {
             <!-- START CARD WRAPPER -->
             <div class="card shadow-sm mb-4">
               <div class="card-header bg-success text-white d-flex align-items-center justify-content-between">
-                <h4 class="mb-0">Project Details<?php
-                    $status_text = strip_tags($status_labels[$project['io']]);
-                    echo ' (' . strtoupper($status_text) . ')';
-                ?></h4>
+                <h4 class="mb-0">Ongoing Project Details</h4>
                 <div class="d-flex gap-2">
                   <a href="projects.php" class="btn btn-light btn-sm">
-                    <i class="fa fa-arrow-left"></i> Back 
+                    <i class="fa fa-arrow-left"></i> Back to Projects
                   </a>
                   <a href="#" class="btn btn-danger btn-sm" id="exportProjectPdfBtn">
                     <i class="fas fa-file-export"></i> Generate
@@ -367,6 +344,7 @@ if ($userid) {
                             <div class="mb-2"><strong>Project Name:</strong> <?php echo htmlspecialchars($project['project']); ?></div>
                             <div class="mb-2"><strong>Location:</strong> <?php echo htmlspecialchars($project['location']); ?></div>
                             <div class="mb-2"><strong>Budget:</strong> <span class="text-success fw-bold">₱<?php echo number_format($project['budget'], 2); ?></span></div>
+                            <div class="mb-2"><strong>Labor/Cost:</strong> <span class="text-primary fw-bold">₱<?php echo number_format($emp_total, 2); ?></span></div>
                             <div class="mb-2"><strong>Deadline:</strong> <span class="text-danger"><?php echo date("F d, Y", strtotime($project['deadline'])); ?></span></div>
                           </div>
                           <div class="col-md-6 mb-2">
@@ -422,9 +400,7 @@ if ($userid) {
                     <div class="card mb-3 shadow-sm mt-3">
                       <div class="card-header bg-success text-white d-flex align-items-center">
                         <span class="flex-grow-1">Project Employees</span>
-                        <?php if ($project['io'] == '1' || $project['io'] == '4'): ?>
-                        <button class="btn btn-light btn-sm ml-auto" data-bs-toggle="modal" data-bs-target="#addEmployeeModal" <?php if ($project['io'] == '2' || $project['io'] == '3') echo 'disabled'; ?>><i class="fas fa-user-plus me-1"></i> Add Employee</button>
-                        <?php endif; ?>
+                        <button class="btn btn-light btn-sm ml-auto" data-bs-toggle="modal" data-bs-target="#addEmployeeModal"><i class="fas fa-user-plus me-1"></i> Add Employee</button>
                       </div>
                       <div class="card-body p-0">
                         <div class="table-responsive">
@@ -461,7 +437,7 @@ if ($userid) {
                                 <td>
                                   <form method="post" style="display:inline;">
                                     <input type="hidden" name="row_id" value="<?php echo $emp['id']; ?>">
-                                    <button type="submit" name="remove_project_employee" class="btn btn-sm btn-danger" onclick="return confirm('Remove this employee?')" <?php if ($project['io'] == '2' || $project['io'] == '3') echo 'disabled'; ?>><i class="fas fa-trash"></i> Remove</button>
+                                    <button type="submit" name="remove_project_employee" class="btn btn-sm btn-danger" onclick="return confirm('Remove this employee?')"><i class="fas fa-trash"></i> Remove</button>
                                   </form>
                                 </td>
                               </tr>
@@ -490,9 +466,7 @@ if ($userid) {
                     <div class="card mb-3 shadow-sm mt-3">
                       <div class="card-header bg-success text-white d-flex align-items-center">
                         <span class="flex-grow-1">Project Materials</span>
-                        <?php if ($project['io'] == '1' || $project['io'] == '4'): ?>
-                        <button class="btn btn-light btn-sm ml-auto" data-bs-toggle="modal" data-bs-target="#addMaterialsModal" <?php if ($project['io'] == '2' || $project['io'] == '3') echo 'disabled'; ?>><i class="fas fa-plus-square me-1"></i> Add Materials</button>
-                        <?php endif; ?>
+                        <button class="btn btn-light btn-sm ml-auto" data-bs-toggle="modal" data-bs-target="#addMaterialsModal"><i class="fas fa-plus-square me-1"></i> Add Materials</button>
                       </div>
                       <div class="card-body p-0">
                         <div class="table-responsive">
@@ -528,16 +502,7 @@ if ($userid) {
                                 </td>
                                 <td style="font-weight:bold;color:#222;">₱<?php echo number_format(floatval($mat['total']) + $add_cost, 2); ?></td>
                                 <td>
-                                  <?php if ($project['io'] == '4'): ?>
-                                    <form method="post" style="display:inline;">
-                                      <input type="hidden" name="row_id" value="<?php echo $mat['id']; ?>">
-                                      <button type="submit" name="remove_project_material" class="btn btn-sm btn-danger" onclick="return confirm('Remove this material?')"><i class="fas fa-trash"></i> Remove</button>
-                                    </form>
-                                  <?php elseif ($project['io'] == '1'): ?>
-                                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#returnMaterialModal" data-row-id="<?php echo $mat['id']; ?>" data-max-qty="<?php echo $mat['quantity']; ?>">
-                                      <i class="fas fa-undo"></i> Return
-                                    </button>
-                                  <?php endif; ?>
+                                  <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#returnMaterialModal" data-row-id="<?php echo $mat['id']; ?>" data-max-qty="<?php echo $mat['quantity']; ?>"><i class="fas fa-undo"></i> Return</button>
                                 </td>
                               </tr>
                               <!-- Add/Edit Additional Cost Modal -->
@@ -590,9 +555,7 @@ if ($userid) {
                     <div class="card mb-3 shadow-sm mt-3">
                       <div class="card-header bg-success text-white d-flex align-items-center">
                         <span class="flex-grow-1">Project Equipments</span>
-                        <?php if ($project['io'] == '1' || $project['io'] == '4'): ?>
-                        <button class="btn btn-light btn-sm ml-auto" data-bs-toggle="modal" data-bs-target="#addEquipmentModal" <?php if ($project['io'] == '2' || $project['io'] == '3') echo 'disabled'; ?>><i class="fas fa-truck-loading me-1"></i> Add Equipment</button>
-                        <?php endif; ?>
+                        <button class="btn btn-light btn-sm ml-auto" data-bs-toggle="modal" data-bs-target="#addEquipmentModal"><i class="fas fa-truck-loading me-1"></i> Add Equipment</button>
                       </div>
                       <div class="card-body p-0">
                         <div class="table-responsive">
@@ -604,7 +567,6 @@ if ($userid) {
                                 <th>Location</th>
                                 <th>Price</th>
                                 <th>Depreciation</th>
-                                <th>Category</th>
                                 <th>Project Days</th>
                                 <th>Total</th>
                                 <th>Action</th>
@@ -625,15 +587,7 @@ if ($userid) {
                                 <td><?php echo $i++; ?></td>
                                 <td><?php echo htmlspecialchars($eq['equipment_name']); ?></td>
                                 <td><?php echo htmlspecialchars($eq['location'] ?? 'N/A'); ?></td>
-                                <td><?php
-                                    if (isset($eq['rental_fee']) && $eq['rental_fee'] !== null && $eq['rental_fee'] !== '' && $eq['rental_fee'] > 0) {
-                                      echo number_format($eq['rental_fee'], 2);
-                                    } elseif (isset($eq['price']) && $eq['price'] !== null && $eq['price'] !== '' && $eq['price'] > 0) {
-                                      echo number_format($eq['price'], 2);
-                                    } else {
-                                      echo '-';
-                                    }
-                                  ?></td>
+                                <td><?php echo number_format($eq['price'], 2); ?></td>
                                 <td>
                                   <?php
                                     if (is_numeric($eq['depreciation'])) {
@@ -645,7 +599,6 @@ if ($userid) {
                                     }
                                   ?>
                                 </td>
-                                <td><?php echo htmlspecialchars($eq['category']); ?></td>
                                 <td><?php echo $project_days; ?></td>
                                 <td>
                                   <?php
@@ -654,38 +607,41 @@ if ($userid) {
                                   ?>
                                 </td>
                                 <td>
-                                  <?php if ($eq['status'] == 'In Use' && $project['io'] == '1'): ?>
+                                  <?php if ($eq['status'] === 'damage'): ?>
+                                    <span class="badge bg-danger">Damaged</span>
+                                  <?php elseif ($eq['status'] === 'returned'): ?>
+                                    <span class="badge bg-success">Returned</span>
+                                  <?php else: ?>
                                     <form method="post" style="display:inline;">
+                                      <input type="hidden" name="row_id" value="<?php echo $eq['id']; ?>">
+                                      <button type="submit" name="return_project_equipment" class="btn btn-sm btn-warning" onclick="return confirm('Mark this equipment as returned?')">
+                                        <i class="fas fa-undo"></i> Return
+                                      </button>
+                                    </form>
+                                    <form method="post" style="display:inline; margin-left: 4px;">
                                       <input type="hidden" name="report_equipment" value="1">
                                       <input type="hidden" name="report_row_id" value="<?php echo $eq['id']; ?>">
                                       <input type="hidden" name="report_remarks" value="Damage Equipment">
                                       <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Mark this equipment as damaged?')"><i class="fas fa-exclamation-triangle"></i> Report Damage</button>
                                     </form>
                                   <?php endif; ?>
-                                  <?php if (($eq['status'] == 'In Use' || $eq['status'] == 'Planning') && ($project['io'] == '1' || $project['io'] == '4')): ?>
-                                    <form method="post" style="display:inline;">
-                                      <input type="hidden" name="row_id" value="<?php echo $eq['id']; ?>">
-                                      <button type="submit" name="return_project_equipment" class="btn btn-sm btn-warning" onclick="return confirm('<?php echo ($project['io'] == '4') ? 'Cancel this equipment forecast?' : 'Mark this equipment as returned?'; ?>')">
-                                        <i class="fas fa-undo"></i> <?php echo ($project['io'] == '4') ? 'Cancel' : 'Return'; ?>
-                                      </button>
-                                    </form>
-                                  <?php else: ?>
-                                    <span class="badge bg-success">Returned</span>
-                                  <?php endif; ?>
                                 </td>
                               </tr>
                               <?php endforeach; else: ?>
-                              <tr><td colspan="9" class="text-center">No equipment added</td></tr>
+                  
+                                <tr><td colspan="8" class="text-center">No equipment added</td></tr>
                               <?php endif; ?>
                             </tbody>
                             <tfoot>
                               <tr>
-                                <th colspan="7" class="text-right">Total</th>
+                                <th colspan="6" class="text-right">Total</th>
                                 <th colspan="2" style="font-weight:bold;color:#222;">₱<?php
                                   $equip_total = 0;
                                   foreach ($proj_equipments as $eq) {
-                                    // Use the stored total value from the database instead of recalculating
-                                    $equip_total += floatval($eq['total']);
+                                    // Only add to total if equipment is not damaged
+                                    if (strtolower($eq['equipment_status'] ?? '') !== 'damaged') {
+                                        $equip_total += floatval($eq['total']);
+                                    }
                                   }
                                   echo number_format($equip_total, 2);
                                 ?></th>
@@ -888,21 +844,7 @@ if ($userid) {
         <div class="modal-body">
           <input type="hidden" name="add_project_equipment" value="1">
           <input type="hidden" id="projectDaysInput" value="<?php echo $project_days; ?>">
-          <div class="form-group mb-2">
-            <label for="categorySelect">Category</label>
-            <select class="form-control" id="categorySelect" name="category" required>
-              <option value="" disabled selected>Select Category</option>
-              <?php 
-              $equipment_categories_result = mysqli_query($con, "SELECT DISTINCT category FROM equipment WHERE category IS NOT NULL AND category != '' ORDER BY category ASC");
-              $equipment_categories = [];
-              while ($row = mysqli_fetch_assoc($equipment_categories_result)) {
-                  $equipment_categories[] = $row['category'];
-              }
-              foreach ($equipment_categories as $cat): ?>
-                <option value="<?php echo htmlspecialchars($cat); ?>"><?php echo htmlspecialchars($cat); ?></option>
-              <?php endforeach; ?>
-            </select>
-          </div>
+          <input type="hidden" name="category" value="Company">
           <div class="form-group mb-2">
             <label for="equipmentSelect">Equipment</label>
             <select class="form-control" id="equipmentSelect" name="equipment_id" required>
@@ -910,20 +852,15 @@ if ($userid) {
               <?php 
               $all_equipment = mysqli_query($con, "SELECT * FROM equipment WHERE approval = 'Approved' ORDER BY equipment_name ASC");
               while ($eq = mysqli_fetch_assoc($all_equipment)) {
-                $qty = isset($eq['quantity']) ? intval($eq['quantity']) : 0;
-                $reserved = isset($eq['reserved_quantity']) ? intval($eq['reserved_quantity']) : 0;
-                $available = $qty - $reserved;
-                $disabled = $available <= 0 ? 'disabled' : '';
-                $label = htmlspecialchars($eq['equipment_name']) . ' (' . ($available > 0 ? $available . ' left, ' . $reserved . ' reserved' : 'Not Available') . ')';
-                echo '<option value="' . $eq['id'] . '" data-qty="' . $qty . '" data-reserved="' . $reserved . '" ' . $disabled . '>' . $label . '</option>';
+                $status = $eq['status'];
+                $label = htmlspecialchars($eq['equipment_name']);
+                if ($status === 'Not Available') {
+                  $label .= ' (Need for Rent)';
+                }
+                echo '<option value="' . $eq['id'] . '" data-status="' . $status . '" data-price="' . htmlspecialchars($eq['equipment_price']) . '" data-depreciation="' . htmlspecialchars($eq['depreciation']) . '">' . $label . '</option>';
               }
               ?>
             </select>
-            <div id="equipmentQtyWarning" class="text-danger mt-1" style="display:none;"></div>
-          </div>
-          <div class="form-group mb-2" id="rentGroup" style="display:none;">
-            <label for="rentInput">Rent</label>
-            <input type="number" step="0.01" min="0" class="form-control" id="rentInput" name="rent">
           </div>
           <div class="form-group mb-2">
             <label>Equipment Price</label>
@@ -940,7 +877,8 @@ if ($userid) {
         </div>
         <div class="modal-footer d-flex justify-content-end gap-2">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-success">Add Equipment</button>
+          <button type="submit" class="btn btn-success" id="addEquipmentBtn">Add Equipment</button>
+          <button type="button" class="btn btn-warning" id="requestForRentBtn" style="display:none;">Request for Rent</button>
         </div>
       </form>
     </div>
@@ -1161,156 +1099,19 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <script>
-// Change Password AJAX (like pm_profile.php)
 document.addEventListener('DOMContentLoaded', function() {
-  var changePasswordForm = document.getElementById('changePasswordForm');
-  var feedbackDiv = document.getElementById('changePasswordFeedback');
-  if (changePasswordForm) {
-    changePasswordForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      feedbackDiv.innerHTML = '';
-      var formData = new FormData(changePasswordForm);
-      var xhr = new XMLHttpRequest();
-      xhr.open('POST', '', true);
-      xhr.onload = function() {
-        try {
-          var res = JSON.parse(xhr.responseText);
-          if (res.success) {
-            feedbackDiv.innerHTML = '<div class="alert alert-success">' + res.message + '</div>';
-            changePasswordForm.reset();
-            setTimeout(function() {
-              var modal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModal'));
-              if (modal) modal.hide();
-            }, 1200);
-          } else {
-            feedbackDiv.innerHTML = '<div class="alert alert-danger">' + res.message + '</div>';
-          }
-        } catch (err) {
-          feedbackDiv.innerHTML = '<div class="alert alert-danger">Unexpected error. Please try again.</div>';
-        }
-      };
-      formData.append('change_password', '1');
-      xhr.send(formData);
-    });
-  }
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  var ctx = document.getElementById('divisionProgressChart').getContext('2d');
-  var divisionLabels = <?php echo json_encode($div_chart_labels); ?>;
-  var divisionData = <?php echo json_encode($div_chart_data); ?>;
-  var chart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: divisionLabels,
-      datasets: [{
-        label: 'Progress (%)',
-        data: divisionData,
-        backgroundColor: [
-          '#e57373', '#64b5f6', '#ffd54f', '#4dd0e1', '#9575cd', '#81c784', '#f06292', '#ba68c8', '#ffb74d', '#aed581'
-        ],
-        borderRadius: 6,
-        maxBarThickness: 40
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: 100,
-          title: {
-            display: true,
-            text: 'Project Progress (%)'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: 'Divisions'
-          }
-        }
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              return context.parsed.y + '%';
-            }
-          }
-        }
-      }
-    }
-  });
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  var categorySelect = document.getElementById('categorySelect');
   var equipmentSelect = document.getElementById('equipmentSelect');
-  var priceInput = document.getElementById('equipmentPriceInput');
+  var equipmentPriceInput = document.getElementById('equipmentPriceInput');
   var depreciationInput = document.getElementById('depreciationInput');
-  var rentalFeeGroup = document.getElementById('rentalFeeGroup') || document.getElementById('rentGroup');
-  var rentalFeeInput = document.getElementById('rentalFeeInput') || document.getElementById('rentInput');
   var totalInput = document.getElementById('equipmentTotalInput');
   var projectDays = parseInt(document.getElementById('projectDaysInput').value) || 0;
 
-  function filterEquipmentOptions() {
-    var selectedCategory = categorySelect.value;
-    // Clear all options except the placeholder
-    equipmentSelect.innerHTML = '<option value="" disabled selected>Select Equipment</option>';
-    if (!selectedCategory) return;
-    allEquipment.forEach(function(eq) {
-      if (eq.category === selectedCategory) {
-        var opt = document.createElement('option');
-        opt.value = eq.id;
-        opt.textContent = eq.name;
-        opt.setAttribute('data-category', eq.category);
-        opt.setAttribute('data-price', eq.price);
-        opt.setAttribute('data-depreciation', eq.depreciation);
-        opt.setAttribute('data-rental_fee', eq.rental_fee);
-        equipmentSelect.appendChild(opt);
-      }
-    });
-    // Reset fields
-    priceInput.value = '';
-    depreciationInput.value = '';
-    if (rentalFeeInput) rentalFeeInput.value = '';
-    totalInput.value = '';
-    showFields();
-  }
-
-  function showFields() {
-    var selectedCategory = categorySelect.value;
-    if (selectedCategory === 'Company') {
-      priceInput.parentElement.style.display = '';
-      depreciationInput.parentElement.style.display = '';
-      if (rentalFeeGroup) rentalFeeGroup.style.display = 'none';
-    } else if (selectedCategory === 'Rent' || selectedCategory === 'Rental') {
-      priceInput.parentElement.style.display = 'none';
-      depreciationInput.parentElement.style.display = 'none';
-      if (rentalFeeGroup) rentalFeeGroup.style.display = '';
-    } else {
-      priceInput.parentElement.style.display = 'none';
-      depreciationInput.parentElement.style.display = 'none';
-      if (rentalFeeGroup) rentalFeeGroup.style.display = 'none';
-    }
-  }
-
-  if (categorySelect) categorySelect.addEventListener('change', filterEquipmentOptions);
-  if (equipmentSelect) equipmentSelect.addEventListener('change', function() {
-    var selected = equipmentSelect.options[equipmentSelect.selectedIndex];
-    if (!selected) return;
-    var price = parseFloat(selected.getAttribute('data-price')) || 0;
-    var depreciation = selected.getAttribute('data-depreciation');
-    var rentalFee = parseFloat(selected.getAttribute('data-rental_fee')) || 0;
-    var selectedCategory = categorySelect.value;
-    var total = 0;
-    if (selectedCategory === 'Company') {
-      priceInput.value = price.toFixed(2);
+  if (equipmentSelect) {
+    equipmentSelect.addEventListener('change', function() {
+      var selected = equipmentSelect.options[equipmentSelect.selectedIndex];
+      var price = parseFloat(selected.getAttribute('data-price')) || 0;
+      var depreciation = selected.getAttribute('data-depreciation');
+      equipmentPriceInput.value = price.toFixed(2);
       // Remove decimal for depreciation if numeric
       if (depreciation && !isNaN(depreciation)) {
         depreciationInput.value = parseInt(depreciation);
@@ -1320,393 +1121,28 @@ document.addEventListener('DOMContentLoaded', function() {
       var deprYears = parseFloat(depreciation);
       if (deprYears > 0) {
         var deprPerDay = price / (deprYears * 365);
-        total = deprPerDay * projectDays;
-        totalInput.value = total > 0 ? total.toFixed(2) : '';
+        totalInput.value = (deprPerDay * projectDays).toFixed(2);
       } else {
         totalInput.value = 'N/A';
       }
-    } else if (selectedCategory === 'Rent' || selectedCategory === 'Rental') {
-      if (rentalFeeInput) rentalFeeInput.value = rentalFee.toFixed(2);
-      total = rentalFee * projectDays;
-      totalInput.value = total > 0 ? total.toFixed(2) : '';
-    }
-  });
-  // Initial hide/show
-  showFields();
-});
-</script>
-<!-- Feedback Modal (Unified for Success/Error) -->
-<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content text-center">
-      <div class="modal-body">
-        <span id="feedbackIcon" style="font-size: 3rem;"></span>
-        <h4 id="feedbackTitle"></h4>
-        <p id="feedbackMessage"></p>
-        <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
-      </div>
-    </div>
-  </div>
-</div>
-<script>
-function showFeedbackModal(success, message, error_code = '', query_param = '') {
-  var icon = document.getElementById('feedbackIcon');
-  var title = document.getElementById('feedbackTitle');
-  var msg = document.getElementById('feedbackMessage');
-  if (success) {
-    icon.innerHTML = '<i class="fas fa-check-circle" style="color:#28a745"></i>';
-    title.textContent = 'Success!';
-    msg.textContent = message;
-  } else {
-    icon.innerHTML = '<i class="fas fa-times-circle" style="color:#dc3545"></i>';
-    title.textContent = 'Error!';
-    msg.textContent = message;
-  }
-  var feedbackModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
-  feedbackModal.show();
-  // Remove the query param after showing the modal
-  window.history.replaceState({}, document.title, window.location.pathname + window.location.search.replace(/([&?](addmat|removemat|returnmat|error)=[^&]*)/, ''));
-}
-(function() {
-  var params = new URLSearchParams(window.location.search);
-  if (params.get('addemp') === '1') {
-    showFeedbackModal(true, 'Employee added successfully!');
-    // Remove the param after showing
-    params.delete('addemp');
-    window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
-  } else if (params.get('addmat') === '1') {
-    showFeedbackModal(true, 'Material added successfully!');
-    params.delete('addmat');
-    window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
-  } else if (params.get('removemat') === '1') {
-    showFeedbackModal(true, 'Material removed successfully!');
-    params.delete('removemat');
-    window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
-  } else if (params.get('returnmat') === '1') {
-    showFeedbackModal(true, 'Material returned to inventory!');
-    params.delete('returnmat');
-    window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
-  } else if (params.get('addequip') === '1') {
-    showFeedbackModal(true, 'Equipment added successfully!');
-    params.delete('addequip');
-    window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
-  } else if (params.get('removeemp') === '1') {
-    showFeedbackModal(true, 'Employee removed successfully!');
-    params.delete('removeemp');
-    window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
-  } else if (params.get('error') === 'insufficient_stock') {
-    var left = params.get('left');
-    var msg = '';
-    if (left === '0') {
-      msg = 'Insufficient stock. 0 stock for this material.';
-    } else {
-      msg = 'Insufficient stock. Not enough material available. Only ' + left + ' left.';
-    }
-    showFeedbackModal(false, msg);
-    params.delete('error');
-    params.delete('left');
-    window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
-  } else if (params.get('error') === 'insufficient_slots') {
-    var left = params.get('left');
-    var msg = 'Insufficient warehouse slots. Not enough space in the warehouse.';
-    if (left !== null) msg += ' Only ' + left + ' slots left.';
-    showFeedbackModal(false, msg);
-    params.delete('error');
-    params.delete('left');
-    window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
-  }
-})();
-</script>
-<script>
-// Set project_id for all forms in the modal when opening
-const uploadFilesModal = document.getElementById('uploadFilesModal');
-uploadFilesModal.addEventListener('show.bs.modal', function (event) {
-  const triggerBtn = event.relatedTarget;
-  let projectId = null;
-  if (triggerBtn && triggerBtn.getAttribute('data-project-id')) {
-    projectId = triggerBtn.getAttribute('data-project-id');
-  } else {
-    // fallback: try to get from a global or selection
-    projectId = document.getElementById('modal_project_id')?.value || '';
-  }
-  document.getElementById('modal_project_id_lgu').value = projectId;
-  document.getElementById('modal_project_id_barangay').value = projectId;
-  document.getElementById('modal_project_id_fire').value = projectId;
-  document.getElementById('modal_project_id_occupancy').value = projectId;
-});
-// Image preview for each file input
-const previewMap = {
-  'lgu': 'preview_file_photo_lgu',
-  'barangay': 'preview_file_photo_barangay',
-  'fire': 'preview_file_photo_fire',
-  'occupancy': 'preview_file_photo_occupancy'
-};
-document.querySelectorAll('.single-upload-form').forEach(function(form) {
-  const fileInput = form.querySelector('input[type="file"]');
-  const formId = form.getAttribute('action').replace('upload_', '').replace('.php', '');
-  const previewImg = document.getElementById('preview_file_photo_' + formId);
-  fileInput.addEventListener('change', function() {
-    if (fileInput.files && fileInput.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        previewImg.src = e.target.result;
-        previewImg.classList.remove('d-none');
-      };
-      reader.readAsDataURL(fileInput.files[0]);
-    } else {
-      previewImg.classList.add('d-none');
-      previewImg.src = '';
-    }
-  });
-});
-</script>
-<?php if (isset($_GET['upload_success'])): ?>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    showFeedbackModal(true, 'Files uploaded successfully.', '', 'upload_success');
-});
-</script>
-<?php endif; ?>
-<?php if (isset($_GET['upload_error'])): ?>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    showFeedbackModal(false, 'Failed to upload files.', <?php echo json_encode(strip_tags($_GET['upload_error'])); ?>, 'upload_error');
-});
-</script>
-<?php endif; ?>
-<script>
-document.querySelectorAll('.single-upload-form').forEach(function(form) {
-  const fileInput = form.querySelector('input[type="file"]');
-  const invalidFeedback = fileInput.nextElementSibling; // the .invalid-feedback div
-
-  form.addEventListener('submit', function(e) {
-    if (!fileInput.files || !fileInput.files[0]) {
-      e.preventDefault();
-      fileInput.classList.add('is-invalid');
-      if (invalidFeedback) invalidFeedback.style.display = 'block';
-      fileInput.focus();
-    } else {
-      fileInput.classList.remove('is-invalid');
-      if (invalidFeedback) invalidFeedback.style.display = 'none';
-    }
-  });
-
-  // Hide error when user selects a file
-  fileInput.addEventListener('change', function() {
-    if (fileInput.files && fileInput.files[0]) {
-      fileInput.classList.remove('is-invalid');
-      if (invalidFeedback) invalidFeedback.style.display = 'none';
-    }
-  });
-});
-</script>
-
-<!-- Upload/Download Files Modal -->
-<div class="modal fade" id="uploadFilesModal" tabindex="-1" aria-labelledby="uploadFilesModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="uploadFilesModalLabel">Upload Project Permits & Clearances</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="alert alert-info py-2 mb-3" style="font-size: 0.97rem;">
-          Upload images for the following required permits and clearances for this project:
-          <ul class="mb-0 ps-3">
-            <li>LGU Permit</li>
-            <li>Barangay Clearance</li>
-            <li>Fire Clearance</li>
-            <li>Occupancy Permit</li>
-          </ul>
-        </div>
-        <form class="mb-3 single-upload-form" method="POST" action="upload_lgu.php" enctype="multipart/form-data">
-          <input type="hidden" name="project_id" id="modal_project_id_lgu" value="<?php echo $project_id; ?>">
-          <img id="preview_file_photo_lgu" class="img-thumbnail mb-2 d-none" style="max-width: 220px; max-height: 220px; display:block; margin:auto;" />
-          <label class="form-label">LGU Permit</label>
-          <input type="file" class="form-control file-input-preview" name="file_photo" accept="image/*">
-          <div class="invalid-feedback">Please select a photo before uploading.</div>
-          <button type="submit" class="btn btn-success mt-2">Upload LGU Permit</button>
-        </form>
-        <form class="mb-3 single-upload-form" method="POST" action="upload_barangay.php" enctype="multipart/form-data">
-          <input type="hidden" name="project_id" id="modal_project_id_barangay" value="<?php echo $project_id; ?>">
-          <img id="preview_file_photo_barangay" class="img-thumbnail mb-2 d-none" style="max-width: 220px; max-height: 220px; display:block; margin:auto;" />
-          <label class="form-label">Barangay Clearance</label>
-          <input type="file" class="form-control file-input-preview" name="file_photo" accept="image/*">
-          <div class="invalid-feedback">Please select a photo before uploading.</div>
-          <button type="submit" class="btn btn-success mt-2">Upload Barangay Clearance</button>
-        </form>
-        <form class="mb-3 single-upload-form" method="POST" action="upload_fire.php" enctype="multipart/form-data">
-          <input type="hidden" name="project_id" id="modal_project_id_fire" value="<?php echo $project_id; ?>">
-          <img id="preview_file_photo_fire" class="img-thumbnail mb-2 d-none" style="max-width: 220px; max-height: 220px; display:block; margin:auto;" />
-          <label class="form-label">Fire Clearance</label>
-          <input type="file" class="form-control file-input-preview" name="file_photo" accept="image/*">
-          <div class="invalid-feedback">Please select a photo before uploading.</div>
-          <button type="submit" class="btn btn-success mt-2">Upload Fire Clearance</button>
-        </form>
-        <form class="mb-3 single-upload-form" method="POST" action="upload_occupancy.php" enctype="multipart/form-data">
-          <input type="hidden" name="project_id" id="modal_project_id_occupancy" value="<?php echo $project_id; ?>">
-          <img id="preview_file_photo_occupancy" class="img-thumbnail mb-2 d-none" style="max-width: 220px; max-height: 220px; display:block; margin:auto;" />
-          <label class="form-label">Occupancy Permit</label>
-          <input type="file" class="form-control file-input-preview" name="file_photo" accept="image/*">
-          <div class="invalid-feedback">Please select a photo before uploading.</div>
-          <button type="submit" class="btn btn-success mt-2">Upload Occupancy Permit</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
-<script>
-// Set project_id for all forms in the modal when opening
-const uploadFilesModal = document.getElementById('uploadFilesModal');
-uploadFilesModal.addEventListener('show.bs.modal', function (event) {
-  const triggerBtn = event.relatedTarget;
-  let projectId = null;
-  if (triggerBtn && triggerBtn.getAttribute('data-project-id')) {
-    projectId = triggerBtn.getAttribute('data-project-id');
-  } else {
-    // fallback: try to get from a global or selection
-    projectId = document.getElementById('modal_project_id')?.value || '';
-  }
-  document.getElementById('modal_project_id_lgu').value = projectId;
-  document.getElementById('modal_project_id_barangay').value = projectId;
-  document.getElementById('modal_project_id_fire').value = projectId;
-  document.getElementById('modal_project_id_occupancy').value = projectId;
-});
-// Image preview for each file input
-const previewMap = {
-  'lgu': 'preview_file_photo_lgu',
-  'barangay': 'preview_file_photo_barangay',
-  'fire': 'preview_file_photo_fire',
-  'occupancy': 'preview_file_photo_occupancy'
-};
-document.querySelectorAll('.single-upload-form').forEach(function(form) {
-  const fileInput = form.querySelector('input[type="file"]');
-  const formId = form.getAttribute('action').replace('upload_', '').replace('.php', '');
-  const previewImg = document.getElementById('preview_file_photo_' + formId);
-  fileInput.addEventListener('change', function() {
-    if (fileInput.files && fileInput.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        previewImg.src = e.target.result;
-        previewImg.classList.remove('d-none');
-      };
-      reader.readAsDataURL(fileInput.files[0]);
-    } else {
-      previewImg.classList.add('d-none');
-      previewImg.src = '';
-    }
-  });
-});
-</script>
-
-<?php if (isset($_GET['upload_success'])): ?>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    showFeedbackModal(true, 'Files uploaded successfully.', '', 'upload_success');
-});
-</script>
-<?php endif; ?>
-<?php if (isset($_GET['upload_error'])): ?>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    showFeedbackModal(false, 'Failed to upload files.', <?php echo json_encode(strip_tags($_GET['upload_error'])); ?>, 'upload_error');
-});
-</script>
-<?php endif; ?>
-
-<!-- Add JS for client-side validation of file input before upload -->
-<script>
-document.querySelectorAll('.single-upload-form').forEach(function(form) {
-  const fileInput = form.querySelector('input[type="file"]');
-  const invalidFeedback = fileInput.nextElementSibling; // the .invalid-feedback div
-
-  form.addEventListener('submit', function(e) {
-    if (!fileInput.files || !fileInput.files[0]) {
-      e.preventDefault();
-      fileInput.classList.add('is-invalid');
-      if (invalidFeedback) invalidFeedback.style.display = 'block';
-      fileInput.focus();
-    } else {
-      fileInput.classList.remove('is-invalid');
-      if (invalidFeedback) invalidFeedback.style.display = 'none';
-    }
-  });
-
-  // Hide error when user selects a file
-  fileInput.addEventListener('change', function() {
-    if (fileInput.files && fileInput.files[0]) {
-      fileInput.classList.remove('is-invalid');
-      if (invalidFeedback) invalidFeedback.style.display = 'none';
-    }
-  });
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  if (window.location.search.includes('upload_success=1')) {
-    setTimeout(function() {
-      // Close the modal if open
-      var modal = bootstrap.Modal.getInstance(document.getElementById('feedbackModal'));
-      if (modal) modal.hide();
-      // Refresh the page and remove the query param
-      var url = new URL(window.location.href);
-      url.searchParams.delete('upload_success');
-      window.location.href = url.pathname + url.search;
-    }, 1500);
-  }
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  var materialName = document.getElementById('materialName');
-  var materialQty = document.getElementById('materialQty');
-  var addMaterialForm = document.getElementById('addMaterialForm');
-  var maxQty = 0;
-
-  if (materialName && materialQty) {
-    materialName.addEventListener('change', function() {
-      var selected = materialName.options[materialName.selectedIndex];
-      maxQty = parseInt(selected.getAttribute('data-qty')) || 0;
-      materialQty.setAttribute('max', maxQty);
-    });
-    materialQty.addEventListener('input', function() {
-      var qty = parseInt(materialQty.value) || 0;
-      if (maxQty > 0 && qty > maxQty) {
-        materialQty.value = maxQty;
-        showQuantityErrorModal('Your estimated quantity is not allowed. Only ' + maxQty + ' left.');
-      }
-    });
-  }
-  if (addMaterialForm) {
-    addMaterialForm.addEventListener('submit', function(e) {
-      var qty = parseInt(materialQty.value) || 0;
-      if (maxQty > 0 && qty > maxQty) {
-        e.preventDefault();
-        showQuantityErrorModal('Your estimated quantity is not allowed. Only ' + maxQty + ' left.');
-      }
     });
   }
 });
-function showQuantityErrorModal(msg) {
-  var modal = new bootstrap.Modal(document.getElementById('quantityErrorModal'));
-  document.getElementById('quantityErrorMsg').textContent = msg;
-  modal.show();
-}
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   var equipmentSelect = document.getElementById('equipmentSelect');
-  var equipmentQtyWarning = document.getElementById('equipmentQtyWarning');
-  if (equipmentSelect && equipmentQtyWarning) {
+  var addBtn = document.getElementById('addEquipmentBtn');
+  var rentBtn = document.getElementById('requestForRentBtn');
+  if (equipmentSelect) {
     equipmentSelect.addEventListener('change', function() {
       var selected = equipmentSelect.options[equipmentSelect.selectedIndex];
-      var qty = parseInt(selected.getAttribute('data-qty')) || 0;
-      if (qty === 1) {
-        equipmentQtyWarning.textContent = 'Only 1 left!';
-        equipmentQtyWarning.style.display = '';
+      if (selected && selected.getAttribute('data-status') === 'Not Available') {
+        addBtn.style.display = 'none';
+        rentBtn.style.display = '';
       } else {
-        equipmentQtyWarning.textContent = '';
-        equipmentQtyWarning.style.display = 'none';
+        addBtn.style.display = '';
+        rentBtn.style.display = 'none';
       }
     });
   }
@@ -1901,6 +1337,29 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 300);
     });
   }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Activate tab based on URL hash
+  var hash = window.location.hash;
+  if (hash) {
+    var tabTrigger = document.querySelector('button[data-bs-target="' + hash + '"]');
+    if (tabTrigger) {
+      var tab = new bootstrap.Tab(tabTrigger);
+      tab.show();
+    }
+  }
+  // Update hash when tab is changed
+  var tabButtons = document.querySelectorAll('#projectTabs button[data-bs-toggle="tab"]');
+  tabButtons.forEach(function(btn) {
+    btn.addEventListener('shown.bs.tab', function(e) {
+      var target = btn.getAttribute('data-bs-target');
+      if (target) {
+        history.replaceState({}, document.title, target);
+      }
+    });
+  });
 });
 </script>
 </body>
