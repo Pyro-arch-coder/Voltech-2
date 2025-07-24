@@ -119,7 +119,7 @@ if (isset($_POST['update_project'])) {
           $mat_total += floatval($mrow['total']);
       }
       $equip_total = 0;
-      $equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.rental_fee FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
+      $equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.status as equipment_status FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
       while ($row = mysqli_fetch_assoc($equip_query)) {
           $equip_total += floatval($row['total']);
           $proj_equipments[] = $row;
@@ -129,7 +129,7 @@ if (isset($_POST['update_project'])) {
       $expense_sql = "INSERT INTO expenses (user_id, expense, expensedate, expensecategory, project_name, description) VALUES ('$userid', '$grand_total', '$today', 'Project', '$projectname', 'finished ang project')";
       mysqli_query($con, $expense_sql);
       // Refresh the page to show updated data
-      header("Location: project_details.php?id=$project_id&updated=1");
+      header("Location: project_ongoing.php?id=$project_id&updated=1");
       exit();
   }
 
@@ -188,7 +188,7 @@ while ($row = mysqli_fetch_assoc($mat_query)) {
 // Fetch project equipments
 $proj_equipments = [];
 $equip_total = 0;
-$equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.rental_fee, e.status as equipment_status FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
+$equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.status as equipment_status FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
 while ($row = mysqli_fetch_assoc($equip_query)) {
     // Only add to total if equipment is not damaged
     $status = strtolower(($row['status'] ?? $row['equipment_status'] ?? ''));
@@ -197,10 +197,10 @@ while ($row = mysqli_fetch_assoc($equip_query)) {
     }
     $proj_equipments[] = $row;
 }
-// Recalculate grand total after all filters are applied
-$grand_total = $emp_total + $mat_total + $equip_total;
 
-// Fetch division progress for chart
+$grand_total =  $mat_total + $equip_total;
+
+
 $div_chart_labels = [];
 $div_chart_data = [];
 $div_chart_query = mysqli_query($con, "SELECT division_name, progress FROM project_divisions WHERE project_id='$project_id'");
@@ -357,7 +357,7 @@ if ($userid) {
                         <div class="mb-2"><strong>Category:</strong> <?php echo htmlspecialchars($project['category']); ?></div>
                         <hr>
                         <div class="text-end font-weight-bold mt-3" style="font-size:1.3em; color:#222;">
-                          <span style="font-size:1.3em; vertical-align:middle; margin-right:4px; font-weight:bold; color:#222;"></span> Grand Total (Employees + Materials + Equipment): <span style="font-weight:bold;color:#222">₱<?php echo number_format($grand_total, 2); ?></span>
+                          <span style="font-size:1.3em; vertical-align:middle; margin-right:4px; font-weight:bold; color:#222;"></span> Grand Total (Materials + Equipment): <span style="font-weight:bold;color:#222">₱<?php echo number_format($grand_total, 2); ?></span>
                         </div>
                       </div>
                     </div>
@@ -1377,6 +1377,62 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
+});
+</script>
+<script>
+// Initialize Division Progress Chart
+document.addEventListener('DOMContentLoaded', function() {
+  var ctx = document.getElementById('divisionProgressChart').getContext('2d');
+  var divisionLabels = <?php echo json_encode($div_chart_labels); ?>;
+  var divisionData = <?php echo json_encode($div_chart_data); ?>;
+  
+  if (ctx) {
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: divisionLabels,
+        datasets: [{
+          label: 'Progress %',
+          data: divisionData,
+          backgroundColor: 'rgba(40, 167, 69, 0.8)',
+          borderColor: 'rgba(40, 167, 69, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            title: {
+              display: true,
+              text: 'Progress %'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Divisions'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.parsed.y + '%';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
 });
 </script>
 </body>
