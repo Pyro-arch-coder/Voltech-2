@@ -25,19 +25,19 @@ $project_days = $interval->days + 1;
 // Fetch materials for the project with labor_other and material_price from materials table
 $materials = [];
 $mat_total = 0;
-$mat_query = $con->query("SELECT pam.*, m.material_name, m.unit, m.material_price, m.labor_other FROM project_add_materials pam LEFT JOIN materials m ON pam.material_id = m.id WHERE pam.project_id = '$project_id'");
+$mat_query = $con->query("SELECT pem.*, m.material_name, m.unit, m.material_price, m.labor_other FROM project_estimating_materials pem LEFT JOIN materials m ON pem.material_id = m.id WHERE pem.project_id = '$project_id'");
 while($row = $mat_query->fetch_assoc()) {
     $materials[] = $row;
     $mat_total += floatval($row['total'] ?? 0);
 }
-// Fetch equipment
+
+// Create PDF instance
 $pdf = new FPDF();
 $pdf->AddPage();
+
 // Logo (left)
 $pdf->Image('../uploads/voltech_logo_transparent.png', 10, 10, 28);
 // Business name and info (right)
-$pdf = new FPDF();
-$pdf->AddPage();
 $pdf->Image('../uploads/logo.jpg', 10, 10, 190, 40); // 40mm tall header image
 $pdf->SetY(55); // 10 (top) + 40 (image) + 5 (space)
 // Header Section
