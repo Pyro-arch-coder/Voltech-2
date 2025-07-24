@@ -106,8 +106,6 @@ if (isset($_POST['update_project'])) {
             mysqli_query($con, "UPDATE equipment SET status = '$new_status' WHERE id = '$equipment_id'");
         }
     }
-    // Always insert project total into expenses (no more status check)
-    // Calculate grand total for this project
       $emp_total = 0;
       $emp_query = mysqli_query($con, "SELECT total FROM project_add_employee WHERE project_id='$project_id'");
       while ($erow = mysqli_fetch_assoc($emp_query)) {
@@ -180,10 +178,12 @@ while ($row = mysqli_fetch_assoc($emp_query)) {
 // Fetch project materials
 $proj_mats = [];
 $mat_total = 0;
+$material_labor_total = 0;
 $mat_query = mysqli_query($con, "SELECT pam.*, m.supplier_name, m.material_price, m.labor_other, m.unit, m.material_name FROM project_add_materials pam LEFT JOIN materials m ON pam.material_id = m.id WHERE pam.project_id = '$project_id'");
 while ($row = mysqli_fetch_assoc($mat_query)) {
     $proj_mats[] = $row;
     $mat_total += floatval($row['total']) + (isset($row['additional_cost']) ? floatval($row['additional_cost']) : 0);
+    $material_labor_total += $row['labor_other'] * $row['quantity'];
 }
 // Fetch project equipments
 $proj_equipments = [];
@@ -197,7 +197,7 @@ while ($row = mysqli_fetch_assoc($equip_query)) {
     }
     $proj_equipments[] = $row;
 }
-
+$final_labor_cost = $material_labor_total- $emp_total;
 $grand_total =  $mat_total + $equip_total;
 
 
@@ -346,7 +346,7 @@ if ($userid) {
                             <div class="mb-2"><strong>Project Name:</strong> <?php echo htmlspecialchars($project['project']); ?></div>
                             <div class="mb-2"><strong>Location:</strong> <?php echo htmlspecialchars($project['location']); ?></div>
                             <div class="mb-2"><strong>Budget:</strong> <span class="text-success fw-bold">₱<?php echo number_format($project['budget'], 2); ?></span></div>
-                            <div class="mb-2"><strong>Labor/Cost:</strong> <span class="text-primary fw-bold">₱<?php echo number_format($emp_total, 2); ?></span></div>
+                            <div class="mb-2"><strong>Labor/Cost:</strong> <span class="text-primary fw-bold">₱<?php echo number_format($final_labor_cost, 2); ?></span></div>
                             <div class="mb-2"><strong>Deadline:</strong> <span class="text-danger"><?php echo date("F d, Y", strtotime($project['deadline'])); ?></span></div>
                           </div>
                           <div class="col-md-6 mb-2">
@@ -1308,7 +1308,7 @@ if (isset($_POST['save_additional_cost']) && isset($_POST['add_cost_row_id'])) {
   $additional_cost = floatval($_POST['additional_cost']);
   mysqli_query($con, "UPDATE project_add_materials SET additional_cost='$additional_cost' WHERE id='$row_id'");
   // Optionally, update the total column as well if you want to store it
-  echo '<script>window.location.href = "project_details.php?id=' . $project_id . '&addmat=1";</script>';
+  echo '<script>window.location.href = "project_ongoing.php?id=' . $project_id . '&addmat=1";</script>';
   exit();
 }
 ?>
