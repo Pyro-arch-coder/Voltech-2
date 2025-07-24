@@ -191,11 +191,13 @@ $equip_total = 0;
 $equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.rental_fee, e.status as equipment_status FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
 while ($row = mysqli_fetch_assoc($equip_query)) {
     // Only add to total if equipment is not damaged
-    if (strtolower($row['equipment_status']) !== 'damaged') {
+    $status = strtolower(($row['status'] ?? $row['equipment_status'] ?? ''));
+    if ($status !== 'damaged' && $status !== 'damage') {
         $equip_total += floatval($row['total']);
     }
     $proj_equipments[] = $row;
 }
+// Recalculate grand total after all filters are applied
 $grand_total = $emp_total + $mat_total + $equip_total;
 
 // Fetch division progress for chart
@@ -638,8 +640,9 @@ if ($userid) {
                                 <th colspan="2" style="font-weight:bold;color:#222;">₱<?php
                                   $equip_total = 0;
                                   foreach ($proj_equipments as $eq) {
-                                    // Only add to total if equipment is not damaged
-                                    if (strtolower($eq['equipment_status'] ?? '') !== 'damaged') {
+                                    // Skip damaged equipment (check both status and equipment_status for compatibility)
+                                    $status = strtolower(($eq['status'] ?? $eq['equipment_status'] ?? ''));
+                                    if ($status !== 'damaged' && $status !== 'damage') {
                                         $equip_total += floatval($eq['total']);
                                     }
                                   }
@@ -850,7 +853,10 @@ if ($userid) {
             <select class="form-control" id="equipmentSelect" name="equipment_id" required>
               <option value="" disabled selected>Select Equipment</option>
               <?php 
-              $all_equipment = mysqli_query($con, "SELECT * FROM equipment WHERE approval = 'Approved' ORDER BY equipment_name ASC");
+              $all_equipment = mysqli_query($con, "SELECT * FROM equipment WHERE approval = 'Approved' AND LOWER(COALESCE(status, '')) NOT IN ('damaged', 'damage') ORDER BY equipment_name ASC");
+              $damaged_equipment = mysqli_query($con, "SELECT * FROM equipment WHERE LOWER(COALESCE(status, '')) IN ('damaged', 'damage') ORDER BY equipment_name ASC");
+              
+              // First, show available equipment
               while ($eq = mysqli_fetch_assoc($all_equipment)) {
                 $status = $eq['status'];
                 $label = htmlspecialchars($eq['equipment_name']);
@@ -858,6 +864,17 @@ if ($userid) {
                   $label .= ' (Need for Rent)';
                 }
                 echo '<option value="' . $eq['id'] . '" data-status="' . $status . '" data-price="' . htmlspecialchars($eq['equipment_price']) . '" data-depreciation="' . htmlspecialchars($eq['depreciation']) . '">' . $label . '</option>';
+              }
+              
+              // Then show disabled damaged equipment (for reference)
+              if (mysqli_num_rows($damaged_equipment) > 0) {
+                echo '<optgroup label="-- Damaged Equipment (Not Available) --">';
+                mysqli_data_seek($damaged_equipment, 0);
+                while ($eq = mysqli_fetch_assoc($damaged_equipment)) {
+                  $label = htmlspecialchars($eq['equipment_name']) . ' (Damaged)';
+                  echo '<option value="" disabled style="color: #999; font-style: italic;">' . $label . ' - ' . ucfirst($eq['status']) . '</option>';
+                }
+                echo '</optgroup>';
               }
               ?>
             </select>

@@ -82,11 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_project'])) {
     $category = mysqli_real_escape_string($con, $_POST['category']);
     $billings = floatval($_POST['billings']);
     $size = isset($_POST['size']) ? floatval($_POST['size']) : null;
-    $io = $_POST['io'];
     $user_id = $userid;
 
-    $sql = "INSERT INTO projects (user_id, project, location, budget, start_date, deadline, foreman, category, billings, size, io)
-            VALUES ('$user_id', '$project', '$location', '$budget', '$start_date', '$deadline', '$foreman', '$category', '$billings', '$size', '$io')";
+    $sql = "INSERT INTO projects (user_id, project, location, budget, start_date, deadline, foreman, category, billings, size)
+            VALUES ('$user_id', '$project', '$location', '$budget', '$start_date', '$deadline', '$foreman', '$category', '$billings', '$size')";
 
     if (mysqli_query($con, $sql)) {
         // Get the last inserted project_id
