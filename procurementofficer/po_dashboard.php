@@ -420,12 +420,12 @@ if ($userid) {
                                         <tbody>
                                             <?php
                                             $materials = [];
-                                            $mat_query = mysqli_query($con, "SELECT material_name, category, approval_date FROM materials WHERE approval = 'Approved' AND approval_date IS NOT NULL ORDER BY approval_date DESC LIMIT 5");
+                                            $mat_query = mysqli_query($con, "SELECT material_name, category, purchase_date FROM materials WHERE purchase_date IS NOT NULL ORDER BY purchase_date DESC LIMIT 5");
                                             while ($row = mysqli_fetch_assoc($mat_query)) {
                                                 $materials[] = [
                                                     'material_name' => $row['material_name'],
                                                     'category' => $row['category'],
-                                                    'date_approved' => $row['approval_date']
+                                                    'date_approved' => $row['purchase_date']
                                                 ];
                                             }
                                             foreach ($materials as $row) {
@@ -458,12 +458,12 @@ if ($userid) {
                                         <tbody>
                                             <?php
                                             $equipment = [];
-                                            $equip_query = mysqli_query($con, "SELECT equipment_name, category, approval_date FROM equipment WHERE approval = 'Approved' AND approval_date IS NOT NULL ORDER BY approval_date DESC LIMIT 5");
+                                            $equip_query = mysqli_query($con, "SELECT equipment_name, category, created_at FROM equipment WHERE created_at IS NOT NULL ORDER BY created_at DESC LIMIT 5");
                                             while ($row = mysqli_fetch_assoc($equip_query)) {
                                                 $equipment[] = [
                                                     'equipment_name' => $row['equipment_name'],
                                                     'category' => $row['category'],
-                                                    'date_approved' => $row['approval_date']
+                                                    'date_approved' => $row['created_at']
                                                 ];
                                             }
                                             foreach ($equipment as $row) {

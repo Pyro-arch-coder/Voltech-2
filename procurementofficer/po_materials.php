@@ -73,7 +73,6 @@ $supplier_filter = isset($_GET['supplier']) ? mysqli_real_escape_string($con, $_
 
 // Build WHERE clause
 $where_conditions = [];
-$where_conditions[] = "approval = 'Approved'"; // Only show approved materials
 if (!empty($search)) {
     $where_conditions[] = "(material_name LIKE '%$search%' OR category LIKE '%$search%' OR supplier_name LIKE '%$search%')";
 }
@@ -87,7 +86,7 @@ if (!empty($supplier_filter)) {
     $where_conditions[] = "supplier_name = '$supplier_filter'";
 }
 
-$where_clause = "WHERE " . implode(" AND ", $where_conditions);
+$where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
 
 // Pagination settings
 $items_per_page = 10;
@@ -102,9 +101,9 @@ $total_items = $total_row['total'];
 $total_pages = ceil($total_items / $items_per_page);
 
 // Get distinct values for filters
-$categories_query = "SELECT DISTINCT category FROM materials WHERE approval = 'Approved' ORDER BY category";
-$statuses_query = "SELECT DISTINCT status FROM materials WHERE approval = 'Approved' ORDER BY status";
-$suppliers_query = "SELECT DISTINCT supplier_name FROM materials WHERE approval = 'Approved' ORDER BY supplier_name";
+$categories_query = "SELECT DISTINCT category FROM materials ORDER BY category";
+$statuses_query = "SELECT DISTINCT status FROM materials ORDER BY status";
+$suppliers_query = "SELECT DISTINCT supplier_name FROM materials ORDER BY supplier_name";
 
 $categories = $con->query($categories_query);
 $statuses = $con->query($statuses_query);
@@ -1168,7 +1167,7 @@ function short_number_format($num, $precision = 1) {
       } else if (params.get('deleted') === '1') {
         showFeedbackModal(true, 'Material deleted successfully!', '', 'deleted');
       } else if (params.get('reordered') === '1') {
-        showFeedbackModal(true, 'Material reordered successfully! A reorder request has been sent for approval.', '', 'reordered');
+        showFeedbackModal(true, 'Material reordered successfully!', '', 'reordered');
       } else if (params.get('backordered') === '1') {
         showFeedbackModal(true, 'Backorder successfully! Notification has been sent.', '', 'backordered');
       } else if (params.get('error') === 'duplicate') {
@@ -1185,10 +1184,6 @@ function short_number_format($num, $precision = 1) {
         } else {
           showFeedbackModal(false, `Material '${materialName}' already exists. Cannot add duplicate materials.`, '', 'duplicate');
         }
-      } else if (params.get('error') === 'duplicate_reorder') {
-        showFeedbackModal(false, 'There is already a pending reorder request for this material. Please wait for approval before creating another reorder.', '', 'duplicate_reorder');
-      } else if (params.get('error') === 'duplicate_backorder') {
-        showFeedbackModal(false, 'There is already a pending backorder request for this material with the same reason. Please wait for approval before creating another backorder.', '', 'duplicate_backorder');
       } else if (params.get('error')) {
         showFeedbackModal(false, decodeURIComponent(params.get('error')), '', 'error');
       }

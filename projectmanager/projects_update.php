@@ -1,4 +1,76 @@
 <?php
+
+// Handle Rent Request 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['equipment_id']) && isset($_POST['project_id'])) {
+    header('Content-Type: application/json');
+
+    try {
+        $equipmentId = intval($_POST['equipment_id']);
+        $projectId = intval($_POST['project_id']);
+        $userId = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
+        $renterName = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Unknown';
+        $renterContact = isset($_SESSION['user_contact']) ? $_SESSION['user_contact'] : 'N/A';
+        $rentalDate = date('Y-m-d');
+        $createdAt = date('Y-m-d H:i:s');
+        $status = 'Rented'; // o 'Pending' kung yun ang default logic mo
+
+        if ($userId === 0) {
+            throw new Exception('User not authenticated');
+        }
+
+        // Start transaction
+        mysqli_begin_transaction($con);
+
+        // 1. Update equipment request status
+        $updateEquipment = mysqli_prepare($con, "UPDATE equipment SET `request` = 1 WHERE id = ?");
+        mysqli_stmt_bind_param($updateEquipment, 'i', $equipmentId);
+
+        if (!mysqli_stmt_execute($updateEquipment)) {
+            throw new Exception('Failed to update equipment status');
+        }
+
+        // 2. Insert into equipment_rentals table
+        $insertRental = mysqli_prepare($con, "
+            INSERT INTO equipment_rentals 
+            (equipment_id, equipment_name, rent_fee, rental_date, status, renter_name, renter_contact, project_id, created_at)
+            SELECT id, name, rent_fee, ?, ?, ?, ?, ?, ?
+            FROM equipment
+            WHERE id = ?
+        ");
+        mysqli_stmt_bind_param($insertRental, 'sssssssi', 
+            $rentalDate, $status, $renterName, $renterContact, $projectId, $createdAt, $equipmentId
+        );
+
+        if (!mysqli_stmt_execute($insertRental)) {
+            throw new Exception('Failed to create equipment rental record');
+        }
+
+        // Commit transaction
+        mysqli_commit($con);
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Equipment rental recorded successfully'
+        ]);
+
+    } catch (Exception $e) {
+        if (isset($con)) {
+            mysqli_rollback($con);
+        }
+
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ]);
+    }
+
+    if (isset($updateEquipment)) mysqli_stmt_close($updateEquipment);
+    if (isset($insertRental)) mysqli_stmt_close($insertRental);
+
+    exit();
+}
+
 // Update Equipment Days Used
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_project_equipment_days'])) {
     $row_id = intval($_POST['row_id']);

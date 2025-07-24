@@ -28,15 +28,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
         exit();
     }
     
-    // Check if there's already a pending backorder request for this material
-    $check_pending = "SELECT id FROM back_orders WHERE material_id = ? AND reason != 'Reorder' AND approval_status = 'Pending'";
+    // Check if there's already a backorder request for this material
+    $check_pending = "SELECT id FROM back_orders WHERE material_id = ? AND reason != 'Reorder'";
     $check_stmt = $con->prepare($check_pending);
     $check_stmt->bind_param("i", $material_id);
     $check_stmt->execute();
     $check_result = $check_stmt->get_result();
     
     if ($check_result->num_rows > 0) {
-        header('Location: po_materials.php?error=There is already a pending backorder request for this material');
+        header('Location: po_materials.php?error=There is already a backorder request for this material');
         exit();
     }
     
@@ -66,27 +66,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
         $final_reason = 'Other: ' . $other_reason;
     }
     
-    // Insert into back_orders table with approval_status 'Pending'
-    $backorder_insert = "INSERT INTO back_orders (material_id, quantity, reason, requested_by, approval_status, created_at) 
-                        VALUES (?, ?, ?, ?, 'Pending', NOW())";
+    // Insert into back_orders table
+    $backorder_insert = "INSERT INTO back_orders (material_id, quantity, reason, requested_by, created_at) 
+                        VALUES (?, ?, ?, ?, NOW())";
     
     $stmt = $con->prepare($backorder_insert);
     $stmt->bind_param("iisi", $material_id, $backorder_quantity, $final_reason, $user_id);
     
     if ($stmt->execute()) {
-        // Create a notification for backorder request
-        $notif_type = 'Backorder';
-        $message = "Backordered material: " . $material['material_name'] . " (Quantity: $backorder_quantity, Reason: $final_reason)";
-        $message_esc = mysqli_real_escape_string($con, $message);
-        
-        // Find admin user_id (assuming user_level 2 for admin)
-        $admin_res = $con->query("SELECT id FROM users WHERE user_level = 2 LIMIT 1");
-        $admin_id = ($admin_res && $admin_row = $admin_res->fetch_assoc()) ? intval($admin_row['id']) : 1;
-        
-        // Insert notification
-        $notif_insert = "INSERT INTO notifications_admin (user_id, notif_type, message, is_read, created_at) VALUES ('$admin_id', '$notif_type', '$message_esc', 0, NOW())";
-        $con->query($notif_insert);
-        
         // Success redirect with new message
         header('Location: po_materials.php?backordered=1');
     } else {

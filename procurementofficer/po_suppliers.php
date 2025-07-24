@@ -321,9 +321,6 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
                                 <input type="text" class="form-control border-start-0" name="search" placeholder="Search supplier, contact, or email" value="<?php echo htmlspecialchars(isset($_GET['search']) ? $_GET['search'] : ''); ?>" id="searchInput" autocomplete="off" maxlength="100" pattern="[A-Za-z0-9\s\-\.@]+" title="Search can contain letters, numbers, spaces, hyphens, dots, and @ symbol">
-                                <button type="submit" class="btn btn-outline-secondary" type="button">
-                                    <i class="fas fa-search"></i>
-                                </button>
                             </div>
                         </form>
                        

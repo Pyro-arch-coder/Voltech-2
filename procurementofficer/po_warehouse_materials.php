@@ -33,7 +33,6 @@ $add_error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_warehouse'])) {
     $warehouse = trim(mysqli_real_escape_string($con, $_POST['warehouse']));
     $category = trim(mysqli_real_escape_string($con, $_POST['category']));
-    $slots = isset($_POST['slots']) ? (int)$_POST['slots'] : 100;
     $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
     
     // Validation
@@ -49,10 +48,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_warehouse'])) {
         $add_error = 'Category cannot exceed 50 characters.';
     } elseif (!preg_match('/^[A-Za-z0-9\s\-\.&]+$/', $category)) {
         $add_error = 'Category can only contain letters, numbers, spaces, hyphens, dots, and ampersands.';
-    } elseif ($slots <= 0) {
-        $add_error = 'Slots must be greater than 0.';
-    } elseif ($slots > 999999) {
-        $add_error = 'Slots cannot exceed 999,999.';
     } else {
         // Check if warehouse already exists
         $check_sql = "SELECT id FROM warehouses WHERE warehouse = ? AND category = ?";
@@ -64,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_warehouse'])) {
         if ($check_result->num_rows > 0) {
             $add_error = 'This warehouse and category combination already exists.';
         } else {
-            $stmt = $con->prepare("INSERT INTO warehouses (warehouse, category, approval, user_id, created_at) VALUES (?, ?, 'Pending', ?, NOW())");
+            $stmt = $con->prepare("INSERT INTO warehouses (warehouse, category, user_id, created_at) VALUES (?, ?, ?, NOW())");
             $stmt->bind_param('ssi', $warehouse, $category, $user_id);
             if ($stmt->execute()) {
                 // Insert notification for admin if Procurement Officer
@@ -104,7 +99,7 @@ $category_filter = isset($_GET['category']) ? mysqli_real_escape_string($con, $_
 $warehouse_filter = isset($_GET['warehouse']) ? mysqli_real_escape_string($con, $_GET['warehouse']) : '';
 
 // Build WHERE clause
-$where_conditions = ["approval = 'Approved'"];
+$where_conditions = [];
 if (!empty($search)) {
     $where_conditions[] = "(warehouse LIKE '%$search%' OR category LIKE '%$search%')";
 }
@@ -251,11 +246,7 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                                   </div>
                                 </div>
                                 <div class="col-md-6">
-                                  <div class="form-group mb-3">
-                                    <label>Slots *</label>
-                                    <input type="number" class="form-control" name="slots" placeholder="Slots (default 100)" min="1" max="999999" value="100" required>
-                                    <div class="invalid-feedback">Please enter a valid number of slots (1-999,999).</div>
-                                  </div>
+                                  
                                 </div>
                               </div>
                             </div>
@@ -273,9 +264,6 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                         <div class="input-group" style="min-width:220px; max-width:320px;">
                             <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
                             <input type="text" class="form-control border-start-0" name="search" placeholder="Search warehouse/category" value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off" maxlength="100" pattern="[A-Za-z0-9\s\-\.&]+" title="Search can contain letters, numbers, spaces, hyphens, dots, and ampersands">
-                            <button type="submit" class="btn btn-outline-secondary">
-                                <i class="fas fa-search"></i>
-                            </button>
                         </div>
                         <select name="category" class="form-control" style="max-width:180px;" id="categoryFilter">
                             <option value="">All Categories</option>

@@ -1151,6 +1151,52 @@ document.addEventListener('DOMContentLoaded', function() {
   var equipmentSelect = document.getElementById('equipmentSelect');
   var addBtn = document.getElementById('addEquipmentBtn');
   var rentBtn = document.getElementById('requestForRentBtn');
+  
+  if (rentBtn) {
+    rentBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var selected = equipmentSelect.options[equipmentSelect.selectedIndex];
+      var equipmentName = selected ? selected.text : 'this equipment';
+      
+      if (confirm('Do you want to rent ' + equipmentName + '?')) {
+        var equipmentId = selected.value;
+        var projectId = '<?php echo $project_id; ?>';
+        
+        // Show loading state
+        rentBtn.disabled = true;
+        rentBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        
+        // Send AJAX request
+        fetch('project_update.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: 'equipment_id=' + encodeURIComponent(equipmentId) + 
+                '&project_id=' + encodeURIComponent(projectId)
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Rent request has been submitted successfully!');
+            // Optionally refresh the page or update UI
+            location.reload();
+          } else {
+            alert('Error: ' + (data.message || 'Failed to process rent request'));
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while processing your request.');
+        })
+        .finally(() => {
+          rentBtn.disabled = false;
+          rentBtn.innerHTML = 'Request for Rent';
+        });
+      }
+    });
+  }
+  
   if (equipmentSelect) {
     equipmentSelect.addEventListener('change', function() {
       var selected = equipmentSelect.options[equipmentSelect.selectedIndex];

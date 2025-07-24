@@ -2,17 +2,12 @@
 // Add Equipment to Project
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_project_equipment'])) {
   $equipment_id = intval($_POST['equipment_id']);
-  $category = mysqli_real_escape_string($con, $_POST['category']);
-  // Fetch equipment details before calculation
-  $eq_res = mysqli_query($con, "SELECT equipment_price, rental_fee, depreciation FROM equipment WHERE id='$equipment_id' LIMIT 1");
+  $category = 'purchase'; // Default to purchase since rental is not supported
+  // Fetch equipment details
+  $eq_res = mysqli_query($con, "SELECT equipment_price, depreciation FROM equipment WHERE id='$equipment_id' LIMIT 1");
   $eq = mysqli_fetch_assoc($eq_res);
-  if (strtolower($category) === 'rental' || strtolower($category) === 'rent') {
-    $price = $eq['rental_fee'];
-    $depreciation = 'None';
-  } else {
-    $price = $eq['equipment_price'];
-    $depreciation = is_numeric($eq['depreciation']) ? intval($eq['depreciation']) : $eq['depreciation'];
-  }
+  $price = $eq['equipment_price'];
+  $depreciation = is_numeric($eq['depreciation']) ? intval($eq['depreciation']) : $eq['depreciation'];
   // Calculate project days
   $project_id = intval($_GET['id']);
   $proj_status_res = mysqli_query($con, "SELECT start_date, deadline FROM projects WHERE project_id='$project_id' LIMIT 1");
@@ -28,11 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_project_equipment
     $interval = $start->diff($end);
     $project_days = $interval->days + 1;
   }
-  // Calculate total
+  // Calculate total based on depreciation
   $total = 0;
-  if (strtolower($category) === 'rental' || strtolower($category) === 'rent') {
-    $total = floatval($price) * $project_days;
-  } else if (is_numeric($depreciation) && $depreciation > 0) {
+  if (is_numeric($depreciation) && $depreciation > 0) {
     $depr_per_day = floatval($price) / ($depreciation * 365);
     $total = $depr_per_day * $project_days;
   } else {

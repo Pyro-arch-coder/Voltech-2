@@ -61,22 +61,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Check if material with same name and supplier already exists
-        $check_sql = "SELECT id, approval, supplier_name FROM materials WHERE material_name = ? AND supplier_name = ?";
+        $check_sql = "SELECT id, supplier_name FROM materials WHERE material_name = ? AND supplier_name = ?";
         $check_stmt = $con->prepare($check_sql);
         $check_stmt->bind_param("ss", $material_name, $supplier_name);
         $check_stmt->execute();
         $check_result = $check_stmt->get_result();
         
         if ($check_result->num_rows > 0) {
-            $existing_material = $check_result->fetch_assoc();
+            $errors[] = "Material '$material_name' from supplier '$supplier_name' already exists. Cannot add duplicate materials from the same supplier.";
+            error_log("Duplicate material found: $material_name from supplier $supplier_name");
             $check_stmt->close();
-            
-            if ($existing_material['approval'] === 'Approved') {
-                $errors[] = "Material '$material_name' from supplier '$supplier_name' already exists and is approved. Cannot add duplicate materials from the same supplier.";
-            } else {
-                $errors[] = "There is already a pending request for material '$material_name' from supplier '$supplier_name'. Please wait for approval or contact admin.";
-            }
-            error_log("Duplicate material found: $material_name from supplier $supplier_name (Status: " . $existing_material['approval'] . ")");
             continue;
         }
         $check_stmt->close();
@@ -85,14 +79,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $purchase_date = date('Y-m-d');
 
         // Insert material
-        $sql = "INSERT INTO materials (material_name, category, quantity, unit, status, approval, approval_date, location, supplier_name, purchase_date, material_price, labor_other, total_amount, user_id, low_stock_threshold, max_stock) VALUES (?, ?, ?, ?, ?, 'Pending', NOW(), ?, ?, ?, ?, ?, ?, ?, 10, 100)";
+        $sql = "INSERT INTO materials (material_name, category, quantity, unit, status, location, supplier_name, purchase_date, material_price, labor_other, total_amount, user_id, low_stock_threshold, max_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 10, 100)";
         $stmt = $con->prepare($sql);
         $total_amount_int = intval($total_amount); // Convert to integer for total_amount field
-        $stmt->bind_param("ssissssssddi", $material_name, $category, $quantity, $unit, $status, $location, $supplier_name, $purchase_date, $material_price, $labor_other, $total_amount_int, $user_id);
+        $stmt->bind_param("ssisssssddii", $material_name, $category, $quantity, $unit, $status, $location, $supplier_name, $purchase_date, $material_price, $labor_other, $total_amount_int, $user_id);
         
         if ($stmt->execute()) {
             $success_count++;
             error_log("Successfully saved material: $material_name");
+            
+            // Send notification to project manager for this material
+            $notif_type = 'New Material Added';
+            $message = "A new material ($material_name) has been approved and added.";
+            $message_esc = mysqli_real_escape_string($con, $message);
+            
+            // Find project manager user_id (assuming user_level 3 for project manager)
+            $pm_res = $con->query("SELECT id FROM users WHERE user_level = 3 LIMIT 1");
+            $pm_id = ($pm_res && $pm_row = $pm_res->fetch_assoc()) ? intval($pm_row['id']) : 1;
+            
+            $con->query("INSERT INTO notifications_projectmanager (user_id, notif_type, message, is_read, created_at) VALUES ('$pm_id', '$notif_type', '$message_esc', 0, NOW())");
         } else {
             $errors[] = "Failed to save material: $material_name - " . $con->error;
             error_log("Failed to save material: $material_name - " . $con->error);
@@ -107,18 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'errors' => $errors
     ];
     
-    // Add notification for batch materials purchase
-    if ($success_count > 0) {
-        $notif_type = 'Buy a Batch Materials';
-        $message = "Procurement Officer purchased $success_count materials in batch";
-        $message_esc = mysqli_real_escape_string($con, $message);
-        
-        // Find admin user_id (assuming user_level 1)
-        $admin_res = $con->query("SELECT id FROM users WHERE user_level = 1 LIMIT 1");
-        $admin_id = ($admin_res && $admin_row = $admin_res->fetch_assoc()) ? intval($admin_row['id']) : 1;
-        
-        $con->query("INSERT INTO notifications_admin (user_id, notif_type, message, is_read, created_at) VALUES ('$admin_id', '$notif_type', '$message_esc', 0, NOW())");
-    }
+    // No batch notification needed as we're sending per-material notifications now
     
     header('Content-Type: application/json');
     echo json_encode($response);

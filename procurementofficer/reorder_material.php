@@ -14,17 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
     $material_id = intval($_POST['material_id']);
     $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
     
-    // Check if there's already a pending reorder request for this material
-    $check_pending = "SELECT id FROM back_orders WHERE material_id = ? AND reason = 'Reorder' AND approval_status = 'Pending'";
-    $check_stmt = $con->prepare($check_pending);
-    $check_stmt->bind_param("i", $material_id);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
-    
-    if ($check_result->num_rows > 0) {
-        header('Location: po_materials.php?error=There is already a pending reorder request for this material');
-        exit();
-    }
+    // No longer checking for existing reorders - proceed with reorder
     
     // Get the original material details
     $material_query = "SELECT * FROM materials WHERE id = $material_id";
@@ -74,30 +64,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
             exit();
         }
         
-        // Insert into back_orders table with approval_status 'Pending'
-        $backorder_insert = "INSERT INTO back_orders (material_id, quantity, reason, requested_by, approval_status, created_at) 
-                            VALUES (?, ?, 'Reorder', ?, 'Pending', NOW())";
+        // Start transaction for atomic operations
+        $con->begin_transaction();
         
-        $stmt = $con->prepare($backorder_insert);
-        $stmt->bind_param("iii", $material_id, $reorder_quantity, $user_id);
-        
-        if ($stmt->execute()) {
-            // Create a notification for reorder request
-            $notif_type = 'Reorder';
-            $message = "Reordered material: " . $material['material_name'] . " (Quantity: $reorder_quantity)";
-            $message_esc = mysqli_real_escape_string($con, $message);
+        try {
+            // Insert into back_orders table
+            $backorder_insert = "INSERT INTO back_orders (material_id, quantity, reason, requested_by, created_at) 
+                                VALUES (?, ?, 'Reorder', ?, NOW())";
             
-            // Find admin user_id (assuming user_level 2 for admin)
-            $admin_res = $con->query("SELECT id FROM users WHERE user_level = 2 LIMIT 1");
-            $admin_id = ($admin_res && $admin_row = $admin_res->fetch_assoc()) ? intval($admin_row['id']) : 1;
+            $stmt = $con->prepare($backorder_insert);
+            $stmt->bind_param("iii", $material_id, $reorder_quantity, $user_id);
+            $stmt->execute();
             
-            // Insert notification
-            $notif_insert = "INSERT INTO notifications_admin (user_id, notif_type, message, is_read, created_at) VALUES ('$admin_id', '$notif_type', '$message_esc', 0, NOW())";
-            $con->query($notif_insert);
+            // Update the material quantity by adding the reorder quantity
+            $update_quantity = "UPDATE materials SET quantity = quantity + ? WHERE id = ?";
+            $update_stmt = $con->prepare($update_quantity);
+            $update_stmt->bind_param("ii", $reorder_quantity, $material_id);
+            $update_stmt->execute();
             
+            // Deduct from supplier's stock
+            $update_supplier_stock = "UPDATE suppliers_materials sm 
+                                    INNER JOIN suppliers s ON sm.supplier_id = s.id 
+                                    SET sm.quantity = GREATEST(0, sm.quantity - ?) 
+                                    WHERE s.supplier_name = ? AND sm.material_name = ?";
+            $update_supplier_stmt = $con->prepare($update_supplier_stock);
+            $update_supplier_stmt->bind_param("iss", $reorder_quantity, $supplier_name, $material['material_name']);
+            $update_supplier_stmt->execute();
+            
+            // Check if supplier has sufficient stock after deduction
+            $check_stock = "SELECT sm.quantity FROM suppliers_materials sm 
+                           INNER JOIN suppliers s ON sm.supplier_id = s.id 
+                           WHERE s.supplier_name = ? AND sm.material_name = ?";
+            $check_stmt = $con->prepare($check_stock);
+            $check_stmt->bind_param("ss", $supplier_name, $material['material_name']);
+            $check_stmt->execute();
+            $stock_result = $check_stmt->get_result();
+            $stock_data = $stock_result->fetch_assoc();
+            
+            // If stock is low after deduction, send notification
+            if ($stock_data && $stock_data['quantity'] < $reorder_quantity) {
+                $notif_type = 'Low Stock Alert';
+                $message = "Supplier '$supplier_name' has low stock for material '{$material['material_name']}'. Current stock: {$stock_data['quantity']}";
+                $message_esc = mysqli_real_escape_string($con, $message);
+                
+                // Insert notification for procurement
+                $con->query("INSERT INTO notifications_procurement (notif_type, message, is_read, created_at) 
+                            VALUES ('$notif_type', '$message_esc', 0, NOW())");
+            }
+            
+            // Commit all changes if everything is successful
+            $con->commit();
             header('Location: po_materials.php?reordered=1');
-        } else {
-            header('Location: po_materials.php?error=1');
+            
+        } catch (Exception $e) {
+            // Rollback on any error
+            $con->rollback();
+            error_log("Error in reorder process: " . $e->getMessage());
+            header('Location: po_materials.php?error=' . urlencode("Failed to process reorder: " . $e->getMessage()));
+            exit();
+        } finally {
+            // Close all statements
+            if (isset($stmt)) $stmt->close();
+            if (isset($update_stmt)) $update_stmt->close();
+            if (isset($update_supplier_stmt)) $update_supplier_stmt->close();
+            if (isset($check_stmt)) $check_stmt->close();
         }
     } else {
         header('Location: po_materials.php?error=1');
