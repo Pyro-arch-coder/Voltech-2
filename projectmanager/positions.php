@@ -66,15 +66,49 @@ $search = isset($_GET['search']) ? mysqli_real_escape_string($con, $_GET['search
 
 // Build filter for SQL
 $filter_sql = '';
+$sort_sql = ' ORDER BY title ASC'; // Default sort
+
+// Handle search filter and position filter
+$filter_conditions = [];
+
 if ($search !== '') {
-    $filter_sql = "WHERE title LIKE '%$search%'";
+    $filter_conditions[] = "title LIKE '%$search%'";
+}
+
+// Handle position filter
+if (isset($_GET['position']) && !empty($_GET['position'])) {
+    $position_filter = mysqli_real_escape_string($con, $_GET['position']);
+    $filter_conditions[] = "title = '$position_filter'";
+}
+
+// Combine all filter conditions
+if (!empty($filter_conditions)) {
+    $filter_sql = ' WHERE ' . implode(' AND ', $filter_conditions);
+}
+
+// Handle sort parameter
+if (isset($_GET['sort'])) {
+    switch ($_GET['sort']) {
+        case 'title_asc':
+            $sort_sql = ' ORDER BY title ASC';
+            break;
+        case 'title_desc':
+            $sort_sql = ' ORDER BY title DESC';
+            break;
+        case 'rate_asc':
+            $sort_sql = ' ORDER BY daily_rate ASC';
+            break;
+        case 'rate_desc':
+            $sort_sql = ' ORDER BY daily_rate DESC';
+            break;
+    }
 }
 
 // Count total positions for pagination
 $count_query = "SELECT COUNT(*) as total FROM positions $filter_sql";
 $count_result = mysqli_query($con, $count_query);
-$total_positions = mysqli_fetch_assoc($count_result)['total'];
-$total_pages = ceil($total_positions / $limit);
+$total_positions = $count_result ? mysqli_fetch_assoc($count_result)['total'] : 0;
+$total_pages = $total_positions > 0 ? ceil($total_positions / $limit) : 1;
 
 // Handle position actions
 if (isset($_POST['add_position'])) {
@@ -194,9 +228,6 @@ if ($userid) {
                 <a href="equipment.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'equipment.php' ? 'active' : ''; ?>">
                     <i class="fas fa-wrench"></i>Equipment
                 </a>
-                <a href="suppliers.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'suppliers.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-truck"></i>Suppliers
-                </a>
                 <a href="employees.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'employees.php' ? 'active' : ''; ?>">
                     <i class="fas fa-user-friends"></i>Employees
                 </a>
@@ -296,26 +327,81 @@ if ($userid) {
                                        </button>
                                    </div>
                                    <hr>
-                                   <form class="d-flex flex-grow-1 mb-3" method="get" action="" id="searchForm" style="min-width:260px; max-width:400px;">
-                                       <div class="input-group w-100">
-                                           <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                                           <input type="text" class="form-control border-start-0" name="search" placeholder="Search position/title" value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off">
-                                       </div>
-                                   </form>
+                                    <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                                        <form class="d-flex flex-grow-1" method="get" action="" id="searchForm" style="min-width:260px; max-width:400px;">
+                                            <div class="input-group w-100">
+                                                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                                <input type="text" class="form-control border-start-0" name="search" placeholder="Search position/title" value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off">
+                                                <input type="hidden" name="sort" value="<?php echo isset($_GET['sort']) ? htmlspecialchars($_GET['sort']) : ''; ?>">
+                                            </div>
+                                        </form>
+                                        
+                                        <?php
+                                        // Get distinct positions for the filter dropdown
+                                        $position_query = "SELECT DISTINCT title FROM positions ORDER BY title ASC";
+                                        $position_result = mysqli_query($con, $position_query);
+                                        $positions = [];
+                                        while ($row = mysqli_fetch_assoc($position_result)) {
+                                            $positions[] = $row['title'];
+                                        }
+                                        ?>
+                                        
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="positionFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-filter"></i> Filter by Position
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="positionFilterDropdown" style="max-height: 300px; overflow-y: auto;">
+                                                <li><a class="dropdown-item <?php echo !isset($_GET['position']) ? 'active fw-bold' : ''; ?>" href="?search=<?php echo urlencode($search); ?><?php echo isset($_GET['sort']) ? '&sort=' . htmlspecialchars($_GET['sort']) : ''; ?>">All Positions</a></li>
+                                                <?php if (!empty($positions)): ?>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <?php foreach ($positions as $position): ?>
+                                                        <li><a class="dropdown-item <?php echo (isset($_GET['position']) && $_GET['position'] === $position) ? 'active fw-bold' : ''; ?>" 
+                                                              href="?search=<?php echo urlencode($search); ?>&position=<?php echo urlencode($position); ?><?php echo isset($_GET['sort']) ? '&sort=' . htmlspecialchars($_GET['sort']) : ''; ?>">
+                                                            <?php echo htmlspecialchars($position); ?>
+                                                        </a></li>
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
+                                            </ul>
+                                        </div>
+                                    </div>
                                     <div class="table-responsive mb-0">
                                         <table class="table table-bordered table-striped mb-0">
                                             <thead class="thead-dark">
                                                 <tr>
                                                     <th>No.</th>
-                                                    <th>Position</th>
-                                                    <th>Daily Rate</th>
+                                                    <th>
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span>Position</span>
+                                                            <div class="d-flex flex-column ms-2">
+                                                                <a href="?search=<?php echo urlencode($search); ?>&sort=title_asc<?php echo isset($_GET['position']) ? '&position=' . urlencode($_GET['position']) : ''; ?>" class="text-white text-decoration-none <?php echo (isset($_GET['sort']) && $_GET['sort'] === 'title_asc') ? 'opacity-100' : 'opacity-50'; ?>">
+                                                                    <i class="fas fa-caret-up"></i>
+                                                                </a>
+                                                                <a href="?search=<?php echo urlencode($search); ?>&sort=title_desc<?php echo isset($_GET['position']) ? '&position=' . urlencode($_GET['position']) : ''; ?>" class="text-white text-decoration-none mt-n2 <?php echo (isset($_GET['sort']) && $_GET['sort'] === 'title_desc') ? 'opacity-100' : 'opacity-50'; ?>">
+                                                                    <i class="fas fa-caret-down"></i>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </th>
+                                                    <th>
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span>Daily Rate</span>
+                                                            <div class="d-flex flex-column ms-2">
+                                                                <a href="?search=<?php echo urlencode($search); ?>&sort=rate_desc<?php echo isset($_GET['position']) ? '&position=' . urlencode($_GET['position']) : ''; ?>" class="text-white text-decoration-none <?php echo (isset($_GET['sort']) && $_GET['sort'] === 'rate_desc') ? 'opacity-100' : 'opacity-50'; ?>">
+                                                                    <i class="fas fa-caret-up"></i>
+                                                                </a>
+                                                                <a href="?search=<?php echo urlencode($search); ?>&sort=rate_asc<?php echo isset($_GET['position']) ? '&position=' . urlencode($_GET['position']) : ''; ?>" class="text-white text-decoration-none mt-n2 <?php echo (isset($_GET['sort']) && $_GET['sort'] === 'rate_asc') ? 'opacity-100' : 'opacity-50'; ?>">
+                                                                    <i class="fas fa-caret-down"></i>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </th>
                                                     <th class="text-center">Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <?php
-                                                // Fetch all positions (with filter, limit, offset)
-                                                $query = "SELECT * FROM positions $filter_sql ORDER BY title ASC LIMIT $limit OFFSET $offset";
+                                                // Fetch all positions (with filter, sort, limit, offset)
+                                                $query = "SELECT * FROM positions $filter_sql $sort_sql LIMIT $limit OFFSET $offset";
                                                 $result = mysqli_query($con, $query);
                                                 $no = $offset + 1;
                                                 if(mysqli_num_rows($result) > 0) {
@@ -354,15 +440,15 @@ if ($userid) {
                                 <nav aria-label="Page navigation" class="mt-3 mb-3">
                                     <ul class="pagination justify-content-center custom-pagination-green mb-0">
                                         <li class="page-item<?php if($page <= 1) echo ' disabled'; ?>">
-                                        <a class="page-link" href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($search); ?>">Previous</a>
+                                        <a class="page-link" href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($search); ?><?php echo isset($_GET['sort']) ? '&sort=' . htmlspecialchars($_GET['sort']) : ''; ?>">Previous</a>
                                         </li>
                                         <?php for($i = 1; $i <= $total_pages; $i++): ?>
                                         <li class="page-item<?php if($i == $page) echo ' active'; ?>">
-                                            <a class="page-link" href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>"><?php echo $i; ?></a>
+                                            <a class="page-link" href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?><?php echo isset($_GET['sort']) ? '&sort=' . htmlspecialchars($_GET['sort']) : ''; ?>"><?php echo $i; ?></a>
                                         </li>
                                         <?php endfor; ?>
                                         <li class="page-item<?php if($page >= $total_pages) echo ' disabled'; ?>">
-                                        <a class="page-link" href="?page=<?php echo $page+1; ?>&search=<?php echo urlencode($search); ?>">Next</a>
+                                        <a class="page-link" href="?page=<?php echo $page+1; ?>&search=<?php echo urlencode($search); ?><?php echo isset($_GET['sort']) ? '&sort=' . htmlspecialchars($_GET['sort']) : ''; ?>">Next</a>
                                         </li>
                                     </ul>
                                 </nav>

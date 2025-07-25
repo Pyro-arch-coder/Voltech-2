@@ -65,13 +65,60 @@ $offset = ($page - 1) * $limit;
 $search = isset($_GET['search']) ? mysqli_real_escape_string($con, $_GET['search']) : '';
 
 // Build filter for SQL
+$filter_conditions = [];
 $filter_sql = '';
+
+// Search filter
 if ($search !== '') {
-    $filter_sql = "AND (e.first_name LIKE '%$search%' OR e.last_name LIKE '%$search%' OR p.title LIKE '%$search%')";
+    $filter_conditions[] = "(e.first_name LIKE '%$search%' OR e.last_name LIKE '%$search%' OR p.title LIKE '%$search%')";
+}
+
+// Employee type filter
+if (isset($_GET['type']) && !empty($_GET['type'])) {
+    $employee_type = mysqli_real_escape_string($con, $_GET['type']);
+    $filter_conditions[] = "e.company_type = '$employee_type'";
+}
+
+// Position filter
+if (isset($_GET['position_id']) && !empty($_GET['position_id'])) {
+    $position_id = mysqli_real_escape_string($con, $_GET['position_id']);
+    $filter_conditions[] = "e.position_id = '$position_id'";
+}
+
+// Combine all filter conditions
+if (!empty($filter_conditions)) {
+    $filter_sql = 'AND ' . implode(' AND ', $filter_conditions);
+}
+
+// Handle sort parameter
+$sort_sql = ' ORDER BY e.last_name ASC, e.first_name ASC'; // Default sort
+if (isset($_GET['sort'])) {
+    switch ($_GET['sort']) {
+        case 'name_asc':
+            $sort_sql = ' ORDER BY e.last_name ASC, e.first_name ASC';
+            break;
+        case 'name_desc':
+            $sort_sql = ' ORDER BY e.last_name DESC, e.first_name DESC';
+            break;
+        case 'position_asc':
+            $sort_sql = ' ORDER BY p.title ASC, e.last_name ASC';
+            break;
+        case 'position_desc':
+            $sort_sql = ' ORDER BY p.title DESC, e.last_name ASC';
+            break;
+        case 'type_asc':
+            $sort_sql = ' ORDER BY e.company_type ASC, e.last_name ASC';
+            break;
+        case 'type_desc':
+            $sort_sql = ' ORDER BY e.company_type DESC, e.last_name ASC';
+            break;
+    }
 }
 
 // Count total employees for pagination
-$count_query = "SELECT COUNT(*) as total FROM employees e JOIN positions p ON e.position_id = p.position_id WHERE e.user_id = '$userid' $filter_sql";
+$count_query = "SELECT COUNT(*) as total FROM employees e 
+                JOIN positions p ON e.position_id = p.position_id 
+                WHERE e.user_id = '$userid' $filter_sql";
 $count_result = mysqli_query($con, $count_query);
 $total_employees = mysqli_fetch_assoc($count_result)['total'];
 $total_pages = ceil($total_employees / $limit);
@@ -81,12 +128,13 @@ if (isset($_POST['add_employee'])) {
     $first_name = mysqli_real_escape_string($con, $_POST['first_name']);
     $last_name = mysqli_real_escape_string($con, $_POST['last_name']);
     $position_id = mysqli_real_escape_string($con, $_POST['position_id']);
+    $company_type = mysqli_real_escape_string($con, $_POST['company_type']);
     $contact_number = mysqli_real_escape_string($con, $_POST['contact_number']);
     $email = mysqli_real_escape_string($con, $_POST['email']);
     
     // Insert new employee
-    $query = "INSERT INTO employees (user_id, first_name, last_name, position_id, contact_number, email) 
-              VALUES ('$userid', '$first_name', '$last_name', '$position_id', '$contact_number', '$email')";
+    $query = "INSERT INTO employees (user_id, first_name, last_name, position_id, company_type, contact_number, email) 
+              VALUES ('$userid', '$first_name', '$last_name', '$position_id', '$company_type', '$contact_number', '$email')";
     if (mysqli_query($con, $query)) {
         header("Location: employees.php?success=add");
     } else {
@@ -101,12 +149,14 @@ if (isset($_POST['update_employee'])) {
     $first_name = mysqli_real_escape_string($con, $_POST['first_name']);
     $last_name = mysqli_real_escape_string($con, $_POST['last_name']);
     $position_id = mysqli_real_escape_string($con, $_POST['position_id']);
+    $company_type = mysqli_real_escape_string($con, $_POST['company_type']);
     $contact_number = mysqli_real_escape_string($con, $_POST['contact_number']);
     $email = mysqli_real_escape_string($con, $_POST['email']);
     
     // Update employee
     $query = "UPDATE employees SET first_name = '$first_name', last_name = '$last_name', 
-              position_id = '$position_id', contact_number = '$contact_number', email = '$email' 
+              position_id = '$position_id', company_type = '$company_type', 
+              contact_number = '$contact_number', email = '$email' 
               WHERE employee_id = '$employee_id' AND user_id = '$userid'";
     if (mysqli_query($con, $query)) {
         header("Location: employees.php?success=edit");
@@ -210,9 +260,6 @@ if ($userid) {
                 <a href="equipment.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'equipment.php' ? 'active' : ''; ?>">
                     <i class="fas fa-wrench"></i>Equipment
                 </a>
-                <a href="suppliers.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'suppliers.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-truck"></i>Suppliers
-                </a>
                 <a href="employees.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'employees.php' ? 'active' : ''; ?>">
                     <i class="fas fa-user-friends"></i>Employees
                 </a>
@@ -267,19 +314,95 @@ if ($userid) {
                       </button>
                     </div>
                     <hr>
-                    <form class="d-flex flex-grow-1 mb-3" method="get" action="" id="searchForm" style="min-width:260px; max-width:400px;">
-                      <div class="input-group w-100">
-                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" class="form-control border-start-0" name="search" placeholder="Search name or position" value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off">
+                    <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                      <form class="d-flex flex-grow-1" method="get" action="" id="searchForm" style="min-width:260px; max-width:400px;">
+                        <div class="input-group w-100">
+                          <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                          <input type="text" class="form-control border-start-0" name="search" placeholder="Search name or position" value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off">
+                          <?php if (isset($_GET['type'])): ?>
+                            <input type="hidden" name="type" value="<?php echo htmlspecialchars($_GET['type']); ?>">
+                          <?php endif; ?>
+                          <?php if (isset($_GET['position_id']) && !empty($_GET['position_id'])): ?>
+                            <input type="hidden" name="position_id" value="<?php echo htmlspecialchars($_GET['position_id']); ?>">
+                          <?php endif; ?>
+                        </div>
+                      </form>
+                      <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="employeeTypeFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                          <?php echo isset($_GET['type']) ? htmlspecialchars($_GET['type']) : 'All Employee Types'; ?>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="employeeTypeFilter">
+                          <li><a class="dropdown-item<?php echo !isset($_GET['type']) ? ' active' : ''; ?>" href="?search=<?php echo urlencode($search); ?><?php echo isset($_GET['position_id']) ? '&position_id=' . urlencode($_GET['position_id']) : ''; ?>">All Employee Types</a></li>
+                          <li><a class="dropdown-item<?php echo (isset($_GET['type']) && $_GET['type'] === 'Company Employee') ? ' active' : ''; ?>" href="?search=<?php echo urlencode($search); ?>&type=<?php echo urlencode('Company Employee'); ?><?php echo isset($_GET['position_id']) ? '&position_id=' . urlencode($_GET['position_id']) : ''; ?>">Company Employee</a></li>
+                          <li><a class="dropdown-item<?php echo (isset($_GET['type']) && $_GET['type'] === 'Outsourced Personnel') ? ' active' : ''; ?>" href="?search=<?php echo urlencode($search); ?>&type=<?php echo urlencode('Outsourced Personnel'); ?><?php echo isset($_GET['position_id']) ? '&position_id=' . urlencode($_GET['position_id']) : ''; ?>">Outsourced Personnel</a></li>
+                        </ul>
                       </div>
-                    </form>
+                      <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="positionFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                          <?php 
+                          if (isset($_GET['position_id']) && !empty($_GET['position_id'])) {
+                              $pos_id = $_GET['position_id'];
+                              $pos_query = "SELECT title FROM positions WHERE position_id = '$pos_id' LIMIT 1";
+                              $pos_result = mysqli_query($con, $pos_query);
+                              if ($pos_result && mysqli_num_rows($pos_result) > 0) {
+                                  $pos_data = mysqli_fetch_assoc($pos_result);
+                                  echo htmlspecialchars($pos_data['title']);
+                              } else {
+                                  echo 'All Positions';
+                              }
+                          } else {
+                              echo 'All Positions';
+                          }
+                          ?>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="positionFilter">
+                          <li><a class="dropdown-item<?php echo !isset($_GET['position_id']) ? ' active' : ''; ?>" href="?search=<?php echo urlencode($search); ?><?php echo isset($_GET['type']) ? '&type=' . urlencode($_GET['type']) : ''; ?>">All Positions</a></li>
+                          <?php
+                          $positions_query = "SELECT position_id, title FROM positions ORDER BY title ASC";
+                          $positions_result = mysqli_query($con, $positions_query);
+                          while ($position = mysqli_fetch_assoc($positions_result)) {
+                              $is_active = (isset($_GET['position_id']) && $_GET['position_id'] == $position['position_id']) ? ' active' : '';
+                              echo '<li><a class="dropdown-item' . $is_active . '" href="?search=' . urlencode($search) . 
+                                   (isset($_GET['type']) ? '&type=' . urlencode($_GET['type']) : '') . 
+                                   '&position_id=' . $position['position_id'] . '">' . 
+                                   htmlspecialchars($position['title']) . '</a></li>';
+                          }
+                          ?>
+                        </ul>
+                      </div>
+                    </div>
                     <div class="table-responsive mb-0">
                       <table class="table table-bordered table-striped mb-0">
                         <thead class="thead-dark">
                           <tr>
                             <th>No.</th>
-                            <th>Employee Name</th>
-                            <th>Position</th>
+                            <th>
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span>Employee Name</span>
+                                <div class="d-flex flex-column ms-2">
+                                  <a href="?search=<?php echo urlencode($search); ?><?php echo isset($_GET['type']) ? '&type=' . urlencode($_GET['type']) : ''; ?><?php echo isset($_GET['position_id']) ? '&position_id=' . urlencode($_GET['position_id']) : ''; ?>&sort=name_asc" class="text-white text-decoration-none"><i class="fas fa-caret-up"></i></a>
+                                  <a href="?search=<?php echo urlencode($search); ?><?php echo isset($_GET['type']) ? '&type=' . urlencode($_GET['type']) : ''; ?><?php echo isset($_GET['position_id']) ? '&position_id=' . urlencode($_GET['position_id']) : ''; ?>&sort=name_desc" class="text-white text-decoration-none"><i class="fas fa-caret-down"></i></a>
+                                </div>
+                              </div>
+                            </th>
+                            <th>
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span>Position</span>
+                                <div class="d-flex flex-column ms-2">
+                                  <a href="?search=<?php echo urlencode($search); ?><?php echo isset($_GET['type']) ? '&type=' . urlencode($_GET['type']) : ''; ?><?php echo isset($_GET['position_id']) ? '&position_id=' . urlencode($_GET['position_id']) : ''; ?>&sort=position_asc" class="text-white text-decoration-none"><i class="fas fa-caret-up"></i></a>
+                                  <a href="?search=<?php echo urlencode($search); ?><?php echo isset($_GET['type']) ? '&type=' . urlencode($_GET['type']) : ''; ?><?php echo isset($_GET['position_id']) ? '&position_id=' . urlencode($_GET['position_id']) : ''; ?>&sort=position_desc" class="text-white text-decoration-none"><i class="fas fa-caret-down"></i></a>
+                                </div>
+                              </div>
+                            </th>
+                            <th>
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span>Employee Type</span>
+                                <div class="d-flex flex-column ms-2">
+                                  <a href="?search=<?php echo urlencode($search); ?><?php echo isset($_GET['type']) ? '&type=' . urlencode($_GET['type']) : ''; ?><?php echo isset($_GET['position_id']) ? '&position_id=' . urlencode($_GET['position_id']) : ''; ?>&sort=type_asc" class="text-white text-decoration-none"><i class="fas fa-caret-up"></i></a>
+                                  <a href="?search=<?php echo urlencode($search); ?><?php echo isset($_GET['type']) ? '&type=' . urlencode($_GET['type']) : ''; ?><?php echo isset($_GET['position_id']) ? '&position_id=' . urlencode($_GET['position_id']) : ''; ?>&sort=type_desc" class="text-white text-decoration-none"><i class="fas fa-caret-down"></i></a>
+                                </div>
+                              </div>
+                            </th>
                             <th>Contact</th>
                             <th class="text-center">Actions</th>
                           </tr>
@@ -287,7 +410,12 @@ if ($userid) {
                         <tbody>
                           <?php
                           // Fetch all employees with position details (with filter, limit, offset)
-                          $query = "SELECT e.*, p.title as position_title, p.daily_rate FROM employees e JOIN positions p ON e.position_id = p.position_id WHERE e.user_id = '$userid' $filter_sql ORDER BY e.last_name ASC LIMIT $limit OFFSET $offset";
+                          $query = "SELECT e.*, p.title as position_title, p.daily_rate 
+                                    FROM employees e 
+                                    JOIN positions p ON e.position_id = p.position_id 
+                                    WHERE e.user_id = '$userid' $filter_sql 
+                                    $sort_sql 
+                                    LIMIT $limit OFFSET $offset";
                           $result = mysqli_query($con, $query);
                           $no = $offset + 1;
                           if(mysqli_num_rows($result) > 0) {
@@ -297,7 +425,8 @@ if ($userid) {
                             <td><?php echo $no++; ?></td>
                             <td class="emp-name"><?php echo $row['first_name'] . ' ' . $row['last_name']; ?></td>
                             <td class="emp-position"><?php echo $row['position_title']; ?></td>
-                            <td class="emp-contact" data-number="<?php echo $row['contact_number']; ?>" data-email="<?php echo $row['email']; ?>">
+                            <td><?php echo htmlspecialchars($row['company_type']); ?></td>
+                            <td class="emp-contact" data-number="<?php echo $row['contact_number']; ?>" data-email="<?php echo $row['email']; ?>" data-company-type="<?php echo htmlspecialchars($row['company_type']); ?>">
                               <?php 
                               if (!empty($row['contact_number'])) {
                                   echo '<i class="fas fa-phone-alt"></i> ' . $row['contact_number'] . '<br>';
@@ -309,7 +438,12 @@ if ($userid) {
                             </td>
                             <td class="text-center">
                               <div class="action-buttons">
-                                <a href="#" class="btn btn-warning btn-sm text-dark edit-employee-btn" data-id="<?php echo $row['employee_id']; ?>" data-first="<?php echo htmlspecialchars($row['first_name']); ?>" data-last="<?php echo htmlspecialchars($row['last_name']); ?>" data-position="<?php echo $row['position_id']; ?>">
+                                <a href="#" class="btn btn-warning btn-sm text-dark edit-employee-btn" 
+                                   data-id="<?php echo $row['employee_id']; ?>" 
+                                   data-first="<?php echo htmlspecialchars($row['first_name']); ?>" 
+                                   data-last="<?php echo htmlspecialchars($row['last_name']); ?>" 
+                                   data-position="<?php echo $row['position_id']; ?>"
+                                   data-company-type="<?php echo htmlspecialchars($row['company_type']); ?>">
                                   <i class="fas fa-edit"></i> Edit
                                 </a>
                                 <a href="#" class="btn btn-danger btn-sm text-white delete-employee-btn" data-id="<?php echo $row['employee_id']; ?>" data-name="<?php echo $row['first_name'] . ' ' . $row['last_name']; ?>">
@@ -331,17 +465,17 @@ if ($userid) {
                     </div>
                     <nav aria-label="Page navigation" class="mt-3 mb-3">
                       <ul class="pagination justify-content-center custom-pagination-green mb-0">
-                        <li class="page-item<?php if($page <= 1) echo ' disabled'; ?>">
-                          <a class="page-link" href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($search); ?>">Previous</a>
-                        </li>
-                        <?php for($i = 1; $i <= $total_pages; $i++): ?>
-                        <li class="page-item<?php if($i == $page) echo ' active'; ?>">
-                          <a class="page-link" href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>"><?php echo $i; ?></a>
-                        </li>
-                        <?php endfor; ?>
-                        <li class="page-item<?php if($page >= $total_pages) echo ' disabled'; ?>">
-                          <a class="page-link" href="?page=<?php echo $page+1; ?>&search=<?php echo urlencode($search); ?>">Next</a>
-                        </li>
+                          <li class="page-item<?php if($page <= 1) echo ' disabled'; ?>">
+                            <a class="page-link" href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($search); ?><?php echo isset($_GET['type']) ? '&type=' . urlencode($_GET['type']) : ''; ?><?php echo isset($_GET['position_id']) ? '&position_id=' . urlencode($_GET['position_id']) : ''; ?><?php echo isset($_GET['sort']) ? '&sort=' . urlencode($_GET['sort']) : ''; ?>">Previous</a>
+                          </li>
+                          <?php for($i = 1; $i <= $total_pages; $i++): ?>
+                          <li class="page-item<?php if($i == $page) echo ' active'; ?>">
+                            <a class="page-link" href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?><?php echo isset($_GET['type']) ? '&type=' . urlencode($_GET['type']) : ''; ?><?php echo isset($_GET['position_id']) ? '&position_id=' . urlencode($_GET['position_id']) : ''; ?><?php echo isset($_GET['sort']) ? '&sort=' . urlencode($_GET['sort']) : ''; ?>"><?php echo $i; ?></a>
+                          </li>
+                          <?php endfor; ?>
+                          <li class="page-item<?php if($page >= $total_pages) echo ' disabled'; ?>">
+                            <a class="page-link" href="?page=<?php echo $page+1; ?>&search=<?php echo urlencode($search); ?><?php echo isset($_GET['type']) ? '&type=' . urlencode($_GET['type']) : ''; ?><?php echo isset($_GET['position_id']) ? '&position_id=' . urlencode($_GET['position_id']) : ''; ?><?php echo isset($_GET['sort']) ? '&sort=' . urlencode($_GET['sort']) : ''; ?>">Next</a>
+                          </li>
                       </ul>
                     </nav>
                   </div>
@@ -410,6 +544,14 @@ if ($userid) {
                                 ?>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label for="company_type"><b>Employee Type</b></label>
+                            <select class="form-control" id="company_type" name="company_type" required>
+                                <option value="">Select Employee Type</option>
+                                <option value="Outsourced Personnel">Outsourced Personnel</option>
+                                <option value="Company Employee">Company Employee</option>
+                            </select>
+                        </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -470,6 +612,14 @@ if ($userid) {
                                     echo "<option value='{$position['position_id']}'>{$position['title']} (₱{$position['daily_rate']})</option>";
                                 }
                                 ?>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit_company_type"><b>Employee Type</b></label>
+                            <select class="form-control" id="edit_company_type" name="company_type" required>
+                                <option value="">Select Employee Type</option>
+                                <option value="Outsourced Personnel">Outsourced Personnel</option>
+                                <option value="Company Employee">Company Employee</option>
                             </select>
                         </div>
                         <div class="row">
@@ -618,7 +768,10 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('edit_first_name').value = this.getAttribute('data-first');
       document.getElementById('edit_last_name').value = this.getAttribute('data-last');
       document.getElementById('edit_position_id').value = this.getAttribute('data-position');
-      // Optionally, fetch contact/email from row if you want to prefill those too
+      // Set the company type from the data attribute
+      document.getElementById('edit_company_type').value = this.getAttribute('data-company-type') || '';
+      
+      // Fetch contact/email from row
       var row = this.closest('tr');
       if (row) {
         var contactCell = row.querySelector('.emp-contact');

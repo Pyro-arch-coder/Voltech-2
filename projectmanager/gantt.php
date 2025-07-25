@@ -65,7 +65,7 @@ if ($userid) {
 }
 
 $projects = [];
-$res = mysqli_query($con, "SELECT project_id, project, start_date, deadline, io FROM projects WHERE user_id='$userid' AND archived=0 AND io IN (1,4) ORDER BY project_id DESC");
+$res = mysqli_query($con, "SELECT project_id, project, start_date, deadline FROM projects WHERE user_id='$userid' AND archived=0 ORDER BY project_id DESC");
 if ($res) {
     while ($row = mysqli_fetch_assoc($res)) {
         $projects[] = $row;
@@ -122,9 +122,6 @@ $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
                 </a>
                 <a href="equipment.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'equipment.php' ? 'active' : ''; ?>">
                     <i class="fas fa-wrench"></i>Equipment
-                </a>
-                <a href="suppliers.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'suppliers.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-truck"></i>Suppliers
                 </a>
                 <a href="employees.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'employees.php' ? 'active' : ''; ?>">
                     <i class="fas fa-user-friends"></i>Employees

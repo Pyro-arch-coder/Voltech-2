@@ -83,17 +83,65 @@ if ($userid) {
 // Get filter values
 $search = isset($_GET['search']) ? mysqli_real_escape_string($con, $_GET['search']) : '';
 $status_filter = isset($_GET['status']) ? mysqli_real_escape_string($con, $_GET['status']) : '';
+$location_filter = isset($_GET['location_filter']) ? mysqli_real_escape_string($con, $_GET['location_filter']) : '';
+$price_sort = isset($_GET['price_sort']) ? $_GET['price_sort'] : '';
+
+// Handle sorting
+$sort_field = isset($_GET['sort']) ? $_GET['sort'] : 'id';
+$sort_order = 'DESC';
+
+// Validate sort field to prevent SQL injection
+$valid_sort_fields = ['id', 'equipment_name', 'equipment_type', 'purchase_date', 'status', 'last_maintenance_date'];
+if (!in_array($sort_field, $valid_sort_fields)) {
+    $sort_field = 'id';
+}
+
+// Toggle sort order if clicking on the same field
+if (isset($_GET['sort']) && isset($_GET['order']) && $_GET['order'] === 'DESC') {
+    $sort_order = 'ASC';
+}
+
+// Debug: Log filter values
+error_log("Search: " . $search);
+error_log("Status Filter: " . $status_filter);
+error_log("Location Filter: " . $location_filter);
 
 // Build WHERE clause
 $where_conditions = [];
 if (!empty($search)) {
-    $where_conditions[] = "(equipment_name LIKE '%$search%')";
+    $where_conditions[] = "(equipment_name LIKE '%$search%' OR equipment_type LIKE '%$search%' OR status LIKE '%$search%' OR location LIKE '%$search%')";
 }
 if (!empty($status_filter)) {
-    $where_conditions[] = "status = '$status_filter'";
+    $where_conditions[] = "status = '" . mysqli_real_escape_string($con, $status_filter) . "'";
+}
+if (!empty($location_filter)) {
+    $where_conditions[] = "location = '" . mysqli_real_escape_string($con, $location_filter) . "'";
 }
 
 $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
+
+// Debug: Log price sort value
+error_log("Price Sort: " . $price_sort);
+
+// Build ORDER BY clause based on sort parameters
+$order_by = [];
+
+// Handle price sorting
+if (!empty($price_sort)) {
+    $price_order = ($price_sort == 'lowest') ? 'ASC' : 'DESC';
+    $order_by[] = "equipment_price $price_order";
+    error_log("Price sort applied: equipment_price $price_order");
+}
+
+// If no specific sort is selected, use the default
+if (empty($order_by)) {
+    $order_by[] = "$sort_field $sort_order";
+    error_log("Using default sort: $sort_field $sort_order");
+}
+
+// Build the final ORDER BY clause
+$order_by_clause = !empty($order_by) ? "ORDER BY " . implode(", ", $order_by) : "";
+error_log("Final ORDER BY clause: " . $order_by_clause);
 
 // Pagination settings
 $items_per_page = 10;
@@ -124,13 +172,17 @@ $maintenance = $maintenance_query->fetch_assoc();
 $statuses_query = "SELECT DISTINCT status FROM equipment ORDER BY status";
 $statuses = $con->query($statuses_query);
 
-// Fetch equipment with pagination and filters
-if (!empty($where_clause)) {
-    $sql = "SELECT * FROM equipment $where_clause AND approval = 'Approved' ORDER BY id DESC LIMIT $offset, $items_per_page";
-} else {
-    $sql = "SELECT * FROM equipment WHERE approval = 'Approved' ORDER BY id DESC LIMIT $offset, $items_per_page";
-}
+// Debug: Output the SQL query for testing
+error_log("SQL Query: SELECT * FROM equipment $where_clause $order_by_clause LIMIT $offset, $items_per_page");
+
+// Fetch equipment with pagination, filters, and sorting
+$sql = "SELECT * FROM equipment $where_clause $order_by_clause LIMIT $offset, $items_per_page";
 $result = $con->query($sql);
+
+// Check for query errors
+if (!$result) {
+    error_log("Query failed: " . $con->error);
+}
 
 ?>
 <!DOCTYPE html>
@@ -171,9 +223,6 @@ $result = $con->query($sql);
                 </a>
                 <a href="equipment.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'equipment.php' ? 'active' : ''; ?>">
                     <i class="fas fa-wrench"></i>Equipment
-                </a>
-                <a href="suppliers.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'suppliers.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-truck"></i>Suppliers
                 </a>
                 <a href="employees.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'employees.php' ? 'active' : ''; ?>">
                     <i class="fas fa-user-friends"></i>Employees
@@ -228,25 +277,114 @@ $result = $con->query($sql);
                             <h4 class="mb-0">Equipment List</h4>
                         </div>
                         <hr>
-                        <form class="d-flex flex-wrap gap-2 mb-3" method="get" action="" id="searchForm" style="min-width:260px; max-width:600px;">
-                            <div class="input-group" style="min-width:220px; max-width:320px;">
-                                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                                <input type="text" class="form-control border-start-0" name="search" placeholder="Search equipment name" value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off">
+                        <?php
+                        // Get unique locations for the location filter
+                        $location_query = $con->query("SELECT DISTINCT location FROM equipment WHERE location IS NOT NULL AND location != '' ORDER BY location");
+                        
+                        // Get price sort value from URL if set
+                        $price_sort = isset($_GET['price_sort']) ? $_GET['price_sort'] : '';
+                        
+                        // Get location filter value from URL if set
+                        $location_filter = isset($_GET['location_filter']) ? $_GET['location_filter'] : '';
+                        
+                        // Debug: Check if location filter is being set
+                        error_log("Location Filter: " . $location_filter);
+                        ?>
+                        
+                        <style>
+                            .filter-row {
+                                display: flex;
+                                flex-wrap: wrap;
+                                gap: 10px;
+                                margin-bottom: 15px;
+                                align-items: center;
+                            }
+                            .filter-group {
+                                flex: 1;
+                                min-width: 150px;
+                                max-width: 200px;
+                            }
+                            .search-group {
+                                flex: 2;
+                                min-width: 250px;
+                                max-width: 350px;
+                            }
+                        </style>
+                        
+                        <form method="get" action="" id="searchForm">
+                            <div class="filter-row">
+                                <!-- Search by name -->
+                                <div class="search-group">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                        <input type="text" class="form-control border-start-0" name="search" placeholder="Search equipment..." value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off">
+                                    </div>
                                 </div>
-                            <select name="status" class="form-control" style="max-width:180px;" id="statusFilter">
+                                
+                                <!-- Status filter -->
+                                <div class="filter-group">
+                                    <select name="status" class="form-control w-100" id="statusFilter">
                                         <option value="">All Status</option>
                                         <?php 
                                         $statuses->data_seek(0); // Reset the pointer
                                         while ($status = $statuses->fetch_assoc()): ?>
-                                    <option value="<?php echo htmlspecialchars($status['status']); ?>" <?php echo ($status_filter == $status['status']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($status['status']); ?></option>
+                                            <option value="<?php echo htmlspecialchars($status['status']); ?>" <?php echo ($status_filter == $status['status']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($status['status']); ?></option>
                                         <?php endwhile; ?>
                                     </select>
+                                </div>
+                                
+                                <!-- Location filter -->
+                                <div class="filter-group">
+                                    <select name="location_filter" class="form-control w-100" id="locationFilter">
+                                        <option value="">All Locations</option>
+                                        <?php 
+                                        $location_query->data_seek(0); // Reset the pointer
+                                        while ($location = $location_query->fetch_assoc()): 
+                                            if (!empty($location['location'])): // Skip empty locations
+                                        ?>
+                                            <option value="<?php echo htmlspecialchars($location['location']); ?>" <?php echo ($location_filter == $location['location']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($location['location']); ?></option>
+                                        <?php 
+                                            endif;
+                                        endwhile; 
+                                        ?>
+                                    </select>
+                                </div>
+                                
+                                <!-- Price sort dropdown -->
+                                <div class="filter-group">
+                                    <select name="price_sort" class="form-control w-100" id="priceSort">
+                                        <option value="">Sort by Price</option>
+                                        <option value="lowest" <?php echo ($price_sort == 'lowest') ? 'selected' : ''; ?>>Lowest to Highest</option>
+                                        <option value="highest" <?php echo ($price_sort == 'highest') ? 'selected' : ''; ?>>Highest to Lowest</option>
+                                    </select>
+                                </div>
+                            </div>
                         </form>
                         <script>
                         document.addEventListener('DOMContentLoaded', function() {
                             var searchInput = document.getElementById('searchInput');
                             var statusFilter = document.getElementById('statusFilter');
+                            var locationFilter = document.getElementById('locationFilter');
+                            var priceSort = document.getElementById('priceSort');
                             var searchForm = document.getElementById('searchForm');
+                            
+                            // Function to submit form
+                            function submitForm() {
+                                searchForm.submit();
+                            }
+                            
+                            // Add event listeners for all filter dropdowns
+                            if (statusFilter) {
+                                statusFilter.addEventListener('change', submitForm);
+                            }
+                            if (locationFilter) {
+                                locationFilter.addEventListener('change', submitForm);
+                            }
+                            if (priceSort) {
+                                priceSort.addEventListener('change', submitForm);
+                            }
+                            
+                            // Search input with debounce
                             if (searchInput && searchForm) {
                                 var searchTimeout;
                                 searchInput.addEventListener('input', function() {
@@ -268,11 +406,47 @@ $result = $con->query($sql);
                                 <thead class="thead-dark">
                                     <tr>
                                         <th>No.</th>
-                                        <th>Equipment Name</th>
-                                        <th>Location</th>
-                                        <th>Equipment Price</th>
-                                        <th>Depreciation / Rental Fee</th>
-                                        <th>Status</th>
+                                        <th>
+                                            <a href="?sort=equipment_name&order=<?php echo ($sort_field == 'equipment_name' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="text-white text-decoration-none">
+                                                Equipment Name
+                                                <?php if ($sort_field == 'equipment_name'): ?>
+                                                    <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
+                                                <?php else: ?>
+                                                    <i class="fas fa-sort ms-1 text-white-50"></i>
+                                                <?php endif; ?>
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="?sort=location&order=<?php echo ($sort_field == 'location' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="text-white text-decoration-none">
+                                                Location
+                                                <?php if ($sort_field == 'location'): ?>
+                                                    <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
+                                                <?php else: ?>
+                                                    <i class="fas fa-sort ms-1 text-white-50"></i>
+                                                <?php endif; ?>
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="?sort=equipment_price&order=<?php echo ($sort_field == 'equipment_price' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="text-white text-decoration-none">
+                                                Equipment Price
+                                                <?php if ($sort_field == 'equipment_price'): ?>
+                                                    <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
+                                                <?php else: ?>
+                                                    <i class="fas fa-sort ms-1 text-white-50"></i>
+                                                <?php endif; ?>
+                                            </a>
+                                        </th>
+                                        <th>Depreciation</th>
+                                        <th>
+                                            <a href="?sort=status&order=<?php echo ($sort_field == 'status' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="text-white text-decoration-none">
+                                                Status
+                                                <?php if ($sort_field == 'status'): ?>
+                                                    <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
+                                                <?php else: ?>
+                                                    <i class="fas fa-sort ms-1 text-white-50"></i>
+                                                <?php endif; ?>
+                                            </a>
+                                        </th>
                                         <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
@@ -330,21 +504,68 @@ $result = $con->query($sql);
                                 </tbody>
                             </table>
                         </div>
+                        <?php
+                        // Function to build query string with all current parameters
+                        function buildQueryString($page_num = null) {
+                            $params = [];
+                            
+                            // Add page if provided
+                            if ($page_num !== null) {
+                                $params['page'] = $page_num;
+                            }
+                            
+                            // Add search if exists
+                            if (!empty($_GET['search'])) {
+                                $params['search'] = $_GET['search'];
+                            }
+                            
+                            // Add status filter if exists
+                            if (!empty($_GET['status'])) {
+                                $params['status'] = $_GET['status'];
+                            }
+                            
+                            // Add location filter if exists
+                            if (!empty($_GET['location_filter'])) {
+                                $params['location_filter'] = $_GET['location_filter'];
+                            }
+                            
+                            // Add price sort if exists
+                            if (!empty($_GET['price_sort'])) {
+                                $params['price_sort'] = $_GET['price_sort'];
+                            }
+                            
+                            // Add sort and order if they exist
+                            if (!empty($_GET['sort'])) {
+                                $params['sort'] = $_GET['sort'];
+                                if (!empty($_GET['order'])) {
+                                    $params['order'] = $_GET['order'];
+                                }
+                            }
+                            
+                            return !empty($params) ? '?' . http_build_query($params) : '?';
+                        }
+                        ?>
+                        
                         <nav aria-label="Page navigation" class="mt-3 mb-3">
                             <ul class="pagination justify-content-center custom-pagination-green mb-0">
+                                <!-- Previous Button -->
                                 <li class="page-item<?php if($page <= 1) echo ' disabled'; ?>">
-                                    <a class="page-link" href="?page=<?php echo $page-1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>">Previous</a>
-                                                </li>
+                                    <a class="page-link" href="<?php echo buildQueryString($page - 1); ?>">Previous</a>
+                                </li>
+                                
+                                <!-- Page Numbers -->
                                 <?php for($i = 1; $i <= $total_pages; $i++): ?>
                                     <li class="page-item<?php if($i == $page) echo ' active'; ?>">
-                                        <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>"><?php echo $i; ?></a>
-                                                </li>
-                                            <?php endfor; ?>
+                                        <a class="page-link" href="<?php echo buildQueryString($i); ?>"><?php echo $i; ?></a>
+                                    </li>
+                                <?php endfor; ?>
+                                
+                                <!-- Next Button -->
                                 <li class="page-item<?php if($page >= $total_pages) echo ' disabled'; ?>">
-                                    <a class="page-link" href="?page=<?php echo $page+1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>">Next</a>
-                                                </li>
-                                        </ul>
-                                    </nav>
+                                    <a class="page-link" href="<?php echo buildQueryString($page + 1); ?>">Next</a>
+                                </li>
+                            </ul>
+                        </nav>
                     </div>
                 </div>
             </div>

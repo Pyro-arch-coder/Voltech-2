@@ -120,9 +120,9 @@ $suppliers = $con->query($suppliers_query);
 
 // Fetch materials from database with pagination and filters
 if (!empty($where_clause)) {
-    $sql = "SELECT * FROM materials $where_clause AND approval = 'Approved' LIMIT $offset, $items_per_page";
+    $sql = "SELECT * FROM materials $where_clause LIMIT $offset, $items_per_page";
 } else {
-    $sql = "SELECT * FROM materials WHERE approval = 'Approved' LIMIT $offset, $items_per_page";
+    $sql = "SELECT * FROM materials LIMIT $offset, $items_per_page";
 }
 $result = $con->query($sql);
 
@@ -181,9 +181,6 @@ function short_number_format($num, $precision = 1) {
                 </a>
                 <a href="equipment.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'equipment.php' ? 'active' : ''; ?>">
                     <i class="fas fa-wrench"></i>Equipment
-                </a>
-                <a href="suppliers.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'suppliers.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-truck"></i>Suppliers
                 </a>
                 <a href="employees.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'employees.php' ? 'active' : ''; ?>">
                     <i class="fas fa-user-friends"></i>Employees

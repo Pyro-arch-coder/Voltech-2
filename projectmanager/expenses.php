@@ -72,9 +72,11 @@ if ($userid) {
     }
 }
 
-
+// Get filter values
 $search = isset($_GET['search']) ? mysqli_real_escape_string($con, $_GET['search']) : '';
 $type_filter = isset($_GET['type']) ? mysqli_real_escape_string($con, $_GET['type']) : '';
+$expensecategory = isset($_GET['expensecategory']) ? $_GET['expensecategory'] : '';
+$amount_sort = isset($_GET['amount_sort']) ? $_GET['amount_sort'] : '';
 $date_range = isset($_GET['date_range']) ? mysqli_real_escape_string($con, $_GET['date_range']) : '';
 
 // Build WHERE clause
@@ -85,6 +87,7 @@ if (!empty($search)) {
 if (!empty($type_filter)) {
     $where_conditions[] = "expensecategory = '$type_filter'";
 }
+// Note: Project/Other filter removed since project_id column doesn't exist
 if (!empty($date_range)) {
     switch($date_range) {
         case 'today':
@@ -102,7 +105,36 @@ if (!empty($date_range)) {
     }
 }
 
+// Handle amount sorting
+$order_by = [];
+if (!empty($amount_sort)) {
+    $order_direction = ($amount_sort === 'lowest') ? 'ASC' : 'DESC';
+    $order_by[] = "expense $order_direction";
+}
+
+// Default sorting if no specific sort is selected
+if (empty($order_by)) {
+    $order_by[] = "expensedate DESC";
+}
+
+$order_by_clause = !empty($order_by) ? "ORDER BY " . implode(", ", $order_by) : "";
+
 $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
+
+// Handle sorting
+$sort_field = isset($_GET['sort']) ? $_GET['sort'] : 'expensedate';
+$sort_order = 'DESC';
+
+// Validate sort field to prevent SQL injection
+$valid_sort_fields = ['expensedate', 'expensecategory', 'expense', 'description'];
+if (!in_array($sort_field, $valid_sort_fields)) {
+    $sort_field = 'expensedate';
+}
+
+// Toggle sort order if clicking on the same field
+if (isset($_GET['sort']) && isset($_GET['order']) && $_GET['order'] === 'DESC') {
+    $sort_order = 'ASC';
+}
 
 // Pagination settings
 $items_per_page = 10;
@@ -164,10 +196,10 @@ $week_expense = mysqli_fetch_assoc($week_expense_query);
 $year_expense_query = mysqli_query($con, "SELECT COALESCE(SUM(expense), 0) as total FROM expenses WHERE user_id = '$userid' AND YEAR(expensedate) = YEAR(CURDATE())");
 $year_expense = mysqli_fetch_assoc($year_expense_query);
 
-// Get paginated results
+// Get paginated results with sorting
 $query = "SELECT expense_id, expensedate, expensecategory, expense, description 
           FROM expenses $where_clause 
-          ORDER BY expensedate DESC 
+          $order_by_clause 
           LIMIT $offset, $items_per_page";
 $result = mysqli_query($con, $query);
 
@@ -262,9 +294,6 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
                 <a href="equipment.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'equipment.php' ? 'active' : ''; ?>">
                     <i class="fas fa-wrench"></i>Equipment
                 </a>
-                <a href="suppliers.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'suppliers.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-truck"></i>Suppliers
-                </a>
                 <a href="employees.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'employees.php' ? 'active' : ''; ?>">
                     <i class="fas fa-user-friends"></i>Employees
                 </a>
@@ -323,15 +352,36 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
                         </a>
                       </div>
                     </div>
+
                     <hr>
-                    <div class="mb-3 d-flex flex-wrap align-items-center justify-content-between">
-                      <form method="GET" class="d-flex flex-wrap gap-2 align-items-center mb-0" id="searchFilterForm" style="min-width:220px; max-width:320px;">
-                        <div class="input-group w-100">
+                    
+                    <!-- Search and Filter Row -->
+                    <div class="mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+                      <form method="GET" class="d-flex flex-wrap gap-2 align-items-center mb-0" id="searchFilterForm" style="flex: 1; min-width: 0;">
+                        <div class="input-group" style="width: 250px;">
                           <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                          <input type="text" class="form-control border-start-0" name="search" placeholder="Search type/description" value="<?php echo htmlspecialchars($search); ?>" autocomplete="off" id="searchInput1">
+                          <input type="text" class="form-control border-start-0" name="search" placeholder="Search expenses..." value="<?php echo htmlspecialchars($search); ?>" autocomplete="off">
                         </div>
+                        
+                        <select class="form-select" name="type" style="width: 200px;" onchange="this.form.submit()">
+                          <option value="">All Expense Types</option>
+                          <option value="Project" <?php echo (isset($_GET['type']) && $_GET['type'] === 'Project') ? 'selected' : ''; ?>>Project Expenses</option>
+                          <option value="Others" <?php echo (isset($_GET['type']) && $_GET['type'] === 'Others') ? 'selected' : ''; ?>>Other Expenses</option>
+                        </select>
+                        
+                        <select class="form-select" name="amount_sort" style="width: 200px;" onchange="this.form.submit()">
+                          <option value="">Sort by Amount</option>
+                          <option value="lowest" <?php echo (isset($_GET['amount_sort']) && $_GET['amount_sort'] === 'lowest') ? 'selected' : ''; ?>>Lowest to Highest</option>
+                          <option value="highest" <?php echo (isset($_GET['amount_sort']) && $_GET['amount_sort'] === 'highest') ? 'selected' : ''; ?>>Highest to Lowest</option>
+                        </select>
+                        
+                        <!-- Hidden fields to preserve other filters -->
+                        <?php if (!empty($date_range)): ?>
+                          <input type="hidden" name="date_range" value="<?php echo htmlspecialchars($date_range); ?>">
+                        <?php endif; ?>
                       </form>
-                      <div class="ms-auto fw-bold text-success" style="font-size:1.1rem;">
+                      
+                      <div class="fw-bold text-success" style="font-size:1.1rem;">
                         Total Expenses: ₱<?php echo number_format($total_expense['total'], 2); ?>
                       </div>
                     </div>
@@ -340,10 +390,46 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
                         <thead class="thead-dark">
                           <tr>
                             <th>No</th>
-                            <th>Date</th>
-                            <th>Type</th>
-                            <th>Amount</th>
-                            <th>Description</th>
+                            <th>
+                              <a href="?sort=expensedate&order=<?php echo ($sort_field == 'expensedate' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($type_filter) ? '&type=' . urlencode($type_filter) : ''; ?><?php echo !empty($date_range) ? '&date_range=' . urlencode($date_range) : ''; ?>" class="text-white text-decoration-none">
+                                Date
+                                <?php if ($sort_field == 'expensedate'): ?>
+                                  <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
+                                <?php else: ?>
+                                  <i class="fas fa-sort ms-1 text-white-50"></i>
+                                <?php endif; ?>
+                              </a>
+                            </th>
+                            <th>
+                              <a href="?sort=expensecategory&order=<?php echo ($sort_field == 'expensecategory' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($type_filter) ? '&type=' . urlencode($type_filter) : ''; ?><?php echo !empty($date_range) ? '&date_range=' . urlencode($date_range) : ''; ?>" class="text-white text-decoration-none">
+                                Type
+                                <?php if ($sort_field == 'expensecategory'): ?>
+                                  <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
+                                <?php else: ?>
+                                  <i class="fas fa-sort ms-1 text-white-50"></i>
+                                <?php endif; ?>
+                              </a>
+                            </th>
+                            <th>
+                              <a href="?sort=expense&order=<?php echo ($sort_field == 'expense' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($type_filter) ? '&type=' . urlencode($type_filter) : ''; ?><?php echo !empty($date_range) ? '&date_range=' . urlencode($date_range) : ''; ?>" class="text-white text-decoration-none">
+                                Amount
+                                <?php if ($sort_field == 'expense'): ?>
+                                  <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
+                                <?php else: ?>
+                                  <i class="fas fa-sort ms-1 text-white-50"></i>
+                                <?php endif; ?>
+                              </a>
+                            </th>
+                            <th>
+                              <a href="?sort=description&order=<?php echo ($sort_field == 'description' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($type_filter) ? '&type=' . urlencode($type_filter) : ''; ?><?php echo !empty($date_range) ? '&date_range=' . urlencode($date_range) : ''; ?>" class="text-white text-decoration-none">
+                                Description
+                                <?php if ($sort_field == 'description'): ?>
+                                  <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
+                                <?php else: ?>
+                                  <i class="fas fa-sort ms-1 text-white-50"></i>
+                                <?php endif; ?>
+                              </a>
+                            </th>
                             <th class="text-center">Actions</th>
                           </tr>
                         </thead>
@@ -383,20 +469,20 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
                     <nav aria-label="Page navigation" class="mt-4">
                       <ul class="pagination justify-content-center custom-pagination-green">
                         <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                          <a class="page-link" href="?page=<?php echo $page - 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($type_filter) ? '&type=' . urlencode($type_filter) : ''; ?><?php echo !empty($date_range) ? '&date_range=' . urlencode($date_range) : ''; ?>" aria-label="Previous">
+                          <a class="page-link" href="?page=<?php echo $page - 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($type_filter) ? '&type=' . urlencode($type_filter) : ''; ?><?php echo !empty($date_range) ? '&date_range=' . urlencode($date_range) : ''; ?><?php echo isset($sort_field) ? '&sort=' . urlencode($sort_field) . '&order=' . urlencode($sort_order) : ''; ?>" aria-label="Previous">
                             <span aria-hidden="true">&laquo;</span>
                             <span class="sr-only">Previous</span>
                           </a>
                         </li>
                         <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                          <li class="page-item <?php echo ($i == $page) ? 'active' : ''; ?>">
-                            <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($type_filter) ? '&type=' . urlencode($type_filter) : ''; ?><?php echo !empty($date_range) ? '&date_range=' . urlencode($date_range) : ''; ?>">
+                          <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
+                            <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($type_filter) ? '&type=' . urlencode($type_filter) : ''; ?><?php echo !empty($date_range) ? '&date_range=' . urlencode($date_range) : ''; ?><?php echo isset($sort_field) ? '&sort=' . urlencode($sort_field) . '&order=' . urlencode($sort_order) : ''; ?>">
                               <?php echo $i; ?>
                             </a>
                           </li>
                         <?php endfor; ?>
                         <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
-                          <a class="page-link" href="?page=<?php echo $page + 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($type_filter) ? '&type=' . urlencode($type_filter) : ''; ?><?php echo !empty($date_range) ? '&date_range=' . urlencode($date_range) : ''; ?>" aria-label="Next">
+                          <a class="page-link" href="?page=<?php echo $page + 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($type_filter) ? '&type=' . urlencode($type_filter) : ''; ?><?php echo !empty($date_range) ? '&date_range=' . urlencode($date_range) : ''; ?><?php echo isset($sort_field) ? '&sort=' . urlencode($sort_field) . '&order=' . urlencode($sort_order) : ''; ?>" aria-label="Next">
                             <span aria-hidden="true">&raquo;</span>
                             <span class="sr-only">Next</span>
                           </a>

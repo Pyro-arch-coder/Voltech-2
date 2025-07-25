@@ -66,19 +66,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
         $final_reason = 'Other: ' . $other_reason;
     }
     
-    // Insert into back_orders table
-    $backorder_insert = "INSERT INTO back_orders (material_id, quantity, reason, requested_by, created_at) 
-                        VALUES (?, ?, ?, ?, NOW())";
+    // Start transaction
+    $con->begin_transaction();
     
-    $stmt = $con->prepare($backorder_insert);
-    $stmt->bind_param("iisi", $material_id, $backorder_quantity, $final_reason, $user_id);
-    
-    if ($stmt->execute()) {
-        // Success redirect with new message
+    try {
+        // Insert into back_orders table
+        $backorder_insert = "INSERT INTO back_orders (material_id, quantity, reason, requested_by, created_at) 
+                            VALUES (?, ?, ?, ?, NOW())";
+        $stmt = $con->prepare($backorder_insert);
+        $stmt->bind_param("iisi", $material_id, $backorder_quantity, $final_reason, $user_id);
+        $stmt->execute();
+        
+        // Deduct from material quantity
+        $update_material = "UPDATE materials SET quantity = quantity - ? WHERE id = ?";
+        $update_stmt = $con->prepare($update_material);
+        $update_stmt->bind_param("ii", $backorder_quantity, $material_id);
+        $update_stmt->execute();
+        
+        // Add to supplier's stock if supplier exists
+        if (!empty($material['supplier_name'])) {
+            $update_supplier = "UPDATE suppliers_materials sm 
+                              INNER JOIN suppliers s ON sm.supplier_id = s.id 
+                              SET sm.quantity = sm.quantity + ? 
+                              WHERE s.supplier_name = ? AND sm.material_name = ?";
+            $supplier_stmt = $con->prepare($update_supplier);
+            $supplier_stmt->bind_param("iss", $backorder_quantity, $material['supplier_name'], $material['material_name']);
+            $supplier_stmt->execute();
+        }
+        
+        // Commit transaction
+        $con->commit();
         header('Location: po_materials.php?backordered=1');
-    } else {
-        header('Location: po_materials.php?error=Failed to create backorder request');
+        
+    } catch (Exception $e) {
+        // Rollback on error
+        $con->rollback();
+        error_log("Error in backorder process: " . $e->getMessage());
+        header('Location: po_materials.php?error=Failed to process backorder: ' . urlencode($e->getMessage()));
     }
+    
+    // Close statements
+    if (isset($stmt)) $stmt->close();
+    if (isset($update_stmt)) $update_stmt->close();
+    if (isset($supplier_stmt)) $supplier_stmt->close();
     exit();
     
 } else {
