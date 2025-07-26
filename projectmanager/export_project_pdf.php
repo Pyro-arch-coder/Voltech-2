@@ -39,7 +39,7 @@ while($row = $mat_query->fetch_assoc()) {
 }
 // Fetch equipment
 $equip_total = 0;
-$equipments = $con->query("SELECT pae.*, e.equipment_name, e.equipment_price AS price, e.depreciation, e.rental_fee, pae.status, e.category, pae.total FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
+$equipments = $con->query("SELECT pae.*, e.equipment_name, e.equipment_price AS price, e.depreciation, pae.status, e.category, pae.total FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
 while($row = $equipments->fetch_assoc()) {
     if (strtolower($row['status']) !== 'pending') {
         $equip_total += floatval($row['total'] ?? 0);
@@ -149,7 +149,7 @@ $pdf->Cell($eq_col_widths[6],7,'Total',1);
 $pdf->Ln();
 $pdf->SetFont('Arial','',10);
 $i=1;
-$equipments = $con->query("SELECT pae.*, e.equipment_name, e.equipment_price AS price, e.depreciation, e.rental_fee, pae.status, e.category, pae.total FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
+$equipments = $con->query("SELECT pae.*, e.equipment_name, e.equipment_price AS price, e.depreciation, pae.status, e.category, pae.total FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
 while($eq = $equipments->fetch_assoc()) {
     if (strtolower($eq['status']) !== 'in use') continue;
     $price = ($eq['rental_fee'] ?? 0) > 0 ? $eq['rental_fee'] : ($eq['price'] ?? 0);

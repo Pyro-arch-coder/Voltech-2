@@ -47,7 +47,7 @@ $project = mysqli_fetch_assoc($project_query);
     <a href="project_estimation.php?id=<?php echo $project_id; ?>" class="btn btn-warning">
         <i class="fas fa-calculator me-1"></i> Plan for Estimation
     </a>
-    <a href="project_ongoing.php?id=<?php echo $project_id; ?>" class="btn btn-success">
+    <a href="project_actual.php?id=<?php echo $project_id; ?>" class="btn btn-success">
         <i class="fas fa-hammer me-1"></i> Plan for Actual Use
     </a>
 </div> 

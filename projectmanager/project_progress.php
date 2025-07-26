@@ -207,7 +207,7 @@ if ($userid) {
                     <h4 class="mb-0">Progress for: <?php echo htmlspecialchars($project['project']); ?></h4>
                     <div>
                         <button  class="btn btn-light btn-sm ml-auto" data-bs-toggle="modal" data-bs-target="#addDivisionModal"><i class="fas fa-plus"></i> Add Division</button>
-                        <a href="project_ongoing.php?id=<?php echo $project_id; ?>" class="btn btn-light btn-sm">
+                        <a href="project_actual.php?id=<?php echo $project_id; ?>" class="btn btn-light btn-sm">
                             <i class="fa fa-arrow-left"></i> Back
                         </a>
                     </div>

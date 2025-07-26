@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_project_equipment
   $project_id = intval($_GET['id']);
   $proj_status_res = mysqli_query($con, "SELECT start_date, deadline FROM projects WHERE project_id='$project_id' LIMIT 1");
   $proj_status_row = mysqli_fetch_assoc($proj_status_res);
-  $status = 'Planning'; // Always planning in estimation context
+  $status = 'In Use'; // Always planning in estimation context
   $now = date('Y-m-d H:i:s');
   $start_date = isset($proj_status_row['start_date']) ? $proj_status_row['start_date'] : null;
   $end_date = isset($proj_status_row['deadline']) ? $proj_status_row['deadline'] : null;
@@ -40,7 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_project_equipment
   $new_status = 'Not Available';
   mysqli_query($con, "UPDATE equipment SET status = '$new_status' WHERE id = '$equipment_id'");
   
-  header("Location: project_ongoing.php?id=$project_id&addequip=1");
+  // Set timestamp for success message (valid for 5 seconds)
+  $_SESSION['equipment_success_time'] = time();
+  
+  header("Location: project_actual.php?id=$project_id");
   exit();
 }
 // Add Employee to Project
@@ -61,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_project_employee'
     $total = $daily_rate * $project_days;
     $sql = "INSERT INTO project_add_employee (project_id, employee_id, position, daily_rate, total) VALUES ('$project_id', '$employee_id', '$position', '$daily_rate', '$total')";
     mysqli_query($con, $sql);
-    header("Location: project_ongoing.php?id=$project_id&addemp=1");
+    header("Location: project_actual.php?id=$project_id&addemp=1");
     exit();
 }
 // Remove employee from project (add this block if not present)
@@ -69,42 +72,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_project_employ
     $row_id = intval($_POST['row_id']);
     $project_id = intval($_GET['id']);
     mysqli_query($con, "DELETE FROM project_add_employee WHERE id='$row_id'");
-    header("Location:project_ongoing.php?id=$project_id&removeemp=1");
+    header("Location:project_actual.php?id=$project_id&removeemp=1");
     exit();
 }
 // Add Material to Project
 
-// 1. Add material to project and decrease stock
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_project_material'])) {
-    $material_id = intval($_POST['materialName']);
-    $project_id = $_GET['id'];
-    $material_name = mysqli_real_escape_string($con, $_POST['materialNameText']);
-    $unit = mysqli_real_escape_string($con, $_POST['materialUnit']);
-    $material_price = floatval($_POST['materialPrice']);
-    $quantity = intval($_POST['materialQty']);
-    $additional_cost = isset($_POST['additional_cost']) ? floatval($_POST['additional_cost']) : 0;
-    // Get labor_other from materials table
-    $mat_res = mysqli_query($con, "SELECT quantity, location, labor_other FROM materials WHERE id = '$material_id' LIMIT 1");
-    $mat_row = mysqli_fetch_assoc($mat_res);
-    $current_qty = intval($mat_row['quantity']);
-    $warehouse = mysqli_real_escape_string($con, $mat_row['location']);
-    $labor_other = floatval($mat_row['labor_other']);
-    // Calculate total including both material_price and labor_other
-    $total = ($material_price + $labor_other) * $quantity;
-    // Always check if enough stock
-    if ($quantity > $current_qty) {
-        header("Location: project_ongoing.php?id=$project_id&error=insufficient_stock&left=$current_qty");
-        exit();
-    }
-    $sql = "INSERT INTO project_add_materials (project_id, material_id, material_name, unit, material_price, quantity, total, additional_cost) VALUES ('$project_id', '$material_id', '$material_name', '$unit', '$material_price', '$quantity', '$total', '$additional_cost')";
-    if (!mysqli_query($con, $sql)) {
-        echo '<div style="color:red;background:#fee;padding:10px;">SQL ERROR: ' . mysqli_error($con) . '</div>';
-        echo '<div style="font-family:monospace;background:#eef;padding:10px;">' . htmlspecialchars($sql) . '</div>';
-        exit();
-    }
-    // Decrease stock immediately
-    mysqli_query($con, "UPDATE materials SET quantity = GREATEST(quantity - $quantity, 0) WHERE id = '$material_id'");
-    header("Location: project_ongoing.php?id=$project_id&addmat=1");
-    exit();
+  $material_id = intval($_POST['materialName']);
+  $project_id = $_GET['id'];
+  $material_name = mysqli_real_escape_string($con, $_POST['materialNameText']);
+  $unit = mysqli_real_escape_string($con, $_POST['materialUnit']);
+  $material_price = floatval($_POST['materialPrice']);
+  $quantity = intval($_POST['materialQty']);
+  $additional_cost = isset($_POST['additional_cost']) ? floatval($_POST['additional_cost']) : 0;
+
+  // Get material data from DB
+  $mat_res = mysqli_query($con, "SELECT quantity, location, labor_other FROM materials WHERE id = '$material_id' LIMIT 1");
+  $mat_row = mysqli_fetch_assoc($mat_res);
+  $current_qty = intval($mat_row['quantity']);
+  $warehouse = mysqli_real_escape_string($con, $mat_row['location']);
+  $labor_other = floatval($mat_row['labor_other']);
+
+  // Check stock availability
+  if ($quantity > $current_qty) {
+      header("Location: project_actual.php?id=$project_id&error=insufficient_stock&left=$current_qty");
+      exit();
+  }
+
+  // Insert to project_add_materials
+  $sql = "INSERT INTO project_add_materials (
+              project_id, material_id, material_name, unit, material_price, quantity, additional_cost
+          ) VALUES (
+              '$project_id', '$material_id', '$material_name', '$unit', '$material_price', '$quantity', '$additional_cost'
+          )";
+
+  if (!mysqli_query($con, $sql)) {
+      echo '<div style="color:red;background:#fee;padding:10px;">SQL ERROR: ' . mysqli_error($con) . '</div>';
+      echo '<div style="font-family:monospace;background:#eef;padding:10px;">' . htmlspecialchars($sql) . '</div>';
+      exit();
+  }
+
+  // Decrease stock
+  mysqli_query($con, "UPDATE materials SET quantity = GREATEST(quantity - $quantity, 0) WHERE id = '$material_id'");
+
+  // Get updated stock after deduction
+  $new_qty_res = mysqli_query($con, "SELECT quantity, material_name FROM materials WHERE id = '$material_id' LIMIT 1");
+  $new_qty_row = mysqli_fetch_assoc($new_qty_res);
+  $new_qty = intval($new_qty_row['quantity']);
+  $material_name_only = mysqli_real_escape_string($con, $new_qty_row['material_name']);
+
+  // Notify procurement if stock is low (≤25)
+  if ($new_qty <= 25) {
+      $notif_user_id = $_SESSION['user_id'] ?? 0; // Get the logged-in user's ID
+      $notif_type = 'Low Stock Alert';
+      $notif_msg = "The material '$material_name_only' is now low on stock (Remaining: $new_qty) after being added to a project.";
+      $notif_created = date('Y-m-d H:i:s');
+
+      $notif_sql = "INSERT INTO notifications_procurement (
+                      user_id, notif_type, message, is_read, created_at
+                  ) VALUES (
+                      " . (int)$notif_user_id . ", 
+                      '" . mysqli_real_escape_string($con, $notif_type) . "', 
+                      '" . mysqli_real_escape_string($con, $notif_msg) . "', 
+                      0, 
+                      '" . $notif_created . "'
+                  )";
+
+      mysqli_query($con, $notif_sql) or error_log('Notification error: ' . mysqli_error($con));
+  }
+
+  // Redirect after success
+  header("Location: project_actual.php?id=$project_id&addmat=1");
+  exit();
 }
+
 ?> 
