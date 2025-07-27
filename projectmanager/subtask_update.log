@@ -1,0 +1,63 @@
+[2025-07-27 18:21:43] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 2/2 tasks = 100% (50% per task)
+Updated division 211 progress to 100% (2/2 tasks completed)
+[2025-07-27 18:21:43] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-07-27 18:26:20] {"subtask_id":"5","is_completed":"0"}
+Updating subtask 5 to status: 0
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/3 tasks = 33% (33.333333333333% per task)
+Updated division 211 progress to 33% (1/3 tasks completed)
+[2025-07-27 18:26:20] {"subtask_id":"5","is_completed":"0"}
+Updating subtask 5 to status: 0
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-07-27 18:26:23] {"subtask_id":"6","is_completed":"1"}
+Updating subtask 6 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 2/3 tasks = 67% (33.333333333333% per task)
+Updated division 211 progress to 67% (2/3 tasks completed)
+[2025-07-27 18:26:23] {"subtask_id":"6","is_completed":"1"}
+Updating subtask 6 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-07-27 18:26:26] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 3/3 tasks = 100% (33.333333333333% per task)
+Updated division 211 progress to 100% (3/3 tasks completed)
+[2025-07-27 18:26:26] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-07-27 18:26:52] {"subtask_id":"7","is_completed":"1"}
+Updating subtask 7 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/2 tasks = 50% (50% per task)
+Updated division 212 progress to 50% (1/2 tasks completed)
+[2025-07-27 18:26:52] {"subtask_id":"7","is_completed":"1"}
+Updating subtask 7 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-07-27 18:26:54] {"subtask_id":"8","is_completed":"1"}
+Updating subtask 8 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 2/2 tasks = 100% (50% per task)
+Updated division 212 progress to 100% (2/2 tasks completed)
+[2025-07-27 18:26:54] {"subtask_id":"8","is_completed":"1"}
+Updating subtask 8 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-07-27 18:28:31] {"subtask_id":"9","is_completed":"1"}
+Updating subtask 9 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/3 tasks = 33% (33.333333333333% per task)
+Updated division 213 progress to 33% (1/3 tasks completed)
+[2025-07-27 18:28:31] {"subtask_id":"9","is_completed":"1"}
+Updating subtask 9 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
