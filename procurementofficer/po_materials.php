@@ -112,7 +112,7 @@ $suppliers = $con->query($suppliers_query);
 // Add these after $con = new mysqli(...);
 $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY supplier_name");
 $all_warehouses = $con->query("SELECT id, warehouse FROM warehouses ORDER BY warehouse");
-$all_categories = $con->query("SELECT DISTINCT category FROM warehouses ORDER BY category");
+
 
 // Fetch materials from database with pagination and filters
 $sql = "SELECT m.* FROM materials m $where_clause";

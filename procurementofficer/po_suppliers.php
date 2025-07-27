@@ -702,7 +702,7 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                     <select class="form-control" name="category" required>
                                         <option value="">Select Category</option>
                                         <?php 
-                                        $categories = $con->query("SELECT DISTINCT category FROM warehouses WHERE category IS NOT NULL AND category != '' ORDER BY category");
+                                        $categories = $con->query("SELECT DISTINCT category FROM supplier_category WHERE category IS NOT NULL AND category != '' ORDER BY category");
                                         while($cat = $categories->fetch_assoc()): 
                                         ?>
                                             <option value="<?php echo htmlspecialchars($cat['category']); ?>"><?php echo htmlspecialchars($cat['category']); ?></option>

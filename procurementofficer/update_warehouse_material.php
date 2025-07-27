@@ -12,9 +12,7 @@ if ($con->connect_error) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update']) && isset($_POST['id'])) {
     $id = (int)$_POST['id'];
     $warehouse = mysqli_real_escape_string($con, $_POST['warehouse']);
-    $category = mysqli_real_escape_string($con, $_POST['category']);
-    $slots = (int)$_POST['slots'];
-    $update_query = "UPDATE warehouses SET warehouse='$warehouse', category='$category', slots=$slots WHERE id=$id";
+    $update_query = "UPDATE warehouses SET warehouse='$warehouse' WHERE id=$id";
     if ($con->query($update_query)) {
         header('Location: po_warehouse_materials.php?updated=1');
         exit();

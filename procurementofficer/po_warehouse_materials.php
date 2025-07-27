@@ -93,26 +93,21 @@ if (isset($_GET['delete'])) {
 $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
 $items_per_page = 10;
 $offset = ($page - 1) * $items_per_page;
-// Get filter values
+// Get search and filter parameters
 $search = isset($_GET['search']) ? mysqli_real_escape_string($con, $_GET['search']) : '';
-$category_filter = isset($_GET['category']) ? mysqli_real_escape_string($con, $_GET['category']) : '';
 $warehouse_filter = isset($_GET['warehouse']) ? mysqli_real_escape_string($con, $_GET['warehouse']) : '';
 
 // Build WHERE clause
 $where_conditions = [];
 if (!empty($search)) {
-    $where_conditions[] = "(warehouse LIKE '%$search%' OR category LIKE '%$search%')";
-}
-if (!empty($category_filter)) {
-    $where_conditions[] = "category = '$category_filter'";
+    $where_conditions[] = "warehouse LIKE '%$search%'";
 }
 if (!empty($warehouse_filter)) {
     $where_conditions[] = "warehouse = '$warehouse_filter'";
 }
 $where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
 
-// Get distinct values for filters
-$categories = $con->query("SELECT DISTINCT category FROM warehouses ORDER BY category");
+// Get distinct values for warehouse filter
 $warehouses_list = $con->query("SELECT DISTINCT warehouse FROM warehouses ORDER BY warehouse");
 
 // Pagination logic remains
@@ -133,7 +128,7 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
     <link rel="stylesheet" href="po_styles.css" />
-    <title>Warehouse & Category Management</title>
+    <title>Warehouse Management</title>
 </head>
 <body>
 <div class="d-flex" id="wrapper">
@@ -178,7 +173,7 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
         <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
             <div class="d-flex align-items-center">
                 <i class="fas fa-align-left primary-text fs-4 me-3" id="menu-toggle"></i>
-                <h2 class="fs-2 m-0">Warehouse & Category Management</h2>
+                <h2 class="fs-2 m-0">Warehouse Management</h2>
             </div>
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                 <?php include 'po_notification.php'; ?>
@@ -227,7 +222,7 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                       <div class="modal-dialog modal-lg modal-dialog-centered">
                         <div class="modal-content">
                           <div class="modal-header">
-                            <h5 class="modal-title" id="addWarehouseModalLabel">Add Warehouse + Category</h5>
+                            <h5 class="modal-title" id="addWarehouseModalLabel">Add Warehouse</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                           </div>
                           <form method="POST" novalidate>
@@ -240,9 +235,9 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                                     <div class="invalid-feedback">Please enter a valid warehouse name (2-100 characters).</div>
                                   </div>
                                   <div class="form-group mb-3">
-                                    <label>Category *</label>
-                                    <input type="text" class="form-control" name="category" placeholder="Category" required minlength="2" maxlength="50" pattern="[A-Za-z0-9\s\-\.&]+" title="Category can only contain letters, numbers, spaces, hyphens, dots, and ampersands">
-                                    <div class="invalid-feedback">Please enter a valid category (2-50 characters).</div>
+                                    <label>Slots *</label>
+                                    <input type="number" class="form-control" name="slots" placeholder="Slots" required min="1" max="999999" title="Slots must be a positive number">
+                                    <div class="invalid-feedback">Please enter a valid number of slots (1-999999).</div>
                                   </div>
                                 </div>
                                 <div class="col-md-6">
@@ -263,14 +258,8 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                     <form method="GET" class="d-flex flex-wrap gap-2 mb-3" id="searchForm" style="min-width:260px; max-width:900px;">
                         <div class="input-group" style="min-width:220px; max-width:320px;">
                             <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                            <input type="text" class="form-control border-start-0" name="search" placeholder="Search warehouse/category" value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off" maxlength="100" pattern="[A-Za-z0-9\s\-\.&]+" title="Search can contain letters, numbers, spaces, hyphens, dots, and ampersands">
+                            <input type="text" class="form-control border-start-0" name="search" placeholder="Search warehouse" value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off" maxlength="100" pattern="[A-Za-z0-9\s\-\.&]+" title="Search can contain letters, numbers, spaces, hyphens, dots, and ampersands">
                         </div>
-                        <select name="category" class="form-control" style="max-width:180px;" id="categoryFilter">
-                            <option value="">All Categories</option>
-                            <?php if ($categories) { while($cat = $categories->fetch_assoc()): ?>
-                                <option value="<?php echo htmlspecialchars($cat['category']); ?>" <?php echo $category_filter === $cat['category'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($cat['category']); ?></option>
-                            <?php endwhile; } ?>
-                        </select>
                         <select name="warehouse" class="form-control" style="max-width:180px;" id="warehouseFilter">
                             <option value="">All Warehouses</option>
                             <?php if ($warehouses_list) { while($wh = $warehouses_list->fetch_assoc()): ?>
@@ -284,8 +273,9 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                                 <tr>
                                     <th>No</th>
                                     <th>Warehouse</th>
-                                    <th>Category</th>
-                                    <th>Action</th>
+                                 
+                               
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -293,7 +283,8 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                                 <tr>
                                     <td><?php echo $i++; ?></td>
                                     <td><?php echo htmlspecialchars($row['warehouse']); ?></td>
-                                    <td><?php echo htmlspecialchars($row['category']); ?></td>
+                                    
+                                   
                                     <td>
                                         <button type="button" class="btn btn-warning btn-sm me-1" data-bs-toggle="modal" data-bs-target="#editWarehouseModal<?php echo $row['id']; ?>">
                                             <i class="fas fa-edit"></i> Edit
@@ -308,7 +299,7 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                                   <div class="modal-dialog modal-lg modal-dialog-centered">
                                     <div class="modal-content">
                                       <div class="modal-header">
-                                        <h5 class="modal-title" id="editWarehouseModalLabel<?php echo $row['id']; ?>">Edit Warehouse + Category</h5>
+                                        <h5 class="modal-title" id="editWarehouseModalLabel<?php echo $row['id']; ?>">Edit Warehouse</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                       </div>
                                       <form method="POST" action="update_warehouse_material.php" novalidate>
@@ -323,9 +314,9 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                                                 <div class="invalid-feedback">Please enter a valid warehouse name (2-100 characters).</div>
                                               </div>
                                               <div class="form-group mb-3">
-                                                <label>Category *</label>
-                                                <input type="text" class="form-control" name="category" value="<?php echo htmlspecialchars($row['category']); ?>" required minlength="2" maxlength="50" pattern="[A-Za-z0-9\s\-\.&]+" title="Category can only contain letters, numbers, spaces, hyphens, dots, and ampersands">
-                                                <div class="invalid-feedback">Please enter a valid category (2-50 characters).</div>
+                                                <label>Slots *</label>
+                                                <input type="number" class="form-control" name="slots" value="<?php echo $row['slots']; ?>" required min="1" max="999999" title="Slots must be a positive number">
+                                                <div class="invalid-feedback">Please enter a valid number of slots (1-999999).</div>
                                               </div>
                                             </div>
                                             <div class="col-md-6">
@@ -349,15 +340,15 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                     <nav aria-label="Page navigation" class="mt-3 mb-3">
                       <ul class="pagination justify-content-center custom-pagination-green mb-0">
                         <li class="page-item<?php if($page <= 1) echo ' disabled'; ?>">
-                          <a class="page-link" href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($search); ?>&category=<?php echo urlencode($category_filter); ?>&warehouse=<?php echo urlencode($warehouse_filter); ?>">Previous</a>
+                          <a class="page-link" href="?page=<?php echo $page-1; ?>&search=<?php echo urlencode($search); ?>&warehouse=<?php echo urlencode($warehouse_filter); ?>">Previous</a>
                         </li>
                         <?php for($j = 1; $j <= $total_pages; $j++): ?>
                           <li class="page-item<?php if($j == $page) echo ' active'; ?>">
-                            <a class="page-link" href="?page=<?php echo $j; ?>&search=<?php echo urlencode($search); ?>&category=<?php echo urlencode($category_filter); ?>&warehouse=<?php echo urlencode($warehouse_filter); ?>"><?php echo $j; ?></a>
+                            <a class="page-link" href="?page=<?php echo $j; ?>&search=<?php echo urlencode($search); ?>&warehouse=<?php echo urlencode($warehouse_filter); ?>"><?php echo $j; ?></a>
                           </li>
                         <?php endfor; ?>
                         <li class="page-item<?php if($page >= $total_pages) echo ' disabled'; ?>">
-                          <a class="page-link" href="?page=<?php echo $page+1; ?>&search=<?php echo urlencode($search); ?>&category=<?php echo urlencode($category_filter); ?>&warehouse=<?php echo urlencode($warehouse_filter); ?>">Next</a>
+                          <a class="page-link" href="?page=<?php echo $page+1; ?>&search=<?php echo urlencode($search); ?>&warehouse=<?php echo urlencode($warehouse_filter); ?>">Next</a>
                         </li>
                       </ul>
                     </nav>
@@ -482,7 +473,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Handle search form validation
   const searchForm = document.getElementById('searchForm');
   const searchInput = document.getElementById('searchInput');
-  const categoryFilter = document.getElementById('categoryFilter');
   const warehouseFilter = document.getElementById('warehouseFilter');
   
   if (searchForm && searchInput) {
@@ -510,12 +500,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Auto-submit on filter changes
-    if (categoryFilter) {
-      categoryFilter.addEventListener('change', function() {
-        searchForm.submit();
-      });
-    }
-
     if (warehouseFilter) {
       warehouseFilter.addEventListener('change', function() {
         searchForm.submit();
@@ -526,7 +510,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Custom validation for warehouse forms
   function validateWarehouseForm(form) {
     const warehouse = form.querySelector('[name="warehouse"]').value.trim();
-    const category = form.querySelector('[name="category"]').value.trim();
     const slots = parseInt(form.querySelector('[name="slots"]').value);
 
     let isValid = true;
