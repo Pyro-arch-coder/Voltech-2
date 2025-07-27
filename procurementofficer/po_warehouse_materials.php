@@ -313,11 +313,6 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                                                 <input type="text" class="form-control" name="warehouse" value="<?php echo htmlspecialchars($row['warehouse']); ?>" required minlength="2" maxlength="100" pattern="[A-Za-z0-9\s\-\.&]+" title="Warehouse name can only contain letters, numbers, spaces, hyphens, dots, and ampersands">
                                                 <div class="invalid-feedback">Please enter a valid warehouse name (2-100 characters).</div>
                                               </div>
-                                              <div class="form-group mb-3">
-                                                <label>Slots *</label>
-                                                <input type="number" class="form-control" name="slots" value="<?php echo $row['slots']; ?>" required min="1" max="999999" title="Slots must be a positive number">
-                                                <div class="invalid-feedback">Please enter a valid number of slots (1-999999).</div>
-                                              </div>
                                             </div>
                                             <div class="col-md-6">
                                               
