@@ -6,13 +6,12 @@ $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 $con = new mysqli("localhost", "root", "", "voltech2");
 $unread_count = 0;
 $notifications = [];
-if ($user_id) {
-    $res = $con->query("SELECT id, notif_type, message, is_read, created_at FROM notifications_procurement WHERE (user_id = $user_id OR (notif_type LIKE '%Request%' AND notif_type != 'Activation')) ORDER BY created_at DESC LIMIT 10");
-    if ($res && $res->num_rows > 0) {
-        while ($row = $res->fetch_assoc()) {
-            $notifications[] = $row;
-            if ($row['is_read'] == 0) $unread_count++;
-        }
+// Fetch all notifications without user_id filtering
+$res = $con->query("SELECT id, notif_type, message, is_read, created_at FROM notifications_procurement ORDER BY created_at DESC LIMIT 10");
+if ($res && $res->num_rows > 0) {
+    while ($row = $res->fetch_assoc()) {
+        $notifications[] = $row;
+        if ($row['is_read'] == 0) $unread_count++;
     }
 }
 ?>

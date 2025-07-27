@@ -52,19 +52,19 @@ $pdf->Cell(40, 8, 'Count', 1, 0, 'C');
 $pdf->Cell(60, 8, 'Amount (Php)', 1, 0, 'C');
 $pdf->Ln();
 $pdf->SetFont('Arial', '', 9);
-// Total Orders
-$total_orders_q = mysqli_query($con, "SELECT COUNT(*) as cnt, IFNULL(SUM(total_amount),0) as amt FROM materials WHERE approval = 'Approved' AND approval_date BETWEEN '$start' AND '$end'");
+// Total Orders - Removed approval filter as it doesn't exist in the table
+$total_orders_q = mysqli_query($con, "SELECT COUNT(*) as cnt, IFNULL(SUM(total_amount),0) as amt FROM materials WHERE purchase_date BETWEEN '$start' AND '$end'");
 $total_orders_row = mysqli_fetch_assoc($total_orders_q);
 $total_orders = intval($total_orders_row['cnt']);
 $total_orders_amt = floatval($total_orders_row['amt']);
 // Total Reorders
-$total_reorders_q = mysqli_query($con, "SELECT COUNT(*) as cnt FROM back_orders WHERE approval_status = 'Approved' AND reason = 'Reorder' AND created_at BETWEEN '$start' AND '$end'");
+$total_reorders_q = mysqli_query($con, "SELECT COUNT(*) as cnt FROM back_orders WHERE reason = 'Reorder' AND created_at BETWEEN '$start' AND '$end'");
 $total_reorders_row = mysqli_fetch_assoc($total_reorders_q);
 $total_reorders = intval($total_reorders_row['cnt']);
 $reorder_exp_q = mysqli_query($con, "SELECT IFNULL(SUM(expense),0) as amt FROM order_expenses WHERE description LIKE '%Reorder%' AND expensedate BETWEEN '$start' AND '$end'");
 $reorder_exp = ($row = mysqli_fetch_assoc($reorder_exp_q)) ? floatval($row['amt']) : 0;
 // Total Backorders
-$total_backorders_q = mysqli_query($con, "SELECT COUNT(*) as cnt FROM back_orders WHERE approval_status = 'Approved' AND reason != 'Reorder' AND created_at BETWEEN '$start' AND '$end'");
+$total_backorders_q = mysqli_query($con, "SELECT COUNT(*) as cnt FROM back_orders WHERE reason != 'Reorder' AND created_at BETWEEN '$start' AND '$end'");
 $total_backorders_row = mysqli_fetch_assoc($total_backorders_q);
 $total_backorders = intval($total_backorders_row['cnt']);
 $backorder_exp_q = mysqli_query($con, "SELECT IFNULL(SUM(expense),0) as amt FROM order_expenses WHERE description LIKE '%Backorder%' AND expensedate BETWEEN '$start' AND '$end'");
@@ -98,14 +98,14 @@ $pdf->Cell(40, 8, 'Price', 1);
 $pdf->Cell(40, 8, 'Date Added', 1);
 $pdf->Ln();
 $pdf->SetFont('Arial', '', 8);
-$equip_query = mysqli_query($con, "SELECT equipment_name, category, equipment_price, rental_fee, created_at FROM equipment WHERE approval = 'Approved' AND created_at BETWEEN '$start' AND '$end' ORDER BY created_at DESC LIMIT 10");
+$equip_query = mysqli_query($con, "SELECT equipment_name, category, equipment_price, created_at FROM equipment WHERE created_at BETWEEN '$start' AND '$end' ORDER BY created_at DESC LIMIT 10");
 $equip_count = 0;
 $equip_total_amt = 0;
 if (mysqli_num_rows($equip_query) > 0) {
     while ($row = mysqli_fetch_assoc($equip_query)) {
         $pdf->Cell(70, 8, $row['equipment_name'], 1);
         $pdf->Cell(40, 8, $row['category'], 1);
-        $price = ($row['category'] == 'Rental') ? $row['rental_fee'] : $row['equipment_price'];
+        $price = $row['equipment_price'];
         $pdf->Cell(40, 8, 'Php ' . number_format($price,2), 1, 0, 'R');
         $pdf->Cell(40, 8, date('M d, Y', strtotime($row['created_at'])), 1);
         $pdf->Ln();

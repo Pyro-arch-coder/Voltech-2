@@ -608,7 +608,7 @@ if ($userid) {
             labels: ['Reorder', 'Backorder', 'Order'],
             datasets: [
                 {
-                    label: 'Equipment/Order Expenses (₱)',
+                    label: 'Order Expenses (₱)',
                     data: [
                         <?php echo $equip_reorder_total; ?>,
                         <?php echo $equip_backorder_total; ?>,

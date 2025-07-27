@@ -50,17 +50,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     )";
     
     if ($con->query($insert_query)) {
-        // Notification logic (like add_materials.php)
-        $notif_type = "Add Equipment";
-        $price_display = $category === 'Company' ? $equipment_price : $rental_fee;
-        $notif_message = "$user_name added a new equipment: $equipment_name (₱$price_display)";
-        // Only notify Admin if Procurement Officer or Admin
-        if ($user_level == 4) {
-            $stmt2 = $con->prepare("INSERT INTO notifications_admin (user_id, notif_type, message, is_read, created_at) VALUES (?, ?, ?, 0, NOW())");
-            $stmt2->bind_param("iss", $user_id, $notif_type, $notif_message);
-            $stmt2->execute();
-            $stmt2->close();
+        // Get the ID of the newly inserted equipment
+        $equipment_id = $con->insert_id;
+        
+        // Record the expense if equipment has a price
+        if ($equipment_price > 0) {
+            $expense_description = "Purchased A $equipment_name";
+            $expense_query = "INSERT INTO order_expenses 
+                            (user_id, expense, expensedate, expensecategory, description) 
+                            VALUES (?, ?, CURDATE(), 'Equipment', ?)";
+            $stmt = $con->prepare($expense_query);
+            $stmt->bind_param("ids", $user_id, $equipment_price, $expense_description);
+            $stmt->execute();
+            $stmt->close();
         }
+        
+        // Insert notification
+        $notif_type = "New Equipment Added";
+        $notif_message = "A new equipment $equipment_name has been added to inventory.";
+        
+        $notif_query = "INSERT INTO notifications_projectmanager 
+                      (user_id, notif_type, message, is_read, created_at) 
+                      VALUES (?, ?, ?, 0, NOW())";
+        $stmt = $con->prepare($notif_query);
+        $stmt->bind_param("iss", $user_id, $notif_type, $notif_message);
+        $stmt->execute();
+        $stmt->close();
+        
         header('Location: po_equipment.php?success=1');
         exit();
     } else {

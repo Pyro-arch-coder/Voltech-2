@@ -1,23 +1,16 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id']) || !isset($_GET['id'])) {
+if (!isset($_SESSION['user_id']) || $_SESSION['user_level'] != 4 || !isset($_GET['id'])) {
     header('Location: po_dashboard.php');
     exit();
 }
 $con = new mysqli("localhost", "root", "", "voltech2");
 $id = intval($_GET['id']);
-$user_id = intval($_SESSION['user_id']);
-// Fetch the notification
-$res = $con->query("SELECT user_id, notif_type FROM notifications_procurement WHERE id = $id LIMIT 1");
-if ($res && $res->num_rows > 0) {
-    $notif = $res->fetch_assoc();
-    // Allow if user_id matches, or if notif_type contains 'Request' (except Activation)
-    if (
-        $notif['user_id'] == $user_id ||
-        (stripos($notif['notif_type'], 'Request') !== false && stripos($notif['notif_type'], 'Activation') === false)
-    ) {
-        $con->query("UPDATE notifications_procurement SET is_read = 1 WHERE id = $id");
-    }
-}
-header('Location: po_dashboard.php');
-exit(); 
+
+// Mark the notification as read (no user_id check needed)
+$con->query("UPDATE notifications_procurement SET is_read = 1 WHERE id = $id");
+
+// Redirect back to the previous page or dashboard
+$redirect = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'po_dashboard.php';
+header("Location: $redirect");
+exit();

@@ -45,21 +45,21 @@ $pdf->Ln(20);
 
 // --- Orders Summary Table (Count & Amount, Compact) ---
 
-// Total Orders (from materials table, approved only)
-$total_orders_q = mysqli_query($con, "SELECT COUNT(*) as cnt, IFNULL(SUM(total_amount),0) as amt FROM materials WHERE approval = 'Approved' AND approval_date BETWEEN '$start' AND '$end'");
-$total_orders_row = mysqli_fetch_assoc($total_orders_q);
-$total_orders = intval($total_orders_row['cnt']);
-$total_orders_amt = floatval($total_orders_row['amt']);
+// Total Orders (from materials table)
+$total_orders_q = mysqli_query($con, "SELECT COUNT(*) as cnt, IFNULL(SUM(total_amount),0) as amt FROM materials WHERE purchase_date BETWEEN '$start' AND '$end'");
+    $total_orders_row = mysqli_fetch_assoc($total_orders_q);
+    $total_orders = intval($total_orders_row['cnt']);
+    $total_orders_amt = floatval($total_orders_row['amt']);
 // Total Reorders (count)
-$total_reorders_q = mysqli_query($con, "SELECT COUNT(*) as cnt FROM back_orders WHERE approval_status = 'Approved' AND reason = 'Reorder' AND created_at BETWEEN '$start' AND '$end'");
-$total_reorders_row = mysqli_fetch_assoc($total_reorders_q);
-$total_reorders = intval($total_reorders_row['cnt']);
+$total_reorders_q = mysqli_query($con, "SELECT COUNT(*) as cnt FROM back_orders WHERE reason = 'Reorder' AND created_at BETWEEN '$start' AND '$end'");
+    $total_reorders_row = mysqli_fetch_assoc($total_reorders_q);
+    $total_reorders = intval($total_reorders_row['cnt']);
 // Total Backorders (count)
-$total_backorders_q = mysqli_query($con, "SELECT COUNT(*) as cnt FROM back_orders WHERE approval_status = 'Approved' AND reason != 'Reorder' AND created_at BETWEEN '$start' AND '$end'");
+$total_backorders_q = mysqli_query($con, "SELECT COUNT(*) as cnt FROM back_orders WHERE reason != 'Reorder' AND created_at BETWEEN '$start' AND '$end'");
 $total_backorders_row = mysqli_fetch_assoc($total_backorders_q);
 $total_backorders = intval($total_backorders_row['cnt']);
 // Approved Materials (count & total amount)
-$approved_materials_q = mysqli_query($con, "SELECT COUNT(*) as cnt, IFNULL(SUM(total_amount),0) as amt FROM materials WHERE approval = 'Approved' AND approval_date BETWEEN '$start' AND '$end'");
+$approved_materials_q = mysqli_query($con, "SELECT COUNT(*) as cnt, IFNULL(SUM(total_amount),0) as amt FROM materials WHERE purchase_date BETWEEN '$start' AND '$end'");
 $approved_materials_row = mysqli_fetch_assoc($approved_materials_q);
 $approved_materials = intval($approved_materials_row['cnt']);
 $approved_materials_amt = floatval($approved_materials_row['amt']);
@@ -131,10 +131,10 @@ $pdf->Cell(60, 8, 'Php ' . number_format($approved_materials_amt,2), 1, 0, 'R');
 $pdf->Ln();
 $pdf->SetX(20);
 $pdf->Cell(70, 8, 'Total Equipment Expenses', 1);
-$equip_exp_q = mysqli_query($con, "SELECT COUNT(*) as cnt, IFNULL(SUM(equipment_price),0) as price, IFNULL(SUM(rental_fee),0) as rental FROM equipment WHERE approval = 'Approved' AND created_at BETWEEN '$start' AND '$end'");
+$equip_exp_q = mysqli_query($con, "SELECT COUNT(*) as cnt, IFNULL(SUM(equipment_price),0) as price FROM equipment WHERE created_at BETWEEN '$start' AND '$end'");
 $equip_exp_row = mysqli_fetch_assoc($equip_exp_q);
 $equip_count = isset($equip_exp_row['cnt']) ? intval($equip_exp_row['cnt']) : 0;
-$equip_amt = (isset($equip_exp_row['price']) ? floatval($equip_exp_row['price']) : 0) + (isset($equip_exp_row['rental']) ? floatval($equip_exp_row['rental']) : 0);
+$equip_amt = isset($equip_exp_row['price']) ? floatval($equip_exp_row['price']) : 0;
 $pdf->Cell(40, 8, $equip_count, 1, 0, 'C');
 $pdf->Cell(60, 8, 'Php ' . number_format($equip_amt,2), 1, 0, 'R');
 $pdf->Ln(12);
