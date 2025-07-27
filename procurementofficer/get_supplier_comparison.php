@@ -46,6 +46,7 @@ if ($action === 'compare_suppliers') {
                 sm.material_price,
                 sm.lead_time,
                 sm.unit,
+                sm.category,
                 sm.quantity,
                 sm.labor_other,
                 (sm.material_price * ?) as total_cost
@@ -74,6 +75,7 @@ if ($action === 'compare_suppliers') {
             'supplier_name' => $row['supplier_name'],
             'material_price' => floatval($row['material_price']),
             'lead_time' => intval($row['lead_time']),
+            'category' => $row['category'],
             'unit' => $row['unit'], // Add unit field to the response
             'quantity' => intval($row['quantity']), // Add quantity field to the response
             'labor_other' => isset($row['labor_other']) ? floatval($row['labor_other']) : 0,

@@ -197,6 +197,9 @@ if (isset($_GET['delete'])) {
 $search = isset($_GET['search']) ? mysqli_real_escape_string($con, $_GET['search']) : '';
 $status_filter = isset($_GET['status']) ? mysqli_real_escape_string($con, $_GET['status']) : '';
 
+// Get location filter from URL
+$location_filter = isset($_GET['location']) ? $_GET['location'] : '';
+
 // Build WHERE clause
 $where_conditions = [];
 if (!empty($search)) {
@@ -205,8 +208,14 @@ if (!empty($search)) {
 if (!empty($status_filter)) {
     $where_conditions[] = "status = '$status_filter'";
 }
+if (!empty($location_filter)) {
+    $where_conditions[] = "location = " . ($location_filter === 'NULL' ? 'NULL' : "'$location_filter'");
+}
 
 $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
+
+// Get distinct locations for dropdown
+$locations_query = $con->query("SELECT DISTINCT location FROM equipment WHERE location IS NOT NULL AND location != '' ORDER BY location ASC");
 
 // Pagination settings
 $items_per_page = 10;
@@ -240,9 +249,9 @@ $statuses = $con->query($statuses_query);
 // Fetch equipment with pagination and filters
 $sql = "SELECT * FROM equipment $where_clause ORDER BY id DESC LIMIT $offset, $items_per_page";
 if (!empty($where_clause)) {
-    $sql = "SELECT * FROM equipment $where_clause AND approval = 'Approved' ORDER BY id DESC LIMIT $offset, $items_per_page";
+    $sql = "SELECT * FROM equipment $where_clause ORDER BY id DESC LIMIT $offset, $items_per_page";
 } else {
-    $sql = "SELECT * FROM equipment WHERE approval = 'Approved' ORDER BY id DESC LIMIT $offset, $items_per_page";
+    $sql = "SELECT * FROM equipment ORDER BY id DESC LIMIT $offset, $items_per_page";
 }
 $result = $con->query($sql);
 
@@ -357,19 +366,37 @@ $result = $con->query($sql);
                             </a>
                         </div>
                         <hr>
-                        <form class="d-flex flex-wrap gap-2 mb-3" method="get" action="" id="searchForm" style="min-width:260px; max-width:600px;">
-                            <div class="input-group" style="min-width:220px; max-width:320px;">
+                        <form class="d-flex flex-wrap gap-2 mb-3" method="get" action="" id="searchForm">
+                            <div class="input-group" style="width: 250px;">
                                 <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                                <input type="text" class="form-control border-start-0" name="search" placeholder="Search equipment name or purpose" value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off">
-                                </div>
-                            <select name="status" class="form-control" style="max-width:180px;" id="statusFilter">
-                                        <option value="">All Status</option>
-                                        <?php 
-                                        $statuses->data_seek(0); // Reset the pointer
-                                        while ($status = $statuses->fetch_assoc()): ?>
+                                <input type="text" class="form-control border-start-0" name="search" placeholder="Search equipment..." value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off">
+                            </div>
+                            <select name="status" class="form-select" style="width: 180px;" id="statusFilter">
+                                <option value="">All Status</option>
+                                <?php 
+                                $statuses->data_seek(0); // Reset the pointer
+                                while ($status = $statuses->fetch_assoc()): ?>
                                     <option value="<?php echo htmlspecialchars($status['status']); ?>" <?php echo ($status_filter == $status['status']) ? 'selected' : ''; ?>><?php echo htmlspecialchars($status['status']); ?></option>
-                                        <?php endwhile; ?>
-                                    </select>
+                                <?php endwhile; ?>
+                            </select>
+                            <select name="location" class="form-select" style="width: 180px;" id="locationFilter">
+                                <option value="">All Locations</option>
+                                <option value="NULL" <?php echo ($location_filter === 'NULL') ? 'selected' : ''; ?>>No Location</option>
+                                <?php 
+                                if ($locations_query) {
+                                    $locations_query->data_seek(0);
+                                    while ($loc = $locations_query->fetch_assoc()): 
+                                        if (!empty($loc['location'])):
+                                ?>
+                                    <option value="<?php echo htmlspecialchars($loc['location']); ?>" <?php echo ($location_filter === $loc['location']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($loc['location']); ?>
+                                    </option>
+                                <?php 
+                                        endif;
+                                    endwhile; 
+                                }
+                                ?>
+                            </select>
                         </form>
                         <script>
                         document.addEventListener('DOMContentLoaded', function() {
@@ -387,6 +414,13 @@ $result = $con->query($sql);
                             }
                             if (statusFilter && searchForm) {
                                 statusFilter.addEventListener('change', function() {
+                                    searchForm.submit();
+                                });
+                            }
+                            
+                            var locationFilter = document.getElementById('locationFilter');
+                            if (locationFilter && searchForm) {
+                                locationFilter.addEventListener('change', function() {
                                     searchForm.submit();
                                 });
                             }
@@ -458,15 +492,15 @@ $result = $con->query($sql);
                         <nav aria-label="Page navigation" class="mt-3 mb-3">
                             <ul class="pagination justify-content-center custom-pagination-green mb-0">
                                 <li class="page-item<?php if($page <= 1) echo ' disabled'; ?>">
-                                    <a class="page-link" href="?page=<?php echo $page-1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>">Previous</a>
+                                    <a class="page-link" href="?page=<?php echo $page-1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location=' . urlencode($location_filter) : ''; ?>">Previous</a>
                                                 </li>
                                 <?php for($i = 1; $i <= $total_pages; $i++): ?>
                                     <li class="page-item<?php if($i == $page) echo ' active'; ?>">
-                                        <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>"><?php echo $i; ?></a>
-                                                </li>
+                                        <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location=' . urlencode($location_filter) : ''; ?>" <?php echo ($i == $page) ? 'style="background-color: #28a745; color: white;"' : ''; ?>><?php echo $i; ?></a>
+                                            </li>
                                             <?php endfor; ?>
                                 <li class="page-item<?php if($page >= $total_pages) echo ' disabled'; ?>">
-                                    <a class="page-link" href="?page=<?php echo $page+1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>">Next</a>
+                                    <a class="page-link" href="?page=<?php echo $page+1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location=' . urlencode($location_filter) : ''; ?>">Next</a>
                                                 </li>
                                         </ul>
                                     </nav>

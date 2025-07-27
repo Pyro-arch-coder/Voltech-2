@@ -36,13 +36,37 @@ $date_range = isset($_GET['date_range']) ? mysqli_real_escape_string($con, $_GET
 // Build WHERE clause
 $where_conditions = ["user_id = '$userid'"];
 if (!empty($search)) {
-    $where_conditions[] = "(expensecategory LIKE '%$search%' OR description LIKE '%$search%')";
+    $where_conditions[] = "(expensecategory LIKE '%$search%' OR description LIKE '%$search%' OR expense_id LIKE '%$search%')";
 }
+
+// Type filter (Equipment/Materials)
+$type_filter = isset($_GET['type']) ? mysqli_real_escape_string($con, $_GET['type']) : '';
 if (!empty($type_filter)) {
     $where_conditions[] = "expensecategory = '$type_filter'";
 }
-if (!empty($date_range)) {
-    switch($date_range) {
+
+// Status filter (Reorder/Backorder)
+$status_filter = isset($_GET['status']) ? mysqli_real_escape_string($con, $_GET['status']) : '';
+if (!empty($status_filter)) {
+    if ($status_filter === 'reorder') {
+        $where_conditions[] = "(description LIKE '%reorder%' OR description LIKE '%re-order%' OR description LIKE '%re order%')";
+    } elseif ($status_filter === 'backorder') {
+        $where_conditions[] = "(description LIKE '%backorder%' OR description LIKE '%back-order%' OR description LIKE '%back order%')";
+    }
+}
+
+// Date filter
+$date_filter = isset($_GET['date_filter']) ? mysqli_real_escape_string($con, $_GET['date_filter']) : '';
+$start_date = isset($_GET['start_date']) ? mysqli_real_escape_string($con, $_GET['start_date']) : '';
+$end_date = isset($_GET['end_date']) ? mysqli_real_escape_string($con, $_GET['end_date']) : '';
+
+// If custom date range is provided, use it regardless of date_filter value
+if (!empty($start_date) && !empty($end_date)) {
+    $where_conditions[] = "DATE(expensedate) BETWEEN '$start_date' AND '$end_date'";
+} 
+// If no date range but a date filter is selected
+else if (!empty($date_filter)) {
+    switch($date_filter) {
         case 'today':
             $where_conditions[] = "DATE(expensedate) = CURDATE()";
             break;
@@ -55,6 +79,7 @@ if (!empty($date_range)) {
         case 'year':
             $where_conditions[] = "YEAR(expensedate) = YEAR(CURDATE())";
             break;
+        // 'All Time' is handled by not adding any date condition
     }
 }
 
@@ -74,6 +99,14 @@ $total_pages = ceil($total_items / $items_per_page);
 
 // Expense types for filter dropdown
 $expense_types = ["Materials", "Labor", "Equipment", "Transportation", "Site Costs", "Office Supplies", "Others"];
+
+// Get filter values from URL
+$search = isset($_GET['search']) ? mysqli_real_escape_string($con, $_GET['search']) : '';
+$type_filter = isset($_GET['type']) ? mysqli_real_escape_string($con, $_GET['type']) : '';
+$status_filter = isset($_GET['status']) ? mysqli_real_escape_string($con, $_GET['status']) : '';
+$date_filter = isset($_GET['date_filter']) ? mysqli_real_escape_string($con, $_GET['date_filter']) : '';
+$start_date = isset($_GET['start_date']) ? mysqli_real_escape_string($con, $_GET['start_date']) : '';
+$end_date = isset($_GET['end_date']) ? mysqli_real_escape_string($con, $_GET['end_date']) : '';
 
 // Get total expenses and this month's total (always define before HTML)
 $total_expense_query = mysqli_query($con, "SELECT COALESCE(SUM(expense), 0) as total FROM order_expenses WHERE user_id = '$userid'");
@@ -231,16 +264,44 @@ $result = mysqli_query($con, $query);
                       </div>
                     </div>
                     <hr>
-                    <div class="mb-3 d-flex flex-wrap align-items-center justify-content-between">
-                      <form method="GET" class="d-flex flex-wrap gap-2 align-items-center mb-0" id="searchFilterForm" style="min-width:220px; max-width:320px;">
-                        <div class="input-group w-100">
-                          <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                          <input type="text" class="form-control border-start-0" name="search" placeholder="Search type/description" value="<?php echo htmlspecialchars($search); ?>" autocomplete="off" id="searchInput1">
+                    <form method="GET" class="d-flex flex-wrap gap-2 mb-3" id="searchFilterForm">
+                        <!-- Search Bar -->
+                        <div class="input-group" style="width: 250px;">
+                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" class="form-control border-start-0" name="search" placeholder="Search orders..." value="<?php echo htmlspecialchars($search); ?>" autocomplete="off">
                         </div>
-                      </form>
-                      <div class="ms-auto fw-bold text-success" style="font-size:1.1rem;">
-                        Total Expenses: ₱<?php echo number_format($total_expense['total'], 2); ?>
-                      </div>
+                        
+                        <!-- Type Filter -->
+                        <select name="type" class="form-select" style="width: 150px;">
+                            <option value="">All Types</option>
+                            <option value="Equipment" <?php echo ($type_filter === 'Equipment') ? 'selected' : ''; ?>>Equipment</option>
+                            <option value="Material" <?php echo ($type_filter === 'Material') ? 'selected' : ''; ?>>Material</option>
+                        </select>
+                        
+                        <!-- Status Filter -->
+                        <select name="status" class="form-select" style="width: 150px;">
+                            <option value="">All Status</option>
+                            <option value="reorder" <?php echo ($status_filter === 'reorder') ? 'selected' : ''; ?>>Re-order</option>
+                            <option value="backorder" <?php echo ($status_filter === 'backorder') ? 'selected' : ''; ?>>Backorder</option>
+                        </select>
+                        
+                        <!-- Date Range -->
+                        <div class="d-flex gap-2" style="width: 350px;">
+                            <select name="date_filter" class="form-select" style="width: 150px;">
+                                <option value="">All Time</option>
+                                <option value="today" <?php echo ($date_filter === 'today') ? 'selected' : ''; ?>>Today</option>
+                                <option value="week" <?php echo ($date_filter === 'week') ? 'selected' : ''; ?>>This Week</option>
+                                <option value="month" <?php echo ($date_filter === 'month') ? 'selected' : ''; ?>>This Month</option>
+                                <option value="year" <?php echo ($date_filter === 'year') ? 'selected' : ''; ?>>This Year</option>
+                            </select>
+                            <input type="date" name="start_date" class="form-control" style="width: 100px;" value="<?php echo $start_date; ?>" placeholder="Start">
+                            <span class="d-flex align-items-center">to</span>
+                            <input type="date" name="end_date" class="form-control" style="width: 100px;" value="<?php echo $end_date; ?>" placeholder="End">
+                        </div>
+                    </form>
+                    
+                    <!-- Total Expenses -->
+                   
                     </div>
                     <div class="table-responsive mb-0">
                       <table class="table table-bordered table-striped mb-0">
@@ -586,7 +647,34 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Auto-submit form when filters change
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.getElementById('searchFilterForm');
+    const filterInputs = filterForm.querySelectorAll('select, input');
+    const dateFilterSelect = filterForm.querySelector('select[name="date_filter"]');
+    const startDateInput = filterForm.querySelector('input[name="start_date"]');
+    const endDateInput = filterForm.querySelector('input[name="end_date"]');
+    
+    // Auto-submit when any filter changes
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // If date range is manually selected, clear the date filter dropdown
+            if ((input === startDateInput || input === endDateInput) && (startDateInput.value || endDateInput.value)) {
+                dateFilterSelect.value = '';
+            }
+            // If a date filter is selected from dropdown, clear the date inputs
+            else if (input === dateFilterSelect && input.value !== '') {
+                startDateInput.value = '';
+                endDateInput.value = '';
+            }
+            
+            filterForm.submit();
+        });
+    });
+});
+</script>
 <script>
     var el = document.getElementById("wrapper");
     var toggleButton = document.getElementById("menu-toggle");

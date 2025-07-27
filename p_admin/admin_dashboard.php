@@ -80,7 +80,7 @@ while ($proj = mysqli_fetch_assoc($proj_res2)) {
     while ($eqrow = mysqli_fetch_assoc($equip_query)) {
         $equip_total += floatval($eqrow['total']);
     }
-    $actual_total = $emp_total + $mat_total + $equip_total;
+    $actual_total = $mat_total + $equip_total;
     $actual_totals[] = round($actual_total, 2);
 }
 
@@ -99,7 +99,10 @@ $cat_est_labels = [];
 $cat_est_totals = [];
 $cat_est_query = mysqli_query($con, "SELECT category, SUM(
     (SELECT IFNULL(SUM(total),0) FROM project_add_employee WHERE project_id=p.project_id) +
-    (SELECT IFNULL(SUM(total),0) FROM project_add_materials WHERE project_id=p.project_id) +
+         (SELECT IFNULL(SUM(pam.material_price * pam.quantity + m.labor_other * pam.quantity + pam.additional_cost), 0) 
+         FROM project_add_materials pam 
+         JOIN materials m ON pam.material_id = m.id 
+         WHERE pam.project_id = p.project_id) +
     (SELECT IFNULL(SUM(total),0) FROM project_add_equipment WHERE project_id=p.project_id)
 ) as total FROM projects p WHERE user_id='$userid' GROUP BY category");
 while ($row = mysqli_fetch_assoc($cat_est_query)) {
@@ -141,7 +144,7 @@ while ($proj = mysqli_fetch_assoc($proj_res)) {
     while ($eqrow = mysqli_fetch_assoc($equip_query)) {
         $equip_total += floatval($eqrow['total']);
     }
-    $grand_total = $emp_total + $mat_total + $equip_total;
+    $grand_total =$mat_total + $equip_total;
     $projects_by_category[$cat][] = [
         'name' => $proj['project'],
         'total' => round($grand_total, 2)
@@ -186,12 +189,12 @@ if ($materials_total_query) {
 }
 
 // For Total Reorder count
-$reorder_count_query = mysqli_query($con, "SELECT COUNT(*) as count FROM back_orders WHERE reason = 'Reorder' AND approval_status = 'Approved'");
+$reorder_count_query = mysqli_query($con, "SELECT COUNT(*) as count FROM back_orders WHERE reason = 'Reorder'");
 $reorder_count_result = mysqli_fetch_assoc($reorder_count_query);
 $reorder_count = intval($reorder_count_result['count'] ?? 0);
 
 // For Total Backorder count
-$backorder_count_query = mysqli_query($con, "SELECT COUNT(*) as count FROM back_orders WHERE reason != 'Reorder' AND approval_status = 'Approved'");
+$backorder_count_query = mysqli_query($con, "SELECT COUNT(*) as count FROM back_orders WHERE reason != 'Reorder'");
 $backorder_count_result = mysqli_fetch_assoc($backorder_count_query);
 $backorder_count = intval($backorder_count_result['count'] ?? 0);
 
@@ -299,9 +302,7 @@ if ($userid) {
                 </a>
                 <a href="admin_user_activity_reports.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'admin_user_activity_reports.php' ? 'active' : ''; ?>">
                     <i class="fas fa-chart-line"></i> User Activity Reports
-                    <a href="admin_approval_requests.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'admin_approval_requests.php' ? 'active' : ''; ?>">
-                <i class="fas fa-clipboard-check"></i> Approval of Requests
-            </a>
+                </a>
             </div>
         </div>
         <!-- /#sidebar-wrapper -->

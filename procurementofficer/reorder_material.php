@@ -10,13 +10,11 @@ if ($con->connect_error) {
     die("Connection failed: " . $con->connect_error);
 }
 
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
     $material_id = intval($_POST['material_id']);
     $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
     
-    // No longer checking for existing reorders - proceed with reorder
-    
-    // Get the original material details
     $material_query = "SELECT * FROM materials WHERE id = $material_id";
     $material_result = $con->query($material_query);
     
@@ -76,6 +74,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
             $stmt->bind_param("iii", $material_id, $reorder_quantity, $user_id);
             $stmt->execute();
             
+            // Insert into order_expenses for the reorder
+            $expense_description = "Material Reorder: {$material['material_name']} (Qty: $reorder_quantity)";
+            $expense_amount = $reorder_quantity * $material['material_price'];
+            $expense_insert = "INSERT INTO order_expenses (user_id, expense, expensedate, expensecategory, description) 
+                             VALUES (?, ?, CURDATE(), 'Material', ?)";
+            $expense_stmt = $con->prepare($expense_insert);
+            $expense_stmt->bind_param("ids", $user_id, $expense_amount, $expense_description);
+            $expense_stmt->execute();
+            
             // Update the material quantity by adding the reorder quantity
             $update_quantity = "UPDATE materials SET quantity = quantity + ? WHERE id = ?";
             $update_stmt = $con->prepare($update_quantity);
@@ -131,9 +138,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
         }
     } else {
         header('Location: po_materials.php?error=1');
+        exit();
     }
-} else {
-    header('Location: po_materials.php');
 }
+
+// Handle backorder confirmation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'confirm_backorder' && isset($_POST['backorder_id'])) {
+    $backorder_id = intval($_POST['backorder_id']);
+    $result = confirmBackorder($con, $backorder_id);
+    
+    // Return JSON response
+    header('Content-Type: application/json');
+    echo json_encode($result);
+    exit();
+}
+
+header('Location: po_materials.php');
 exit();
-?> 
+?>

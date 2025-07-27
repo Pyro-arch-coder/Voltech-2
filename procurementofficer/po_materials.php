@@ -905,28 +905,21 @@ function short_number_format($num, $precision = 1) {
                             </div>
                             <div class="form-group mb-3">
                               <label>Category <span class="text-danger">*</span></label>
-                              <select class="form-control" id="categorySelect" required>
-                                <option value="">Select Category</option>
-                                <?php if ($all_categories) { $all_categories->data_seek(0); while($cat = $all_categories->fetch_assoc()): ?>
-                                  <option value="<?php echo htmlspecialchars($cat['category']); ?>">
-                                    <?php echo htmlspecialchars($cat['category']); ?>
-                                  </option>
-                                <?php endwhile; } ?>
-                              </select>
-                              <div class="invalid-feedback">
-                                Please select a category.
-                              </div>
+                              <input type="text" class="form-control" id="categoryInput" readonly>
                             </div>
                             <div class="form-group mb-3">
-                              <label>Location</label>
-                              <select class="form-control" id="locationSelect">
+                            <label>Location</label>
+                            <select class="form-control" id="locationSelect" required>
                                 <option value="">Select Location</option>
                                 <?php if ($all_warehouses) { $all_warehouses->data_seek(0); while($wh = $all_warehouses->fetch_assoc()): ?>
-                                  <option value="<?php echo htmlspecialchars($wh['warehouse']); ?>">
+                                <option value="<?php echo htmlspecialchars($wh['warehouse']); ?>">
                                     <?php echo htmlspecialchars($wh['warehouse']); ?>
-                                  </option>
+                                </option>
                                 <?php endwhile; } ?>
-                              </select>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a location.
+                            </div>
                             </div>
                             <div class="row">
                               <div class="col-6">
@@ -1136,6 +1129,63 @@ function short_number_format($num, $precision = 1) {
         </div>
     </div>
 
+    <div class="modal fade" id="backorderSuccessModal" tabindex="-1" aria-labelledby="backorderSuccessModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="backorderSuccessModalLabel">Backorder Successful!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <p id="backorderSuccessMessage">Backorder completed and quantity updated.</p>
+            </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reorder Success Modal -->
+    <div class="modal fade" id="reorderSuccessModal" tabindex="-1" aria-labelledby="reorderSuccessModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="reorderSuccessModalLabel">Reorder Successful!</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p id="reorderSuccessMessage">Reorder completed successfully!</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reorder Modal -->
+    <div class="modal fade" id="reorderModal" tabindex="-1" aria-labelledby="reorderModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+            <form id="reorderForm">
+                <div class="modal-header">
+                <h5 class="modal-title" id="reorderModalLabel">Reorder Material</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                <p id="reorderSummary"></p>
+                <input type="hidden" id="reorderMaterialId" name="material_id">
+                <input type="number" class="form-control" id="reorderQty" name="reorderQty" readonly>
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelReorderBtn" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-success">Confirm Reorder</button>
+                </div>
+            </form>
+            </div>
+        </div>
+        </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="po_materials.js"></script>
@@ -1169,7 +1219,7 @@ function short_number_format($num, $precision = 1) {
       } else if (params.get('reordered') === '1') {
         showFeedbackModal(true, 'Material reordered successfully!', '', 'reordered');
       } else if (params.get('backordered') === '1') {
-        showFeedbackModal(true, 'Backorder successfully! Notification has been sent.', '', 'backordered');
+        showFeedbackModal(true, 'Backorder successfully!', '', 'backordered');
       } else if (params.get('error') === 'duplicate') {
         const materialName = params.get('material') || 'this material';
         const status = params.get('status');
@@ -1366,7 +1416,7 @@ document.addEventListener('DOMContentLoaded', function() {
             row.innerHTML = `
                 <td>
                     <input type="checkbox" name="selectedSuppliers" value="${supplier.supplier_name}" 
-                           data-price="${supplier.material_price}" data-lead-time="${supplier.lead_time}" data-unit="${supplier.unit || ''}" data-quantity="${supplier.quantity || '0'}" data-labor_other="${supplier.labor_other || 0}">
+                           data-price="${supplier.material_price}" data-lead-time="${supplier.lead_time}" data-unit="${supplier.unit || ''}" data-quantity="${supplier.quantity || '0'}" data-labor_other="${supplier.labor_other || 0}" data-category="${supplier.category || ''}">
                 </td>
                 <td><strong>${supplier.supplier_name}</strong></td>
                 <td>₱ ${supplier.material_price.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
@@ -1411,11 +1461,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set default supplier if available
         if (selectedSupplier) {
             document.getElementById('selectedSupplierInput').value = selectedSupplier.name;
+            document.getElementById('categoryInput').value = selectedSupplier.category;
             document.getElementById('materialPriceInput').value = selectedSupplier.price;
             document.getElementById('laborOtherInput').value = selectedSupplier.labor_other;
             document.getElementById('laborOtherInput').readOnly = true;
         } else {
             document.getElementById('selectedSupplierInput').value = '';
+            document.getElementById('categoryInput').value = '';
             document.getElementById('materialPriceInput').value = '';
             document.getElementById('laborOtherInput').value = '';
             document.getElementById('laborOtherInput').readOnly = false;
@@ -1426,14 +1478,14 @@ document.addEventListener('DOMContentLoaded', function() {
         addToCartBtn.style.display = 'inline-block';
         
         // Add real-time validation to form fields
-        const categorySelect = document.getElementById('categorySelect');
+        const categoryInput = document.getElementById('categoryInput');
         const finalQuantityInput = document.getElementById('finalQuantityInput');
         const statusSelect = document.getElementById('statusSelect');
         const laborOtherInput = document.getElementById('laborOtherInput');
         
         // Category validation
-        if (categorySelect) {
-            categorySelect.addEventListener('change', function() {
+        if (categoryInput) {
+            categoryInput.addEventListener('change', function() {
                 validateAddMaterialField(this, 'category');
             });
         }
@@ -1527,6 +1579,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 price: parseFloat(firstSupplier.getAttribute('data-price')),
                 lead_time: parseInt(firstSupplier.getAttribute('data-lead-time')),
                 unit: unitValue, // Get unit from the data attribute
+                category: firstSupplier.getAttribute('data-category') || '',
                 quantity: parseInt(firstSupplier.getAttribute('data-quantity')),
                 labor_other: parseFloat(firstSupplier.getAttribute('data-labor_other')) // Get labor_other from data attribute
             };
@@ -1537,6 +1590,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('selectedSupplierInput').value = selectedSupplier.name;
             document.getElementById('materialPriceInput').value = selectedSupplier.price;
             document.getElementById('unitInput').value = selectedSupplier.unit; // Set unit in the form
+            document.getElementById('categoryInput').value = selectedSupplier.category;
             document.getElementById('laborOtherInput').value = selectedSupplier.labor_other;
             document.getElementById('laborOtherInput').readOnly = true;
             
@@ -1572,7 +1626,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to validate add material form
     function validateAddMaterialForm() {
-        const category = document.getElementById('categorySelect');
+        const category = document.getElementById('categoryInput');
         const quantity = document.getElementById('finalQuantityInput');
         const status = document.getElementById('statusSelect');
         const labor_other = document.getElementById('laborOtherInput');
@@ -1637,7 +1691,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to add material to cart
     addToCartBtn.addEventListener('click', function() {
         const materialName = document.getElementById('materialNameInput').value;
-        const category = document.getElementById('categorySelect');
+        const category = document.getElementById('categoryInput').value;
         const quantity = document.getElementById('finalQuantityInput');
         const status = document.getElementById('statusSelect');
         const labor_other = document.getElementById('laborOtherInput');
@@ -1704,7 +1758,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Validate all form fields
-        const category = document.getElementById('categorySelect');
+        const category = document.getElementById('categoryInput');
         const quantity = document.getElementById('finalQuantityInput');
         const unit = document.getElementById('unitInput');
         const status = document.getElementById('statusSelect');
@@ -1790,7 +1844,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedCheckboxes.forEach(checkbox => {
             const materialData = {
                 material_name: document.getElementById('materialNameInput').value,
-                category: category.value,
+                category: document.getElementById('categoryInput').value,
                 quantity: quantityValue,
                 unit: unit.value,
                 status: status.value,
@@ -1995,14 +2049,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById(`backorderForm${materialId}`);
         form.addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            // Clear previous validation states
             this.classList.remove('was-validated');
-            
-            // Custom validation
             let isValid = true;
-            
-            // Validate quantity
+
             const deductQty = parseInt(deductQuantityInput.value);
             if (!deductQty || deductQty < 1 || deductQty > currentQuantity) {
                 deductQuantityInput.classList.add('is-invalid');
@@ -2011,8 +2060,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 deductQuantityInput.classList.remove('is-invalid');
                 deductQuantityInput.classList.add('is-valid');
             }
-            
-            // Validate reason
+
             if (!reasonSelect.value) {
                 reasonSelect.classList.add('is-invalid');
                 isValid = false;
@@ -2020,8 +2068,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 reasonSelect.classList.remove('is-invalid');
                 reasonSelect.classList.add('is-valid');
             }
-            
-            // Validate other reason if selected
+
             if (reasonSelect.value === 'Other' && (!otherReasonInput.value || otherReasonInput.value.trim().length < 5)) {
                 otherReasonInput.classList.add('is-invalid');
                 isValid = false;
@@ -2029,12 +2076,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 otherReasonInput.classList.remove('is-invalid');
                 otherReasonInput.classList.add('is-valid');
             }
-            
+
             if (!isValid) {
                 this.classList.add('was-validated');
                 return;
             }
-            
+
             // Confirm action
             if (confirm(`Are you sure you want to create a backorder?\n\n- Add ${deductQty} ${unit} to backorders\n- Reason: ${reasonSelect.value}${reasonSelect.value === 'Other' ? ' - ' + otherReasonInput.value : ''}`)) {
                 // Submit the form
@@ -2045,6 +2092,140 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize summary
         updateSummary();
     }
+});
+
+// --- Reorder Modal logic (DO NOT PUT INSIDE DOMContentLoaded AGAIN!) ---
+document.addEventListener('show-reorder-modal', function(e) {
+    document.getElementById('reorderMaterialId').value = e.detail.materialId;
+    document.getElementById('reorderQty').value = e.detail.qty;
+    document.getElementById('reorderSummary').innerText = `Do you want to reorder ${e.detail.qty} unit(s)?`;
+    var reorderModal = new bootstrap.Modal(document.getElementById('reorderModal'));
+    reorderModal.show();
+});
+
+document.getElementById('reorderForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const qty = document.getElementById('reorderQty').value;
+    const materialId = document.getElementById('reorderMaterialId').value;
+    // TODO: Add your actual reorder AJAX/PHP logic here
+    alert(`Reorder placed for ${qty} unit(s) of material ID ${materialId}!`);
+    bootstrap.Modal.getInstance(document.getElementById('reorderModal')).hide();
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show reorder modal if URL param says so (after backorder redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('show_reorder') === '1') {
+        const materialId = urlParams.get('material_id');
+        const qty = urlParams.get('qty');
+        // Prefill the reorder modal fields
+        document.getElementById('reorderMaterialId').value = materialId;
+        document.getElementById('reorderQty').value = qty;
+        document.getElementById('reorderSummary').innerText = `Do you want to reorder ${qty} unit(s)?`;
+        // Show the modal
+        var reorderModal = new bootstrap.Modal(document.getElementById('reorderModal'));
+        reorderModal.show();
+
+        // Clean up URL so it doesn't open again on refresh
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // Handle reorder form submission
+    document.getElementById('reorderForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const qty = document.getElementById('reorderQty').value;
+        const materialId = document.getElementById('reorderMaterialId').value;
+        // Do your reorder logic here (AJAX, or redirect, or PHP form submission)
+        
+        bootstrap.Modal.getInstance(document.getElementById('reorderModal')).hide();
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+
+    // Show success then reorder modal if backorder was successful
+    if (urlParams.get('backorder_success') === '1') {
+        var backorderSuccessModal = new bootstrap.Modal(document.getElementById('backorderSuccessModal'));
+        document.getElementById('backorderSuccessMessage').innerText =
+            `Backorder completed! Quantity updated${urlParams.get('qty') ? ' (-' + urlParams.get('qty') + ')' : ''}.`;
+        backorderSuccessModal.show();
+
+        // After 5 seconds, hide success modal and show reorder modal
+        setTimeout(function() {
+            backorderSuccessModal.hide();
+            showReorderModal(urlParams.get('material_id'), urlParams.get('qty'));
+        }, 2000);
+
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    function showReorderModal(materialId, qty) {
+        document.getElementById('reorderMaterialId').value = materialId;
+        document.getElementById('reorderQty').value = qty;
+        document.getElementById('reorderSummary').innerText = `Do you want to reorder ${qty} unit(s)?`;
+        var reorderModal = new bootstrap.Modal(document.getElementById('reorderModal'));
+        reorderModal.show();
+
+        // Optional: Attach handler for cancel button
+        document.getElementById('cancelReorderBtn').onclick = function() {
+            reorderModal.hide();
+        };
+    }
+
+    // Handle reorder form submission
+    document.getElementById('reorderForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const qty = document.getElementById('reorderQty').value;
+        const materialId = document.getElementById('reorderMaterialId').value;
+        const modal = bootstrap.Modal.getInstance(document.getElementById('reorderModal'));
+        
+        // Show loading state
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+        
+        // Send reorder request
+        fetch('reordertwo.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `material_id=${materialId}&quantity=${qty}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                const successModal = new bootstrap.Modal(document.getElementById('reorderSuccessModal'));
+                document.getElementById('reorderSuccessMessage').innerText = data.message || 'Reorder request submitted successfully!';
+                modal.hide();
+                successModal.show();
+                
+                // Reload the page after 2 seconds
+                setTimeout(() => {
+                window.location.reload();
+                }, 2000);
+            } else {
+                // Show error message
+                alert(data.message || 'Failed to process reorder. Please try again.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while processing your request. Please try again.');
+        })
+        .finally(() => {
+            // Reset button state
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        });
+    });
 });
 </script>
 </body>

@@ -10,12 +10,13 @@ if ($con->connect_error) {
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $equipment_name = mysqli_real_escape_string($con, $_POST['equipment_name']);
-    $status = mysqli_real_escape_string($con, $_POST['status']);
+    $status = 'Available'; // Default status
     $category = mysqli_real_escape_string($con, $_POST['category']);
     $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
     $user_level = isset($_SESSION['user_level']) ? intval($_SESSION['user_level']) : 0;
     $user_name = isset($_SESSION['firstname']) && isset($_SESSION['lastname']) ? trim($_SESSION['firstname'] . ' ' . $_SESSION['lastname']) : '';
     $equipment_price = isset($_POST['equipment_price']) && $_POST['equipment_price'] !== '' ? floatval($_POST['equipment_price']) : null;
+    
     if ($category === 'Company') {
         $depreciation = isset($_POST['depreciation']) && $_POST['depreciation'] !== '' ? floatval($_POST['depreciation']) : null;
         $rental_fee = null;
@@ -26,7 +27,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $location = isset($_POST['location']) ? mysqli_real_escape_string($con, $_POST['location']) : null;
 
-    $insert_query = "INSERT INTO equipment (equipment_name, location, status, approval, category, depreciation, rental_fee, equipment_price, user_id) VALUES ('$equipment_name', " . ($location ? "'$location'" : "NULL") . ", '$status', 'Pending', '$category', " . ($depreciation !== null ? "'$depreciation'" : "NULL") . ", " . ($rental_fee !== null ? "'$rental_fee'" : "NULL") . ", " . ($equipment_price !== null ? "'$equipment_price'" : "NULL") . ", $user_id)";
+    $insert_query = "INSERT INTO equipment (
+        equipment_name, 
+        location, 
+        status, 
+        category, 
+        depreciation, 
+        equipment_price, 
+        user_id,
+        borrow_time,
+        return_time
+    ) VALUES (
+        '$equipment_name', 
+        " . ($location ? "'$location'" : "NULL") . ", 
+        '$status', 
+        '$category', 
+        " . ($depreciation !== null ? "'$depreciation'" : "NULL") . ", 
+        " . ($equipment_price !== null ? "'$equipment_price'" : "NULL") . ", 
+        $user_id,
+        '0000-00-00 00:00:00',
+        '0000-00-00 00:00:00'
+    )";
     
     if ($con->query($insert_query)) {
         // Notification logic (like add_materials.php)

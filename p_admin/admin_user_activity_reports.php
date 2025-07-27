@@ -218,9 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <a href="admin_user_activity_reports.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'admin_user_activity_reports.php' ? 'active' : ''; ?>">
                     <i class="fas fa-chart-line"></i> User Activity Reports
                 </a>
-                <a href="admin_approval_requests.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'admin_approval_requests.php' ? 'active' : ''; ?>">
-                <i class="fas fa-clipboard-check"></i> Approval of Requests
-            </a>
+               
             </div>
     </div>
     <!-- /#sidebar-wrapper -->

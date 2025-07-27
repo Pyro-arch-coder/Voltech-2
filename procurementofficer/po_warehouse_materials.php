@@ -295,7 +295,7 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                                     <td><?php echo htmlspecialchars($row['warehouse']); ?></td>
                                     <td><?php echo htmlspecialchars($row['category']); ?></td>
                                     <td>
-                                        <button type="button" class="btn btn-warning btn-sm me-1 text-white" data-bs-toggle="modal" data-bs-target="#editWarehouseModal<?php echo $row['id']; ?>">
+                                        <button type="button" class="btn btn-warning btn-sm me-1" data-bs-toggle="modal" data-bs-target="#editWarehouseModal<?php echo $row['id']; ?>">
                                             <i class="fas fa-edit"></i> Edit
                                         </button>
                                         <button type="button" class="btn btn-danger btn-sm delete-warehouse-btn" data-id="<?php echo $row['id']; ?>" data-name="<?php echo htmlspecialchars($row['warehouse']); ?>">

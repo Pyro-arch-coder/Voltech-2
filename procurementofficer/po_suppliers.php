@@ -26,6 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_supplier_material
     $unit = isset($_POST['unit']) ? trim($_POST['unit']) : '';
     $status = isset($_POST['status']) ? trim($_POST['status']) : 'Available';
     $material_price = isset($_POST['material_price']) ? floatval($_POST['material_price']) : 0;
+    $category = isset($_POST['category']) ? trim($_POST['category']) : '';
     $low_stock_threshold = isset($_POST['low_stock_threshold']) ? intval($_POST['low_stock_threshold']) : 10;
     $lead_time = isset($_POST['lead_time']) ? intval($_POST['lead_time']) : 0;
     $labor_other = isset($_POST['labor_other']) ? floatval($_POST['labor_other']) : 0;
@@ -57,9 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_supplier_material
             $response['message'] = 'This material already exists for this supplier.';
         } else {
             // Insert into suppliers_materials table with new fields
-            $insert_sql = "INSERT INTO suppliers_materials (supplier_id, material_name, quantity, unit, status, material_price, labor_other, low_stock_threshold, lead_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $insert_sql = "INSERT INTO suppliers_materials (supplier_id, material_name, category, quantity, unit, status, material_price, labor_other, low_stock_threshold, lead_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $insert_stmt = $con->prepare($insert_sql);
-            $insert_stmt->bind_param("isissddii", $supplier_id, $material_name, $quantity, $unit, $status, $material_price, $labor_other, $low_stock_threshold, $lead_time);
+            $insert_stmt->bind_param("ississddii", $supplier_id, $material_name, $category, $quantity, $unit, $status, $material_price, $labor_other, $low_stock_threshold, $lead_time);
             
             if ($insert_stmt->execute()) {
                 $response['success'] = true;
@@ -113,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_supplier_materia
     $unit = isset($_POST['unit']) ? trim($_POST['unit']) : '';
     $status = isset($_POST['status']) ? trim($_POST['status']) : 'Available';
     $material_price = isset($_POST['material_price']) ? floatval($_POST['material_price']) : 0;
+    $category = isset($_POST['category']) ? trim($_POST['category']) : '';
     $low_stock_threshold = isset($_POST['low_stock_threshold']) ? intval($_POST['low_stock_threshold']) : 10;
     $lead_time = isset($_POST['lead_time']) ? intval($_POST['lead_time']) : 0;
     $labor_other = isset($_POST['labor_other']) ? floatval($_POST['labor_other']) : 0;
@@ -131,9 +133,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_supplier_materia
     } elseif ($lead_time < 0) {
         $response['message'] = 'Lead time cannot be negative.';
     } else {
-        $update_sql = "UPDATE suppliers_materials SET material_name=?, quantity=?, unit=?, status=?, material_price=?, labor_other=?, low_stock_threshold=?, lead_time=? WHERE id=?";
+        $update_sql = "UPDATE suppliers_materials SET material_name=?, category=?, quantity=?, unit=?, status=?, material_price=?, labor_other=?, low_stock_threshold=?, lead_time=? WHERE id=?";
         $update_stmt = $con->prepare($update_sql);
-        $update_stmt->bind_param("sissddiii", $material_name, $quantity, $unit, $status, $material_price, $labor_other, $low_stock_threshold, $lead_time, $material_id);
+        $update_stmt->bind_param("issisdddii", $material_name, $category, $quantity, $unit, $status, $material_price, $labor_other, $low_stock_threshold, $lead_time, $material_id);
         if ($update_stmt->execute()) {
             $response['success'] = true;
             $response['message'] = 'Material updated successfully!';
@@ -460,18 +462,20 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                     </div>
                   </div>
                 </div>
-                <!-- Feedback Modal (Unified for Success/Error) -->
-                <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
-                  <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content text-center">
-                      <div class="modal-body">
-                        <span id="feedbackIcon" style="font-size: 3rem;"></span>
-                        <h4 id="feedbackTitle"></h4>
-                        <p id="feedbackMessage"></p>
-                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
-                      </div>
+                <!-- Feedback Modal (Unified for Success/Error) with higher z-index -->
+                <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true" style="z-index: 9999;">
+                    <div class="modal-dialog modal-dialog-centered" style="z-index: 10000;">
+                        <div class="modal-content text-center">
+                            <div class="modal-body">
+                                <span id="feedbackIcon" style="font-size: 3rem;"></span>
+                                <h4 id="feedbackTitle"></h4>
+                                <p id="feedbackMessage"></p>
+                            </div>
+                            <div class="modal-footer justify-content-center">
+                                <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+                            </div>
+                        </div>
                     </div>
-                  </div>
                 </div>
             </div>
         </div>
@@ -694,6 +698,19 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                     <div class="invalid-feedback">Please enter a valid material name (2-100 characters).</div>
                                 </div>
                                 <div class="form-group mb-3">
+                                    <label>Category *</label>
+                                    <select class="form-control" name="category" required>
+                                        <option value="">Select Category</option>
+                                        <?php 
+                                        $categories = $con->query("SELECT DISTINCT category FROM warehouses WHERE category IS NOT NULL AND category != '' ORDER BY category");
+                                        while($cat = $categories->fetch_assoc()): 
+                                        ?>
+                                            <option value="<?php echo htmlspecialchars($cat['category']); ?>"><?php echo htmlspecialchars($cat['category']); ?></option>
+                                        <?php endwhile; ?>
+                                    </select>
+                                    <div class="invalid-feedback">Please select a category.</div>
+                                </div>
+                                <div class="form-group mb-3">
                                     <label>Quantity</label>
                                     <input type="number" min="0" max="999999" class="form-control" name="quantity" value="0">
                                     <div class="invalid-feedback">Quantity must be between 0 and 999,999.</div>
@@ -908,6 +925,10 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                 
                 loadSupplierMaterials(supplierId);
                 
+                // Load categories into the add material form
+                const categorySelect = document.querySelector('#addMaterialForm select[name="category"]');
+                loadCategories(categorySelect);
+                
                 const materialsModal = new bootstrap.Modal(document.getElementById('supplierMaterialsModal'));
                 materialsModal.show();
             });
@@ -1003,6 +1024,16 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
             // Clear previous validation states
             this.classList.remove('was-validated');
             
+            // Add custom validation for category
+            const categorySelect = this.querySelector('select[name="category"]');
+            if (!categorySelect.value) {
+                categorySelect.setCustomValidity('Please select a category');
+                categorySelect.reportValidity();
+                return;
+            } else {
+                categorySelect.setCustomValidity('');
+            }
+            
             // Custom validation
             let isValid = true;
             const formData = new FormData(this);
@@ -1092,6 +1123,10 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
             
             // Add the AJAX flag
             formData.append('add_supplier_material', '1');
+            
+            // Get the selected category
+            const category = this.querySelector('select[name="category"]').value;
+            formData.set('category', category);
             
             fetch('', {
                 method: 'POST',
@@ -1259,6 +1294,27 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
             }
         });
     });
+
+    // Function to load categories into dropdown
+    function loadCategories(selectElement) {
+        fetch('get_categories.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Clear existing options except the first one
+                    while (selectElement.options.length > 1) {
+                        selectElement.remove(1);
+                    }
+                    
+                    // Add new categories
+                    data.categories.forEach(category => {
+                        const option = new Option(category, category);
+                        selectElement.add(option);
+                    });
+                }
+            })
+            .catch(error => console.error('Error loading categories:', error));
+    }
 
     // Function to load supplier materials
     function loadSupplierMaterials(supplierId) {

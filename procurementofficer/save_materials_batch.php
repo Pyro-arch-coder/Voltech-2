@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $response = [
         'success' => $success_count > 0,
-        'message' => $success_count > 0 ? "Successfully saved $success_count materials." : "Failed to save any materials.",
+        'message' => $success_count > 0 ? "Successfully saved $success_count materials." : "Materials Already Exists.",
         'saved_count' => $success_count,
         'errors' => $errors
     ];

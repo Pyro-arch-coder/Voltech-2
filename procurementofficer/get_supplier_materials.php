@@ -22,7 +22,7 @@ if (!$supplier_id) {
 }
 
 // Fetch materials for the specific supplier
-$sql = "SELECT id, material_name, quantity, unit, status, material_price, labor_other, low_stock_threshold, lead_time FROM suppliers_materials WHERE supplier_id = ? ORDER BY material_name";
+$sql = "SELECT id, material_name, quantity, unit, status, material_price, labor_other, category, low_stock_threshold, lead_time FROM suppliers_materials WHERE supplier_id = ? ORDER BY material_name";
 $stmt = $con->prepare($sql);
 $stmt->bind_param("i", $supplier_id);
 $stmt->execute();

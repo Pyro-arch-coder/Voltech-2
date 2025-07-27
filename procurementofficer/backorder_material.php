@@ -28,17 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
         exit();
     }
     
-    // Check if there's already a backorder request for this material
-    $check_pending = "SELECT id FROM back_orders WHERE material_id = ? AND reason != 'Reorder'";
-    $check_stmt = $con->prepare($check_pending);
-    $check_stmt->bind_param("i", $material_id);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
-    
-    if ($check_result->num_rows > 0) {
-        header('Location: po_materials.php?error=There is already a backorder request for this material');
-        exit();
-    }
+    // Removed check for existing backorders as per user request
     
     // Get current material data to check if it exists and get material name
     $material_query = "SELECT * FROM materials WHERE id = ?";
@@ -77,6 +67,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
         $stmt->bind_param("iisi", $material_id, $backorder_quantity, $final_reason, $user_id);
         $stmt->execute();
         
+        // Insert into order_expenses for the backorder
+        $expense_description = "Material Backorder: {$material['material_name']} (Qty: $backorder_quantity) - Deduction";
+        $expense_amount = -1 * ($backorder_quantity * $material['material_price']);
+        $expense_insert = "INSERT INTO order_expenses (user_id, expense, expensedate, expensecategory, description) 
+                         VALUES (?, ?, CURDATE(), 'Material', ?)";
+        $expense_stmt = $con->prepare($expense_insert);
+        $expense_stmt->bind_param("ids", $user_id, $expense_amount, $expense_description);
+        $expense_stmt->execute();
+        
         // Deduct from material quantity
         $update_material = "UPDATE materials SET quantity = quantity - ? WHERE id = ?";
         $update_stmt = $con->prepare($update_material);
@@ -96,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
         
         // Commit transaction
         $con->commit();
-        header('Location: po_materials.php?backordered=1');
+        header('Location: po_materials.php?backorder_success=1&material_id=' . $material_id . '&qty=' . $backorder_quantity);
         
     } catch (Exception $e) {
         // Rollback on error
