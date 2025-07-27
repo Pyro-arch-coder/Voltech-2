@@ -289,8 +289,13 @@ if ($userid) {
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-success text-white d-flex align-items-center justify-content-between">
                     <h4 class="mb-0">Progress for: <?php echo htmlspecialchars($project['project']); ?></h4>
-                    <div>
-                        <button  class="btn btn-light btn-sm ml-auto" data-bs-toggle="modal" data-bs-target="#addDivisionModal"><i class="fas fa-plus"></i> Add Tasks</button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#blueprintModal">
+                            <i class="fas fa-upload me-1"></i> Blueprint
+                        </button>
+                        <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addDivisionModal">
+                            <i class="fas fa-plus me-1"></i> Add Tasks
+                        </button>
                         <a href="project_actual.php?id=<?php echo $project_id; ?>" class="btn btn-light btn-sm">
                             <i class="fa fa-arrow-left"></i> Back
                         </a>
@@ -431,6 +436,134 @@ if ($userid) {
         </div>
     </div>
 </div>
+<!-- Blueprint Modal -->
+<div class="modal fade" id="blueprintModal" tabindex="-1" aria-labelledby="blueprintModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="blueprintModalLabel">Floor Plans</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs mb-4" id="floorPlanTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-tab-pane" type="button" role="tab" aria-controls="upload-tab-pane" aria-selected="true">
+              <i class="fas fa-upload me-1"></i> Upload Floor Plan
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved-tab-pane" type="button" role="tab" aria-controls="saved-tab-pane" aria-selected="false">
+              <i class="fas fa-list me-1"></i> Saved Floor Plans
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab panes -->
+        <div class="tab-content" id="floorPlanTabsContent">
+          <!-- Upload Tab -->
+          <div class="tab-pane fade show active" id="upload-tab-pane" role="tabpanel" aria-labelledby="upload-tab" tabindex="0">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title mb-4">Upload New Floor Plan</h5>
+                <form id="uploadBlueprintForm" enctype="multipart/form-data">
+                  <div class="mb-3">
+                    <label for="planName" class="form-label">Plan Name</label>
+                    <input type="text" class="form-control" id="planName" name="planName" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="planLocation" class="form-label">Location</label>
+                    <input type="text" class="form-control" id="planLocation" name="planLocation" value="<?php echo htmlspecialchars($project['location'] ?? ''); ?>" readonly>
+                    <div class="form-text">This field is automatically set to the project's location.</div>
+                  </div>
+                  <div class="mb-4">
+                    <label for="planImage" class="form-label">Floor Plan Image</label>
+                    <input class="form-control" type="file" id="planImage" name="planImage" accept="image/*" required>
+                    <div class="form-text">Upload an image file (JPG, PNG, etc. Max 5MB)</div>
+                  </div>
+                  <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-upload me-1"></i> Upload Floor Plan
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Saved Floor Plans Tab -->
+          <div class="tab-pane fade" id="saved-tab-pane" role="tabpanel" aria-labelledby="saved-tab" tabindex="0">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title mb-4">Saved Floor Plans</h5>
+                <div class="table-responsive">
+                  <table class="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Location</th>
+                        <th>Uploaded</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="floorPlansList">
+                      <?php
+                      $floorPlans = $con->query("SELECT * FROM floor_plans ORDER BY created_at DESC");
+                      if ($floorPlans && $floorPlans->num_rows > 0) {
+                        while($plan = $floorPlans->fetch_assoc()) {
+                          echo "<tr>";
+                          echo "<td>" . htmlspecialchars($plan['name']) . "</td>";
+                          echo "<td>" . htmlspecialchars($plan['location']) . "</td>";
+                          echo "<td>" . date('M d, Y', strtotime($plan['created_at'])) . "</td>";
+                          echo "<td class='text-nowrap'>";
+                          echo "<button class='btn btn-sm btn-outline-primary view-plan me-1' data-id='" . $plan['id'] . "' data-name='" . htmlspecialchars($plan['name'], ENT_QUOTES) . "' data-location='" . htmlspecialchars($plan['location'], ENT_QUOTES) . "' data-image='" . htmlspecialchars($plan['image_path']) . "'>";
+                          echo "<i class='fas fa-eye'></i> View";
+                          echo "</button>";
+                          echo "<button class='btn btn-sm btn-outline-danger delete-plan' data-id='" . $plan['id'] . "'>";
+                          echo "<i class='fas fa-trash'></i> Delete";
+                          echo "</button>";
+                          echo "</td>";
+                          echo "</tr>";
+                        }
+                      } else {
+                        echo "<tr><td colspan='4' class='text-center py-4'>No floor plans found. Go to the Upload tab to add a new floor plan.</td></tr>";
+                      }
+                      ?>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Floor Plan Modal -->
+<div class="modal fade" id="viewPlanModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="viewPlanModalLabel">Floor Plan: <span id="planTitle"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="mb-3">
+          <p class="text-muted mb-2">Location: <span id="planLocationText"></span></p>
+        </div>
+        <div style="max-height: 70vh; overflow: auto;">
+          <img id="planImageView" src="" alt="Floor Plan" class="img-fluid" style="max-width: 100%; height: auto;">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Add Division Modal -->
 <div class="modal fade" id="addDivisionModal" tabindex="-1">
   <div class="modal-dialog">
@@ -519,6 +652,140 @@ if (isset($_GET['error'])):
 if (typeof jQuery == 'undefined') {
     document.write('<script src="https://code.jquery.com/jquery-3.6.0.min.js"><\/script>');
 }
+
+// Handle floor plan form submission
+$('#uploadBlueprintForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    var $form = $(this);
+    var $submitBtn = $form.find('button[type="submit"]');
+    var originalBtnText = $submitBtn.html();
+    
+    // Show loading state
+    $submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Uploading...');
+    
+    var formData = new FormData(this);
+    
+    $.ajax({
+        url: 'save_floor_plan.php',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                // Show success message
+                $form.prepend('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+                    'Floor plan uploaded successfully! ' +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                    '</div>');
+                
+                // Reset form
+                $form.trigger('reset');
+                
+                // Switch to the Saved Floor Plans tab after 1.5 seconds
+                setTimeout(function() {
+                    var savedTab = new bootstrap.Tab(document.getElementById('saved-tab'));
+                    savedTab.show();
+                    
+                    // Reload the floor plans list
+                    loadFloorPlans();
+                }, 1500);
+            } else {
+                // Show error message
+                $form.prepend('<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                    (response.message || 'An error occurred while uploading the floor plan.') +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                    '</div>');
+            }
+        },
+        error: function() {
+            $form.prepend('<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                'An error occurred while uploading the floor plan. Please try again.' +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                '</div>');
+        },
+        complete: function() {
+            // Reset button state
+            $submitBtn.prop('disabled', false).html(originalBtnText);
+            
+            // Auto-close alerts after 5 seconds
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
+        }
+    });
+});
+
+// Function to load floor plans via AJAX
+function loadFloorPlans() {
+    $.get('get_floor_plans.php', function(response) {
+        if (response.success) {
+            var tbody = $('#floorPlansList');
+            tbody.empty();
+            
+            if (response.data && response.data.length > 0) {
+                $.each(response.data, function(index, plan) {
+                    var row = $('<tr>');
+                    row.append($('<td>').text(plan.name));
+                    row.append($('<td>').text(plan.location));
+                    row.append($('<td>').text(new Date(plan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })));
+                    
+                    var actions = $('<td class="text-nowrap">');
+                    actions.append($('<button>', {
+                        'class': 'btn btn-sm btn-outline-primary view-plan me-1',
+                        'data-id': plan.id,
+                        'data-name': plan.name,
+                        'data-location': plan.location,
+                        'data-image': plan.image_path,
+                        html: '<i class="fas fa-eye"></i> View'
+                    }));
+                    actions.append(' ');
+                    actions.append($('<button>', {
+                        'class': 'btn btn-sm btn-outline-danger delete-plan',
+                        'data-id': plan.id,
+                        html: '<i class="fas fa-trash"></i> Delete'
+                    }));
+                    
+                    row.append(actions);
+                    tbody.append(row);
+                });
+            } else {
+                tbody.append('<tr><td colspan="4" class="text-center py-4">No floor plans found. Go to the Upload tab to add a new floor plan.</td></tr>');
+            }
+        }
+    }, 'json');
+}
+
+// Handle view floor plan button click
+$(document).on('click', '.view-plan', function() {
+    var name = $(this).data('name');
+    var location = $(this).data('location');
+    var imagePath = $(this).data('image');
+    
+    $('#planTitle').text(name);
+    $('#planLocationText').text(location);
+    $('#planImageView').attr('src', '../' + imagePath);
+    
+    var viewPlanModal = new bootstrap.Modal(document.getElementById('viewPlanModal'));
+    viewPlanModal.show();
+});
+
+// Handle delete floor plan button click
+$(document).on('click', '.delete-plan', function() {
+    if (confirm('Are you sure you want to delete this floor plan?')) {
+        var planId = $(this).data('id');
+        
+        $.post('delete_floor_plan.php', { id: planId }, function(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + response.message);
+            }
+        }, 'json');
+    }
+});
 
 // Change Password AJAX (like pm_profile.php)
 document.addEventListener('DOMContentLoaded', function() {
