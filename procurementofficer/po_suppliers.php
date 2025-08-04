@@ -22,9 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_supplier_material
     
     $supplier_id = isset($_POST['supplier_id']) ? intval($_POST['supplier_id']) : 0;
     $material_name = isset($_POST['material_name']) ? trim($_POST['material_name']) : '';
+    $brand = isset($_POST['brand']) ? trim($_POST['brand']) : null;
+    $specification = isset($_POST['specification']) ? trim($_POST['specification']) : null;
     $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 0;
     $unit = isset($_POST['unit']) ? trim($_POST['unit']) : '';
-    $status = isset($_POST['status']) ? trim($_POST['status']) : 'Available';
     $material_price = isset($_POST['material_price']) ? floatval($_POST['material_price']) : 0;
     $category = isset($_POST['category']) ? trim($_POST['category']) : '';
     $low_stock_threshold = isset($_POST['low_stock_threshold']) ? intval($_POST['low_stock_threshold']) : 10;
@@ -57,10 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_supplier_material
         if ($check_result->num_rows > 0) {
             $response['message'] = 'This material already exists for this supplier.';
         } else {
-            // Insert into suppliers_materials table with new fields
-            $insert_sql = "INSERT INTO suppliers_materials (supplier_id, material_name, category, quantity, unit, status, material_price, labor_other, low_stock_threshold, lead_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            // Insert into suppliers_materials table with new fields including brand and specification
+            $insert_sql = "INSERT INTO suppliers_materials (supplier_id, material_name, brand, specification, category, quantity, unit, material_price, labor_other, low_stock_threshold, lead_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $insert_stmt = $con->prepare($insert_sql);
-            $insert_stmt->bind_param("ississddii", $supplier_id, $material_name, $category, $quantity, $unit, $status, $material_price, $labor_other, $low_stock_threshold, $lead_time);
+            $insert_stmt->bind_param("isssssdddii", $supplier_id, $material_name, $brand, $specification, $category, $quantity, $unit, $material_price, $labor_other, $low_stock_threshold, $lead_time);
             
             if ($insert_stmt->execute()) {
                 $response['success'] = true;
@@ -110,6 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_supplier_materia
     $response = ['success' => false, 'message' => ''];
     $material_id = isset($_POST['material_id']) ? intval($_POST['material_id']) : 0;
     $material_name = isset($_POST['material_name']) ? trim($_POST['material_name']) : '';
+    $brand = isset($_POST['brand']) ? trim($_POST['brand']) : null;
+    $specification = isset($_POST['specification']) ? trim($_POST['specification']) : null;
     $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 0;
     $unit = isset($_POST['unit']) ? trim($_POST['unit']) : '';
     $status = isset($_POST['status']) ? trim($_POST['status']) : 'Available';
@@ -133,9 +136,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_supplier_materia
     } elseif ($lead_time < 0) {
         $response['message'] = 'Lead time cannot be negative.';
     } else {
-        $update_sql = "UPDATE suppliers_materials SET material_name=?, category=?, quantity=?, unit=?, status=?, material_price=?, labor_other=?, low_stock_threshold=?, lead_time=? WHERE id=?";
+        $update_sql = "UPDATE suppliers_materials SET material_name=?, brand=?, specification=?, category=?, quantity=?, unit=?, status=?, material_price=?, labor_other=?, low_stock_threshold=?, lead_time=? WHERE id=?";
         $update_stmt = $con->prepare($update_sql);
-        $update_stmt->bind_param("issisdddii", $material_name, $category, $quantity, $unit, $status, $material_price, $labor_other, $low_stock_threshold, $lead_time, $material_id);
+        $update_stmt->bind_param("ssssisssddii", $material_name, $brand, $specification, $category, $quantity, $unit, $status, $material_price, $labor_other, $low_stock_threshold, $lead_time, $material_id);
         if ($update_stmt->execute()) {
             $response['success'] = true;
             $response['message'] = 'Material updated successfully!';
@@ -698,6 +701,16 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                     <div class="invalid-feedback">Please enter a valid material name (2-100 characters).</div>
                                 </div>
                                 <div class="form-group mb-3">
+                                    <label>Brand *</label>
+                                    <input type="text" class="form-control" name="brand" required minlength="2" maxlength="100" pattern="[A-Za-z0-9\s\-\.]+" placeholder="Enter brand name">
+                                    <div class="invalid-feedback">Please enter a valid brand name (2-100 characters).</div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Specification *</label>
+                                    <textarea class="form-control" name="specification" required minlength="5" maxlength="500" rows="2" placeholder="Enter material specifications"></textarea>
+                                    <div class="invalid-feedback">Please enter specifications (5-500 characters).</div>
+                                </div>
+                                <div class="form-group mb-3">
                                     <label>Category *</label>
                                     <select class="form-control" name="category" required>
                                         <option value="">Select Category</option>
@@ -741,12 +754,7 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                     </select>
                                     <div class="invalid-feedback">Please select a unit.</div>
                                 </div>
-                                <div class="form-group mb-3">
-                                    <label>Status</label>
-                                    <select class="form-control" name="status">
-                                        <option value="Available" selected>Available</option>
-                                    </select>
-                                </div>
+
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
@@ -806,6 +814,14 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                     <div class="invalid-feedback">Please enter a valid material name (2-100 characters).</div>
                                 </div>
                                 <div class="form-group mb-3">
+                                    <label>Brand</label>
+                                    <input type="text" class="form-control" name="brand" id="edit_brand" maxlength="100" placeholder="Enter brand name">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Specification</label>
+                                    <textarea class="form-control" name="specification" id="edit_specification" rows="2" maxlength="500" placeholder="Enter material specifications"></textarea>
+                                </div>
+                                <div class="form-group mb-3">
                                     <label>Quantity</label>
                                     <input type="number" min="0" max="999999" class="form-control" name="quantity" id="edit_quantity" value="0">
                                     <div class="invalid-feedback">Quantity must be between 0 and 999,999.</div>
@@ -835,6 +851,19 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                         <option value="ft²">Square Feet (ft²)</option>
                                     </select>
                                     <div class="invalid-feedback">Please select a unit.</div>
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Category *</label>
+                                    <select class="form-control" name="category" id="edit_category" required>
+                                        <option value="">Select Category</option>
+                                        <?php 
+                                        $categories = $con->query("SELECT DISTINCT category FROM supplier_category WHERE category IS NOT NULL AND category != '' ORDER BY category");
+                                        while($cat = $categories->fetch_assoc()): 
+                                        ?>
+                                            <option value="<?php echo htmlspecialchars($cat['category']); ?>"><?php echo htmlspecialchars($cat['category']); ?></option>
+                                        <?php endwhile; ?>
+                                    </select>
+                                    <div class="invalid-feedback">Please select a category.</div>
                                 </div>
                                 <div class="form-group mb-3">
                                     <label>Status</label>
@@ -878,6 +907,79 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                         <button type="submit" class="btn btn-success">Update Material</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Material Modal -->
+    <div class="modal fade" id="viewMaterialModal" tabindex="-1" aria-labelledby="viewMaterialModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="viewMaterialModalLabel">Material Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h5 class="fw-bold">Basic Information</h5>
+                            <hr>
+                            <div class="mb-2">
+                                <span class="fw-bold">Material Name:</span>
+                                <span id="view_material_name" class="ms-2"></span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="fw-bold">Brand:</span>
+                                <span id="view_brand" class="ms-2"></span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="fw-bold">Category:</span>
+                                <span id="view_category" class="ms-2"></span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="fw-bold">Status:</span>
+                                <span id="view_status" class="ms-2"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="fw-bold">Pricing & Inventory</h5>
+                            <hr>
+                            <div class="mb-2">
+                                <span class="fw-bold">Quantity:</span>
+                                <span id="view_quantity" class="ms-2"></span>
+                                <span id="view_unit"></span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="fw-bold">Material Price:</span>
+                                <span id="view_material_price" class="ms-2"></span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="fw-bold">Labor/Other Cost:</span>
+                                <span id="view_labor_other" class="ms-2"></span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="fw-bold">Low Stock Threshold:</span>
+                                <span id="view_low_stock_threshold" class="ms-2"></span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="fw-bold">Lead Time:</span>
+                                <span id="view_lead_time" class="ms-2"></span> days
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <h5 class="fw-bold">Specifications</h5>
+                            <hr>
+                            <div id="view_specification" class="bg-light p-3 rounded">
+                                <!-- Specifications will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
             </div>
         </div>
     </div>
@@ -926,8 +1028,6 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                 loadSupplierMaterials(supplierId);
                 
                 // Load categories into the add material form
-                const categorySelect = document.querySelector('#addMaterialForm select[name="category"]');
-                loadCategories(categorySelect);
                 
                 const materialsModal = new bootstrap.Modal(document.getElementById('supplierMaterialsModal'));
                 materialsModal.show();
@@ -1236,8 +1336,13 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                 this.classList.add('was-validated');
                 return;
             }
-            // Add the AJAX flag
+            // Add the AJAX flag and category
             formData.append('edit_supplier_material', '1');
+            
+            // Get the selected category and add it to the form data
+            const category = this.querySelector('select[name="category"]').value;
+            formData.set('category', category);
+            
             fetch('', {
                 method: 'POST',
                 body: formData
@@ -1259,6 +1364,87 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
             .catch(error => {
                 showFeedbackModal(false, 'An error occurred. Please try again.');
             });
+        });
+
+        // Handle edit material button click
+        document.addEventListener('click', function(e) {
+            const editBtn = e.target.closest('.edit-material-btn');
+            if (editBtn) {
+                e.preventDefault();
+                
+                // Set form values
+                document.getElementById('edit_material_id').value = editBtn.getAttribute('data-id');
+                document.getElementById('edit_material_name').value = editBtn.getAttribute('data-name');
+                document.getElementById('edit_brand').value = editBtn.getAttribute('data-brand');
+                document.getElementById('edit_specification').value = editBtn.getAttribute('data-specification');
+                document.getElementById('edit_quantity').value = editBtn.getAttribute('data-quantity');
+                document.getElementById('edit_unit').value = editBtn.getAttribute('data-unit');
+                document.getElementById('edit_material_status').value = editBtn.getAttribute('data-status');
+                document.getElementById('edit_material_price').value = editBtn.getAttribute('data-price');
+                document.getElementById('edit_low_stock_threshold').value = editBtn.getAttribute('data-low_stock');
+                document.getElementById('edit_lead_time').value = editBtn.getAttribute('data-lead_time');
+                document.getElementById('edit_labor_other').value = editBtn.getAttribute('data-labor_other');
+                
+                // Set the category value
+                const category = editBtn.getAttribute('data-category');
+                const categorySelect = document.getElementById('edit_category');
+                if (category && categorySelect) {
+                    // First, set the value
+                    categorySelect.value = category;
+                    
+                    // Then trigger the change event to ensure any dependent UI updates
+                    const event = new Event('change');
+                    categorySelect.dispatchEvent(event);
+                }
+                
+                // Show the modal
+                const editModal = new bootstrap.Modal(document.getElementById('editMaterialModal'));
+                editModal.show();
+                
+                return;
+            }
+        });
+
+        // Handle view material button click
+        document.addEventListener('click', function(e) {
+            const viewBtn = e.target.closest('.view-material-btn');
+            if (viewBtn) {
+                e.preventDefault();
+                
+                // Set modal values
+                document.getElementById('view_material_name').textContent = viewBtn.getAttribute('data-name');
+                document.getElementById('view_brand').textContent = viewBtn.getAttribute('data-brand');
+                document.getElementById('view_category').textContent = viewBtn.getAttribute('data-category');
+                document.getElementById('view_status').textContent = viewBtn.getAttribute('data-status');
+                document.getElementById('view_quantity').textContent = viewBtn.getAttribute('data-quantity');
+                document.getElementById('view_unit').textContent = viewBtn.getAttribute('data-unit');
+                
+                // Format currency
+                const price = parseFloat(viewBtn.getAttribute('data-price'));
+                document.getElementById('view_material_price').textContent = '₱' + price.toLocaleString('en-US', { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                });
+                
+                const laborOther = parseFloat(viewBtn.getAttribute('data-labor_other'));
+                document.getElementById('view_labor_other').textContent = '₱' + laborOther.toLocaleString('en-US', { 
+                    minimumFractionDigits: 2, 
+                    maximumFractionDigits: 2 
+                });
+                
+                document.getElementById('view_low_stock_threshold').textContent = viewBtn.getAttribute('data-low_stock');
+                document.getElementById('view_lead_time').textContent = viewBtn.getAttribute('data-lead_time');
+                
+                // Handle specifications (preserve line breaks)
+                const specText = viewBtn.getAttribute('data-specification') || 'No specifications provided.';
+                document.getElementById('view_specification').innerHTML = specText.replace(/\n/g, '<br>');
+                
+                // Show the modal
+                const viewModal = new bootstrap.Modal(document.getElementById('viewMaterialModal'));
+                viewModal.show();
+                
+                return;
+            }
         });
 
         // Handle delete material
@@ -1296,25 +1482,7 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
     });
 
     // Function to load categories into dropdown
-    function loadCategories(selectElement) {
-        fetch('get_categories.php')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Clear existing options except the first one
-                    while (selectElement.options.length > 1) {
-                        selectElement.remove(1);
-                    }
-                    
-                    // Add new categories
-                    data.categories.forEach(category => {
-                        const option = new Option(category, category);
-                        selectElement.add(option);
-                    });
-                }
-            })
-            .catch(error => console.error('Error loading categories:', error));
-    }
+  
 
     // Function to load supplier materials
     function loadSupplierMaterials(supplierId) {
@@ -1338,7 +1506,34 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                 <td>${material.low_stock_threshold}</td>
                                 <td>${material.lead_time} days</td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-warning btn-sm edit-material-btn" data-id="${material.id}" data-name="${material.material_name}" data-quantity="${material.quantity}" data-unit="${material.unit}" data-status="${material.status}" data-price="${material.material_price}" data-low_stock="${material.low_stock_threshold}" data-lead_time="${material.lead_time}" data-labor_other="${material.labor_other !== undefined && material.labor_other !== null ? material.labor_other : 0}">
+                                    <button type="button" class="btn btn-info btn-sm view-material-btn me-1" 
+                                        data-id="${material.id}" 
+                                        data-name="${material.material_name}" 
+                                        data-brand="${material.brand || 'N/A'}" 
+                                        data-specification="${material.specification || 'No specifications provided.'}" 
+                                        data-category="${material.category || 'N/A'}"
+                                        data-quantity="${material.quantity}" 
+                                        data-unit="${material.unit}" 
+                                        data-status="${material.status}" 
+                                        data-price="${material.material_price}" 
+                                        data-low_stock="${material.low_stock_threshold}" 
+                                        data-lead_time="${material.lead_time}" 
+                                        data-labor_other="${material.labor_other !== undefined && material.labor_other !== null ? material.labor_other : 0}">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                    <button type="button" class="btn btn-warning btn-sm edit-material-btn me-1" 
+                                        data-id="${material.id}" 
+                                        data-name="${material.material_name}" 
+                                        data-brand="${material.brand || ''}" 
+                                        data-specification="${material.specification || ''}" 
+                                        data-category="${material.category || ''}"
+                                        data-quantity="${material.quantity}" 
+                                        data-unit="${material.unit}" 
+                                        data-status="${material.status}" 
+                                        data-price="${material.material_price}" 
+                                        data-low_stock="${material.low_stock_threshold}" 
+                                        data-lead_time="${material.lead_time}" 
+                                        data-labor_other="${material.labor_other !== undefined && material.labor_other !== null ? material.labor_other : 0}">
                                         <i class="fas fa-edit"></i> Edit
                                     </button>
                                     <button type="button" class="btn btn-danger btn-sm delete-material-btn" data-id="${material.id}">
@@ -1405,6 +1600,8 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('edit_quantity').value = btn.getAttribute('data-quantity');
       document.getElementById('edit_unit').value = btn.getAttribute('data-unit');
       document.getElementById('edit_material_status').value = btn.getAttribute('data-status');
+      document.getElementById('edit_brand').value = btn.getAttribute('data-brand') || '';
+      document.getElementById('edit_specification').value = btn.getAttribute('data-specification') || '';
       document.getElementById('edit_material_price').value = btn.getAttribute('data-price');
       document.getElementById('edit_low_stock_threshold').value = btn.getAttribute('data-low_stock');
       document.getElementById('edit_lead_time').value = btn.getAttribute('data-lead_time');

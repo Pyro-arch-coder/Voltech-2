@@ -46,6 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = isset($material['status']) ? trim($material['status']) : 'Available';
         $location = isset($material['location']) ? trim($material['location']) : '';
         $supplier_name = isset($material['supplier_name']) ? trim($material['supplier_name']) : '';
+        $brand = isset($material['brand']) ? trim($material['brand']) : '';
+        $specification = isset($material['specification']) ? trim($material['specification']) : ''; 
         $material_price = isset($material['material_price']) ? floatval($material['material_price']) : 0;
         $labor_other = isset($material['labor_other']) ? floatval($material['labor_other']) : 0;
         $amount = ($material_price + $labor_other) * $quantity;
@@ -78,26 +80,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Always use today's date for purchase_date
         $purchase_date = date('Y-m-d');
 
-        // Insert material
-        $sql = "INSERT INTO materials (material_name, category, quantity, unit, status, location, supplier_name, purchase_date, material_price, labor_other, total_amount, user_id, low_stock_threshold, max_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 10, 100)";
+        $sql = "INSERT INTO materials (material_name, category, quantity, unit, status, location, supplier_name, purchase_date, material_price, labor_other, total_amount, user_id, brand, specification, low_stock_threshold, max_stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 10, 100)";
         $stmt = $con->prepare($sql);
-        $total_amount_int = intval($total_amount); // Convert to integer for total_amount field
-        $stmt->bind_param("ssisssssddii", $material_name, $category, $quantity, $unit, $status, $location, $supplier_name, $purchase_date, $material_price, $labor_other, $total_amount_int, $user_id);
+        $total_amount_int = intval($total_amount);
+        $stmt->bind_param("ssisssssddisss", $material_name, $category, $quantity, $unit, $status, $location, $supplier_name, $purchase_date, $material_price, $labor_other, $total_amount_int, $user_id, $brand, $specification);
         
         if ($stmt->execute()) {
             $success_count++;
             error_log("Successfully saved material: $material_name");
-            
-            // Send notification to project manager for this material
-            $notif_type = 'New Material Added';
-            $message = "A new material ($material_name) has been approved and added.";
-            $message_esc = mysqli_real_escape_string($con, $message);
-            
-            // Find project manager user_id (assuming user_level 3 for project manager)
-            $pm_res = $con->query("SELECT id FROM users WHERE user_level = 3 LIMIT 1");
-            $pm_id = ($pm_res && $pm_row = $pm_res->fetch_assoc()) ? intval($pm_row['id']) : 1;
-            
-            $con->query("INSERT INTO notifications_projectmanager (user_id, notif_type, message, is_read, created_at) VALUES ('$pm_id', '$notif_type', '$message_esc', 0, NOW())");
         } else {
             $errors[] = "Failed to save material: $material_name - " . $con->error;
             error_log("Failed to save material: $material_name - " . $con->error);

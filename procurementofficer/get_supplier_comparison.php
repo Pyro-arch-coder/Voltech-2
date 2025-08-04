@@ -46,6 +46,8 @@ if ($action === 'compare_suppliers') {
                 sm.material_price,
                 sm.lead_time,
                 sm.unit,
+                sm.brand,
+                sm.specification,
                 sm.category,
                 sm.quantity,
                 sm.labor_other,
@@ -80,6 +82,8 @@ if ($action === 'compare_suppliers') {
             'quantity' => intval($row['quantity']), // Add quantity field to the response
             'labor_other' => isset($row['labor_other']) ? floatval($row['labor_other']) : 0,
             'total_cost' => floatval($row['total_cost']),
+            'brand' => $row['brand'],                
+            'specification' => $row['specification'],
             'best_deal' => ''
         ];
         

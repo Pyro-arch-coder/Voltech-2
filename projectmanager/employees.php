@@ -130,11 +130,11 @@ if (isset($_POST['add_employee'])) {
     $position_id = mysqli_real_escape_string($con, $_POST['position_id']);
     $company_type = mysqli_real_escape_string($con, $_POST['company_type']);
     $contact_number = mysqli_real_escape_string($con, $_POST['contact_number']);
-    $email = mysqli_real_escape_string($con, $_POST['email']);
+    $fb_link = isset($_POST['fb_link']) ? mysqli_real_escape_string($con, $_POST['fb_link']) : '';
     
     // Insert new employee
-    $query = "INSERT INTO employees (user_id, first_name, last_name, position_id, company_type, contact_number, email) 
-              VALUES ('$userid', '$first_name', '$last_name', '$position_id', '$company_type', '$contact_number', '$email')";
+    $query = "INSERT INTO employees (user_id, first_name, last_name, position_id, company_type, contact_number, fb_link) 
+              VALUES ('$userid', '$first_name', '$last_name', '$position_id', '$company_type', '$contact_number', " . ($fb_link ? "'$fb_link'" : "NULL") . ")";
     if (mysqli_query($con, $query)) {
         header("Location: employees.php?success=add");
     } else {
@@ -151,12 +151,12 @@ if (isset($_POST['update_employee'])) {
     $position_id = mysqli_real_escape_string($con, $_POST['position_id']);
     $company_type = mysqli_real_escape_string($con, $_POST['company_type']);
     $contact_number = mysqli_real_escape_string($con, $_POST['contact_number']);
-    $email = mysqli_real_escape_string($con, $_POST['email']);
+    $fb_link = isset($_POST['fb_link']) ? mysqli_real_escape_string($con, $_POST['fb_link']) : '';
     
     // Update employee
     $query = "UPDATE employees SET first_name = '$first_name', last_name = '$last_name', 
               position_id = '$position_id', company_type = '$company_type', 
-              contact_number = '$contact_number', email = '$email' 
+              contact_number = '$contact_number', fb_link = " . ($fb_link ? "'$fb_link'" : "NULL") . " 
               WHERE employee_id = '$employee_id' AND user_id = '$userid'";
     if (mysqli_query($con, $query)) {
         header("Location: employees.php?success=edit");
@@ -204,7 +204,7 @@ if (isset($_GET['edit'])) {
         $edit_last_name = $edit_data['last_name'];
         $edit_position_id = $edit_data['position_id'];
         $edit_contact_number = $edit_data['contact_number'];
-        $edit_email = $edit_data['email'];
+        $edit_fb_link = $edit_data['fb_link'] ?? '';
     }
 }
 
@@ -426,13 +426,13 @@ if ($userid) {
                             <td class="emp-name"><?php echo $row['first_name'] . ' ' . $row['last_name']; ?></td>
                             <td class="emp-position"><?php echo $row['position_title']; ?></td>
                             <td><?php echo htmlspecialchars($row['company_type']); ?></td>
-                            <td class="emp-contact" data-number="<?php echo $row['contact_number']; ?>" data-email="<?php echo $row['email']; ?>" data-company-type="<?php echo htmlspecialchars($row['company_type']); ?>">
+                            <td class="emp-contact" data-number="<?php echo htmlspecialchars($row['contact_number']); ?>" data-email="<?php echo htmlspecialchars($row['fb_link']); ?>" data-company-type="<?php echo htmlspecialchars($row['company_type']); ?>">
                               <?php 
                               if (!empty($row['contact_number'])) {
-                                  echo '<i class="fas fa-phone-alt"></i> ' . $row['contact_number'] . '<br>';
+                                  echo '<i class="fas fa-phone-alt"></i> ' . htmlspecialchars($row['contact_number']) . '<br>';
                               }
-                              if (!empty($row['email'])) {
-                                  echo '<i class="fas fa-envelope"></i> ' . $row['email'];
+                              if (!empty($row['fb_link'])) {
+                                  echo '<i class="fab fa-facebook"></i> ' . htmlspecialchars($row['fb_link']);
                               }
                               ?>
                             </td>
@@ -561,8 +561,8 @@ if ($userid) {
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="modal_email"><b>Email Address</b></label>
-                                    <input type="email" class="form-control" id="modal_email" name="email" placeholder="example@gmail.com" required>
+                                    <label for="modal_fb_link"><b>Facebook Link (Optional)</b></label>
+                                    <input type="url" class="form-control" id="modal_fb_link" name="fb_link" placeholder="https://facebook.com/username">
                                 </div>
                             </div>
                         </div>
@@ -631,8 +631,8 @@ if ($userid) {
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group mb-3">
-                                    <label for="edit_email"><b>Email Address</b></label>
-                                    <input type="email" class="form-control" id="edit_email" name="email">
+                                    <label for="edit_fb_link"><b>Facebook Link (Optional)</b></label>
+                                    <input type="url" class="form-control" id="edit_fb_link" name="fb_link" placeholder="https://facebook.com/username">
                                 </div>
                             </div>
                         </div>
@@ -777,7 +777,14 @@ document.addEventListener('DOMContentLoaded', function() {
         var contactCell = row.querySelector('.emp-contact');
         if (contactCell) {
           document.getElementById('edit_contact_number').value = contactCell.getAttribute('data-number') || '';
-          document.getElementById('edit_email').value = contactCell.getAttribute('data-email') || '';
+          // Get the Facebook link from the data-email attribute (which now stores the fb_link)
+          var fbLink = contactCell.getAttribute('data-email') || '';
+          // If the stored value is a Facebook link, remove any HTML/display text and keep just the URL
+          if (fbLink.includes('facebook.com') || fbLink.includes('fb.com')) {
+            var match = fbLink.match(/(https?:\/\/[^\s<]+)/);
+            fbLink = match ? match[0] : '';
+          }
+          document.getElementById('edit_fb_link').value = fbLink;
         }
       }
       var modal = new bootstrap.Modal(document.getElementById('editEmployeeModal'));
@@ -812,37 +819,25 @@ document.addEventListener('DOMContentLoaded', function() {
   function enforce09OnFocus(e) {
     if (!e.target.value.startsWith('09')) e.target.value = '09';
   }
-  // Email: must always end with @gmail.com
-  function filterEmailInput(e) {
-    let value = e.target.value;
-    let atGmail = value.indexOf('@gmail.com');
-    if (atGmail !== -1) value = value.substring(0, atGmail);
-    value = value.replace(/[^A-Za-z0-9._-]/g, '');
-    e.target.value = value + '@gmail.com';
-  }
-  function enforceGmailOnFocus(e) {
-    let value = e.target.value;
-    if (!value.endsWith('@gmail.com')) {
-      value = value.split('@')[0];
-      e.target.value = value + '@gmail.com';
-    }
+  // Facebook Link: no validation
+  function filterFbLinkInput(e) {
+    // No validation, just clear any existing validation messages
+    e.target.setCustomValidity('');
   }
   // --- Add Modal ---
   var addFirst = document.getElementById('modal_first_name');
   var addLast = document.getElementById('modal_last_name');
   var addContact = document.getElementById('modal_contact_number');
-  var addEmail = document.getElementById('modal_email');
-  var addForm = addFirst && addLast && addContact && addEmail ? addFirst.closest('form') : null;
+  var addFbLink = document.getElementById('modal_fb_link');
+  var addForm = addFirst && addLast && addContact && addFbLink ? addFirst.closest('form') : null;
   if (addFirst) addFirst.addEventListener('input', filterFirstNameInput);
   if (addLast) addLast.addEventListener('input', filterLastNameInput);
   if (addContact) {
     addContact.addEventListener('input', filterContactInput);
     addContact.addEventListener('focus', enforce09OnFocus);
   }
-  if (addEmail) {
-    addEmail.addEventListener('input', filterEmailInput);
-    addEmail.addEventListener('focus', enforceGmailOnFocus);
-    if (!addEmail.value.endsWith('@gmail.com')) addEmail.value = '@gmail.com';
+  if (addFbLink) {
+    addFbLink.addEventListener('input', filterFbLinkInput);
   }
   if (addForm) {
     addForm.addEventListener('submit', function(e) {
@@ -887,17 +882,9 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         addContact.setCustomValidity('');
       }
-      // Email: must end with @gmail.com
-      if (!/^([A-Za-z0-9._-]+)@gmail\.com$/.test(addEmail.value)) {
-        addEmail.setCustomValidity('Email must be a valid Gmail address ending with @gmail.com.');
-        addEmail.reportValidity();
-        e.preventDefault();
-        return;
-      } else {
-        addEmail.setCustomValidity('');
-      }
+      // Facebook Link: no validation
     });
-    [addFirst, addLast, addContact, addEmail].forEach(function(input) {
+    [addFirst, addLast, addContact, addFbLink].forEach(function(input) {
       if (input) input.addEventListener('input', function() { input.setCustomValidity(''); });
     });
   }
@@ -905,18 +892,16 @@ document.addEventListener('DOMContentLoaded', function() {
   var editFirst = document.getElementById('edit_first_name');
   var editLast = document.getElementById('edit_last_name');
   var editContact = document.getElementById('edit_contact_number');
-  var editEmail = document.getElementById('edit_email');
-  var editForm = editFirst && editLast && editContact && editEmail ? editFirst.closest('form') : null;
+  var editFbLink = document.getElementById('edit_fb_link');
+  var editForm = editFirst && editLast && editContact && editFbLink ? editFirst.closest('form') : null;
   if (editFirst) editFirst.addEventListener('input', filterFirstNameInput);
   if (editLast) editLast.addEventListener('input', filterLastNameInput);
   if (editContact) {
     editContact.addEventListener('input', filterContactInput);
     editContact.addEventListener('focus', enforce09OnFocus);
   }
-  if (editEmail) {
-    editEmail.addEventListener('input', filterEmailInput);
-    editEmail.addEventListener('focus', enforceGmailOnFocus);
-    if (!editEmail.value.endsWith('@gmail.com')) editEmail.value = '@gmail.com';
+  if (editFbLink) {
+    editFbLink.addEventListener('input', filterFbLinkInput);
   }
   if (editForm) {
     editForm.addEventListener('submit', function(e) {
@@ -952,26 +937,18 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         return;
       }
-      // Contact: must be 11 digits and start with 09
-      if (!/^09\d{9}$/.test(editContact.value)) {
-        editContact.setCustomValidity('Contact number must start with 09 and be exactly 11 digits.');
+      // Contact: must be valid (starts with 09 and at least 11 digits)
+      if (editContact.value && !/^09\d{9,}$/.test(editContact.value)) {
+        editContact.setCustomValidity('Contact number must start with 09 and be at least 11 digits.');
         editContact.reportValidity();
         e.preventDefault();
         return;
       } else {
         editContact.setCustomValidity('');
       }
-      // Email: must end with @gmail.com
-      if (!/^([A-Za-z0-9._-]+)@gmail\.com$/.test(editEmail.value)) {
-        editEmail.setCustomValidity('Email must be a valid Gmail address ending with @gmail.com.');
-        editEmail.reportValidity();
-        e.preventDefault();
-        return;
-      } else {
-        editEmail.setCustomValidity('');
-      }
+      // Facebook Link: no validation
     });
-    [editFirst, editLast, editContact, editEmail].forEach(function(input) {
+    [editFirst, editLast, editContact, editFbLink].forEach(function(input) {
       if (input) input.addEventListener('input', function() { input.setCustomValidity(''); });
     });
   }

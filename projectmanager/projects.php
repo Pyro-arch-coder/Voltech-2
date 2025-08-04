@@ -69,6 +69,7 @@ if (isset($_GET['archive'])) {
 
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_project'])) {
+    // Get form data
     $project = mysqli_real_escape_string($con, $_POST['project']);
     $region = isset($_POST['Region']) ? mysqli_real_escape_string($con, $_POST['Region']) : '';
     $province = isset($_POST['Province']) ? mysqli_real_escape_string($con, $_POST['Province']) : '';
@@ -83,11 +84,163 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_project'])) {
     $billings = floatval($_POST['billings']);
     $size = isset($_POST['size']) ? floatval($_POST['size']) : null;
     $user_id = $userid;
+    
+    // Convert dates to DateTime objects for comparison
+    $start_date_obj = new DateTime($start_date);
+    $deadline_obj = new DateTime($deadline);
+    
+    // Validation flags
+    $is_valid = true;
+    $error_message = '';
+    
+    // Check if deadline is before start date
+    if ($deadline_obj < $start_date_obj) {
+        $is_valid = false;
+        $error_message = 'Error: Deadline cannot be before start date.';
+    }
+    
+    // Check for existing projects at the same location with date conflicts
+    if ($is_valid) {
+        $location_escaped = mysqli_real_escape_string($con, $location);
+        $query = "SELECT * FROM projects 
+                 WHERE location = '$location_escaped' 
+                 AND user_id = '$user_id' 
+                 AND archived = 0";
+        
+        $result = mysqli_query($con, $query);
+        
+        if ($result) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $existing_start = new DateTime($row['start_date']);
+                $existing_end = new DateTime($row['deadline']);
+                
+                // Check for same start date
+                if ($start_date == $row['start_date']) {
+                    $is_valid = false;
+                    $error_message = 'Error: There is already a project at this location starting on ' . $start_date . '.';
+                    break;
+                }
+                
+                // Check for date range overlap (new project starts during existing project)
+                if (($start_date_obj >= $existing_start && $start_date_obj <= $existing_end) ||
+                    // New project ends during existing project
+                    ($deadline_obj >= $existing_start && $deadline_obj <= $existing_end) ||
+                    // New project completely contains existing project
+                    ($start_date_obj <= $existing_start && $deadline_obj >= $existing_end)) {
+                    $is_valid = false;
+                    $error_message = 'Error: This project conflicts with an existing project at this location from ' . 
+                                   $existing_start->format('Y-m-d') . ' to ' . $existing_end->format('Y-m-d') . '.';
+                    break;
+                }
+            }
+        }
+    }
+    
+        // Check for existing project with same name (case-insensitive)
+    if ($is_valid) {
+        $project_escaped = mysqli_real_escape_string($con, $project);
+        $check_sql = "SELECT project FROM projects WHERE LOWER(project) = LOWER('$project_escaped') AND user_id = '$user_id' LIMIT 1";
+        $result = mysqli_query($con, $check_sql);
+        
+        if (mysqli_num_rows($result) > 0) {
+            // Store all form data in session
+            $_SESSION['form_data'] = [
+                'project' => $project,
+                'region' => $region,
+                'province' => $province,
+                'municipality' => $municipality,
+                'barangay' => $barangay,
+                'budget' => $budget,
+                'start_date' => $start_date,
+                'deadline' => $deadline,
+                'foreman' => $foreman,
+                'category' => $category,
+                'billings' => $billings,
+                'size' => $size
+            ];
+            
+            // Find the next available name
+            $counter = 1;
+            $base_project = trim($project);
+            $new_project_name = "$base_project $counter";
+            
+            // Keep incrementing counter until we find an available name
+            while (true) {
+                $check_sql = "SELECT project FROM projects WHERE LOWER(project) = LOWER('" . mysqli_real_escape_string($con, $new_project_name) . "') AND user_id = '$user_id' LIMIT 1";
+                $result = mysqli_query($con, $check_sql);
+                
+                if (mysqli_num_rows($result) === 0) {
+                    // Store the original project name and suggested name in session
+            $_SESSION['suggested_project_name'] = $new_project_name;
+            $_SESSION['original_project_name'] = $project; // Store the original name too
+            
+            // Redirect to self to show the modal
+            header("Location: projects.php?show_duplicate_modal=1");
+                    exit();
+                }
+                
+                $counter++;
+                $new_project_name = "$base_project $counter";
+                
+                // Safety check to prevent infinite loop
+                if ($counter > 100) {
+                    $is_valid = false;
+                    $error_message = 'Error: Too many projects with similar names. Please choose a different name.';
+                    break;
+                }
+            }
+        }
+    }
+    
+    // If validation passed, proceed with project creation
+    if ($is_valid) {
+        // Check if we're coming from a duplicate name confirmation
+        if (isset($_SESSION['form_data'])) {
+            // Get the project name from POST if available (user modified it in the modal)
+            // Otherwise use the suggested name from session
+            $project = isset($_POST['project']) ? trim($_POST['project']) : '';
+            if (empty($project) && isset($_SESSION['suggested_project_name'])) {
+                $project = trim($_SESSION['suggested_project_name']);
+            }
+            
+            // Ensure project name is not empty
+            if (empty($project)) {
+                $project = 'New Project ' . date('Y-m-d');
+            } else {
+                // Clean and format the project name
+                $project = ucwords(strtolower(trim($project)));
+            }
+            $region = $_SESSION['form_data']['region'];
+            $province = $_SESSION['form_data']['province'];
+            $municipality = $_SESSION['form_data']['municipality'];
+            $barangay = $_SESSION['form_data']['barangay'];
+            $location = trim("$region $province $municipality $barangay");
+            $budget = $_SESSION['form_data']['budget'];
+            $start_date = $_SESSION['form_data']['start_date'];
+            $deadline = $_SESSION['form_data']['deadline'];
+            $foreman = $_SESSION['form_data']['foreman'];
+            $category = $_SESSION['form_data']['category'];
+            $billings = $_SESSION['form_data']['billings'];
+            $size = $_SESSION['form_data']['size'];
+            
+            // Clear the session data
+            unset($_SESSION['form_data']);
+            unset($_SESSION['suggested_project_name']);
+        } else {
+            // For regular form submission, ensure project name is properly formatted
+            $project = trim($project);
+            if (empty($project)) {
+                $project = 'New Project ' . date('Y-m-d');
+            } else {
+                // Capitalize first letter of each word
+                $project = ucwords(strtolower($project));
+            }
+        }
+        
+        $sql = "INSERT INTO projects (user_id, project, location, budget, start_date, deadline, foreman, category, billings, size)
+                VALUES ('$user_id', '$project', '$location', '$budget', '$start_date', '$deadline', '$foreman', '$category', '$billings', '$size')";
 
-    $sql = "INSERT INTO projects (user_id, project, location, budget, start_date, deadline, foreman, category, billings, size)
-            VALUES ('$user_id', '$project', '$location', '$budget', '$start_date', '$deadline', '$foreman', '$category', '$billings', '$size')";
-
-    if (mysqli_query($con, $sql)) {
+        if (mysqli_query($con, $sql)) {
         // Get the last inserted project_id
         $new_project_id = mysqli_insert_id($con);
 
@@ -117,10 +270,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_project'])) {
             }
         }
 
-        header("Location: projects.php?success=1");
-        exit();
+            header("Location: projects.php?success=1");
+            exit();
+        } else {
+            $error_message = 'Error: ' . mysqli_error($con);
+            $forecastMessage = '<div class="alert alert-danger">' . $error_message . '</div>';
+        }
     } else {
-        $forecastMessage = '<div class="alert alert-danger">Error: ' . mysqli_error($con) . '</div>';
+        // Show validation error
+        $forecastMessage = '<div class="alert alert-danger">' . $error_message . '</div>';
     }
 }
 
@@ -142,20 +300,77 @@ if ($foreman_position_id) {
 
 
 
-// --- PAGINATION & SEARCH LOGIC FOR PROJECT LIST ---
+// --- PAGINATION & SEARCH/FILTER LOGIC FOR PROJECT LIST ---
 $limit = 10;
 $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $offset = ($page - 1) * $limit;
 $search = isset($_GET['search']) ? mysqli_real_escape_string($con, $_GET['search']) : '';
 
-// Only show projects where archived=0 in the main list
+// Status filter
+$status_filter = isset($_GET['status']) ? mysqli_real_escape_string($con, $_GET['status']) : '';
+
+// Date filter
+$date_filter = isset($_GET['date_filter']) ? mysqli_real_escape_string($con, $_GET['date_filter']) : '';
+$start_date = isset($_GET['start_date']) ? mysqli_real_escape_string($con, $_GET['start_date']) : '';
+$end_date = isset($_GET['end_date']) ? mysqli_real_escape_string($con, $_GET['end_date']) : '';
+
+// Base filter - only show non-archived projects for the current user
 $filter_sql = "user_id='$userid' AND archived=0";
 
+// Apply search filter
 if ($search !== '') {
     $filter_sql .= " AND (project LIKE '%$search%' OR location LIKE '%$search%')";
 }
 
-// Count total projects for pagination
+// Apply status filter
+if ($status_filter === 'finished') {
+    $filter_sql .= " AND status = 'Finished'";
+} elseif ($status_filter === 'cancelled') {
+    $filter_sql .= " AND status = 'Cancelled'";
+}
+
+// Apply date filter
+if (!empty($date_filter)) {
+    $today = date('Y-m-d');
+    if ($date_filter === 'today') {
+        $filter_sql .= " AND (DATE(start_date) = '$today' OR DATE(deadline) = '$today')";
+    } elseif ($date_filter === 'week') {
+        $monday = date('Y-m-d', strtotime('monday this week'));
+        $sunday = date('Y-m-d', strtotime('sunday this week'));
+        $filter_sql .= " AND (
+            (DATE(start_date) BETWEEN '$monday' AND '$sunday') 
+            OR (DATE(deadline) BETWEEN '$monday' AND '$sunday')
+            OR (start_date <= '$monday' AND deadline >= '$sunday')
+        )";
+    } elseif ($date_filter === 'month') {
+        $first_day = date('Y-m-01');
+        $last_day = date('Y-m-t');
+        $filter_sql .= " AND (
+            (DATE(start_date) BETWEEN '$first_day' AND '$last_day') 
+            OR (DATE(deadline) BETWEEN '$first_day' AND '$last_day')
+            OR (start_date <= '$first_day' AND deadline >= '$last_day')
+        )";
+    } elseif ($date_filter === 'year') {
+        $year = date('Y');
+        $first_day = "$year-01-01";
+        $last_day = "$year-12-31";
+        $filter_sql .= " AND (
+            (YEAR(start_date) = '$year' OR YEAR(deadline) = '$year')
+            OR (start_date <= '$first_day' AND deadline >= '$last_day')
+        )";
+    }
+}
+
+// Apply start date filter
+if (!empty($start_date)) {
+    $filter_sql .= " AND DATE(start_date) >= '$start_date'";
+}
+
+// Apply end date filter
+if (!empty($end_date)) {
+    $filter_sql .= " AND DATE(deadline) <= '$end_date'";
+}
+
 $count_query = "SELECT COUNT(*) as total FROM projects WHERE $filter_sql";
 $count_result = mysqli_query($con, $count_query);
 $total_projects = mysqli_fetch_assoc($count_result)['total'];
@@ -276,14 +491,108 @@ if ($userid) {
                                     <hr>
                                     <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
                                         
-                                        <form method="get" id="searchForm" class="mb-0" style="width:250px;flex:0 0 auto;">
-                                          <div class="search-box position-relative">
-                                            <span class="position-absolute" style="left:10px;top:50%;transform:translateY(-50%);color:#aaa;z-index:2;">
-                                              <i class="fas fa-search"></i>
-                                            </span>
+                                        <form method="get" id="searchForm" class="mb-0 d-flex flex-wrap gap-2" style="flex: 1 1 auto;">
+                                            <!-- Search Box -->
+                                            <div class="search-box position-relative" style="width:250px;">
+                                                <span class="position-absolute" style="left:10px;top:50%;transform:translateY(-50%);color:#aaa;z-index:2;">
+                                                    <i class="fas fa-search"></i>
+                                                </span>
+                                                <input type="hidden" name="page" value="1">
+                                                <input type="text" class="form-control pl-4" name="search" placeholder="Search project/location" value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off" style="padding-left:2rem;">
+                                            </div>
                                             
-                                            <input type="text" class="form-control pl-4" name="search" placeholder="Search project/location" value="<?php echo htmlspecialchars($search); ?>" id="searchInput" autocomplete="off" style="padding-left:2rem;">
-                                          </div>
+                                            <!-- Status Filter -->
+                                            <div class="dropdown">
+                                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="statusFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <?php 
+                                                    $status_text = 'All Status';
+                                                    if ($status_filter === 'finished') $status_text = 'Finished';
+                                                    elseif ($status_filter === 'cancelled') $status_text = 'Cancelled';
+                                                    echo $status_text;
+                                                    ?>
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="statusFilter">
+                                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['status' => '', 'page' => 1])); ?>">All Status</a></li>
+                                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['status' => 'finished', 'page' => 1])); ?>">Finished</a></li>
+                                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['status' => 'cancelled', 'page' => 1])); ?>">Cancelled</a></li>
+                                                </ul>
+                                            </div>
+                                            
+                                            <!-- Quick Date Filters -->
+                                            <div class="dropdown me-2">
+                                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="quickDateFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <?php 
+                                                    $date_text = 'All Time';
+                                                    if ($date_filter === 'today') $date_text = 'Today';
+                                                    elseif ($date_filter === 'week') $date_text = 'This Week';
+                                                    elseif ($date_filter === 'month') $date_text = 'This Month';
+                                                    elseif ($date_filter === 'year') $date_text = 'This Year';
+                                                    echo $date_text;
+                                                    ?>
+                                                </button>
+                                                <ul class="dropdown-menu" aria-labelledby="quickDateFilter">
+                                                    <li><a class="dropdown-item" href="?<?php 
+                                                    $query = $_GET;
+                                                    unset($query['date_filter']);
+                                                    $query['page'] = 1;
+                                                    echo http_build_query($query);
+                                                    ?>"></i>All Time</a></li>
+                                                    <li><a class="dropdown-item" href="?<?php 
+                                                        $query = array_merge($_GET, ['date_filter' => 'week', 'page' => 1]);
+                                                        echo http_build_query($query);
+                                                    ?>">
+                                                        <div>
+                                                            <div>This Week</div>
+                                                            
+                                                        </div>
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="?<?php 
+                                                        $query = array_merge($_GET, ['date_filter' => 'month', 'page' => 1]);
+                                                        echo http_build_query($query);
+                                                    ?>">
+                                                        
+                                                        <div>
+                                                            <div>This Month</div>
+                                                           
+                                                        </div>
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="?<?php 
+                                                        $query = array_merge($_GET, ['date_filter' => 'year', 'page' => 1]);
+                                                        echo http_build_query($query);
+                                                    ?>">
+                                                       
+                                                        <div>
+                                                            <div>This Year</div>
+                                                            
+                                                        </div>
+                                                    </a></li>
+                                                </ul>
+                                            </div>
+                                            
+                                            <!-- Start Date Filter -->
+                                            <div class="input-group input-group-sm me-2" style="width: 180px;">
+                                                <span class="input-group-text"><i class="fas fa-calendar-plus"></i></span>
+                                                <input type="date" name="start_date" class="form-control form-control-sm" 
+                                                       value="<?php echo htmlspecialchars($start_date); ?>" 
+                                                       id="startDateInput" 
+                                                       onchange="applyDateFilter()"
+                                                       placeholder="Start Date">
+                                            </div>
+                                            
+                                            <!-- End Date Filter -->
+                                            <div class="input-group input-group-sm" style="width: 180px;">
+                                                <span class="input-group-text"><i class="fas fa-calendar-minus"></i></span>
+                                                <input type="date" name="end_date" class="form-control form-control-sm" 
+                                                       value="<?php echo htmlspecialchars($end_date); ?>" 
+                                                       id="endDateInput" 
+                                                       onchange="applyDateFilter()"
+                                                       placeholder="End Date">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="clearDateFilter()">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                            
+                                           
                                         </form>
                                         <div class="ms-auto" style="flex:0 0 auto;text-align:right;">
                                           <!-- Removed Gantt Chart button from here -->
@@ -293,18 +602,43 @@ if ($userid) {
                                 <script>
                                 // Search input auto-submit (vanilla JS)
                                 document.addEventListener('DOMContentLoaded', function() {
-                                  var searchInput = document.getElementById('searchInput');
-                                  var searchForm = document.getElementById('searchForm');
-                                  if (searchInput && searchForm) {
-                                    var searchTimeout;
-                                    searchInput.addEventListener('input', function() {
-                                      clearTimeout(searchTimeout);
-                                      searchTimeout = setTimeout(function() {
-                                        searchForm.submit();
-                                      }, 400);
-                                    });
-                                  }
+                                    var searchInput = document.getElementById('searchInput');
+                                    var searchForm = document.getElementById('searchForm');
+                                    
+                                    // Auto-submit for search input
+                                    if (searchInput && searchForm) {
+                                        var searchTimeout;
+                                        searchInput.addEventListener('input', function() {
+                                            clearTimeout(searchTimeout);
+                                            searchTimeout = setTimeout(function() {
+                                                searchForm.submit();
+                                            }, 400);
+                                        });
+                                    }
                                 });
+
+                                // Function to apply date filter automatically
+                                function applyDateFilter() {
+                                    const form = document.getElementById('searchForm');
+                                    // Clear quick date filter when using custom dates
+                                    const dateFilterInput = document.createElement('input');
+                                    dateFilterInput.type = 'hidden';
+                                    dateFilterInput.name = 'date_filter';
+                                    dateFilterInput.value = '';
+                                    form.appendChild(dateFilterInput);
+                                    form.submit();
+                                }
+
+                                // Function to clear date filter
+                                function clearDateFilter() {
+                                    document.getElementById('startDateInput').value = '';
+                                    document.getElementById('endDateInput').value = '';
+                                    // Remove date parameters and keep other filters
+                                    const url = new URL(window.location.href);
+                                    url.searchParams.delete('start_date');
+                                    url.searchParams.delete('end_date');
+                                    window.location.href = url.toString();
+                                }
                                 </script>
 
                                 <!-- Project Table -->
@@ -314,7 +648,8 @@ if ($userid) {
                                             <tr>
                                                 <th>No.</th>
                                                 <th>Project</th>
-                                                
+                                                <th>Start Date</th>
+                                                <th>Deadline</th>
                                                 <th>Location</th>
                                                 <th class="text-center">Action</th>
                                             </tr>
@@ -331,7 +666,8 @@ if ($userid) {
                                             <tr>
                                                 <td><?php echo $no++; ?></td>
                                                 <td><?php echo $row['project']; ?></td>
-                                                
+                                                <td><?php echo $row['start_date']; ?></td>
+                                                <td><?php echo $row['deadline']; ?></td>
                                                 <td>
                                                     <?php
                                                     // If location is numeric, show 'Unknown', else show as is
@@ -377,6 +713,39 @@ if ($userid) {
                      
             </div>
     <!-- /#page-content-wrapper -->
+    </div>
+    
+    <!-- Duplicate Project Confirmation Modal -->
+    <div class="modal fade" id="duplicateProjectModal" tabindex="-1" aria-labelledby="duplicateProjectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-danger">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title w-100 text-center" id="duplicateProjectModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Project Name Exists
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-exclamation-circle fa-3x text-danger mb-3"></i>
+                        <p class="mb-1">A project with this name already exists.</p>
+                        <p class="mb-3">Save as:</p>
+                        <div class="d-flex justify-content-center align-items-center mb-3">
+                            <input type="text" class="form-control form-control-lg text-center fw-bold text-danger" id="suggestedNameInput" style="max-width: 80%;">
+                        </div>
+                        <p class="text-muted small">(You can edit the name above)</p>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center border-top-0">
+                    <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDuplicateBtn">
+                        <i class="fas fa-save me-1"></i> Save as <span id="confirmNameDisplay" class="fw-bold"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="modal fade" id="AddProjectModal" tabindex="-1" role="dialog">
@@ -428,8 +797,9 @@ if ($userid) {
                             </div>
                                             <div class="form-group">
                                                 <label>Deadline*</label>
-                                                 <input type="date" class="form-control" name="deadline" required>
-                        </div>
+                                                <input type="date" class="form-control" name="deadline" required>
+                                                <div id="dateValidationError" class="text-danger mt-1" style="display: none;"></div>
+                                            </div>
                     </div>
                                         <div class="col-md-6">
                                             <div class="form-group" style="display:none;">
@@ -497,7 +867,81 @@ if ($userid) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
    
-
+    <?php if (isset($_GET['show_duplicate_modal']) && isset($_SESSION['suggested_project_name'])): ?>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const duplicateModal = document.getElementById('duplicateProjectModal');
+        if (duplicateModal) {
+            const modal = new bootstrap.Modal(duplicateModal, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            
+            const suggestedNameInput = document.getElementById('suggestedNameInput');
+            const confirmNameDisplay = document.getElementById('confirmNameDisplay');
+            const originalForm = document.getElementById('addProjectForm');
+            
+            // Set the suggested name
+            const suggestedName = '<?php echo addslashes($_SESSION['suggested_project_name']); ?>';
+            suggestedNameInput.value = suggestedName;
+            confirmNameDisplay.textContent = suggestedName;
+            
+            // Update the suggested name when the input changes
+            suggestedNameInput.addEventListener('input', function() {
+                const newName = this.value.trim() || 'New Project';
+                confirmNameDisplay.textContent = newName;
+            });
+            
+            // Handle confirm button click
+            document.getElementById('confirmDuplicateBtn').addEventListener('click', function() {
+                // Get and validate the new project name
+                const newProjectName = suggestedNameInput.value.trim();
+                if (!newProjectName) {
+                    alert('Please enter a valid project name');
+                    return;
+                }
+                
+                // Create a hidden form to submit the confirmation
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = 'projects.php';
+                
+                // Add all the form data from the session
+                <?php foreach ($_SESSION['form_data'] as $key => $value): ?>
+                    <?php if ($key !== 'project'): ?>
+                        const input_<?php echo $key; ?> = document.createElement('input');
+                        input_<?php echo $key; ?>.type = 'hidden';
+                        input_<?php echo $key; ?>.name = '<?php echo $key; ?>';
+                        input_<?php echo $key; ?>.value = '<?php echo addslashes($value); ?>';
+                        form.appendChild(input_<?php echo $key; ?>);
+                    <?php endif; ?>
+                <?php endforeach; ?>
+                
+                // Add the new project name
+                const projectInput = document.createElement('input');
+                projectInput.type = 'hidden';
+                projectInput.name = 'project';
+                projectInput.value = newProjectName;
+                form.appendChild(projectInput);
+                
+                // Add the submit button
+                const submitInput = document.createElement('input');
+                submitInput.type = 'hidden';
+                submitInput.name = 'add_project';
+                submitInput.value = '1';
+                form.appendChild(submitInput);
+                
+                // Submit the form
+                document.body.appendChild(form);
+                form.submit();
+            });
+            
+            // Show the modal
+            modal.show();
+        }
+    });
+    </script>
+    <?php endif; ?>
    
 
     <div class="modal fade" id="archiveModal" tabindex="-1" role="dialog">
@@ -682,6 +1126,56 @@ if ($userid) {
 <?php endif; ?>
 
     <script>
+        // Function to validate project dates
+        function validateProjectDates() {
+            const startDate = new Date(document.querySelector('input[name="start_date"]').value);
+            const deadline = new Date(document.querySelector('input[name="deadline"]').value);
+            const location = document.querySelector('select[name="Baranggay"]').value;
+            const errorElement = document.getElementById('dateValidationError');
+            
+            // Clear previous error
+            errorElement.textContent = '';
+            errorElement.style.display = 'none';
+            
+            // Check if deadline is before start date
+            if (deadline < startDate) {
+                errorElement.textContent = 'Error: Deadline cannot be before start date.';
+                errorElement.style.display = 'block';
+                return false;
+            }
+            
+            // Check if location is selected
+            if (!location) {
+                errorElement.textContent = 'Please select a location first.';
+                errorElement.style.display = 'block';
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Add event listeners when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add form submission handler
+            const form = document.getElementById('addProjectForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    if (!validateProjectDates()) {
+                        e.preventDefault();
+                    }
+                });
+            }
+            
+            // Add date change handlers
+            const startDateInput = document.querySelector('input[name="start_date"]');
+            const deadlineInput = document.querySelector('input[name="deadline"]');
+            
+            if (startDateInput && deadlineInput) {
+                startDateInput.addEventListener('change', validateProjectDates);
+                deadlineInput.addEventListener('change', validateProjectDates);
+            }
+        });
+        
         var el = document.getElementById("wrapper");
         var toggleButton = document.getElementById("menu-toggle");
 
@@ -761,16 +1255,19 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- View Project Details Modal -->
 <div class="modal fade" id="projectDetailsModal" tabindex="-1" aria-labelledby="projectDetailsModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="projectDetailsModalLabel">Project Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold" id="projectDetailsModalLabel">
+          <i class="fas fa-info-circle me-2"></i>Project Details
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body" id="projectDetailsModalBody">
-        <div class="text-center">
-          <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
+      <div class="modal-body p-4" id="projectDetailsModalBody">
+        <div class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading project details...</span>
           </div>
+          <p class="mt-2 text-muted">Loading project information...</p>
         </div>
       </div>
     </div>

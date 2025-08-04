@@ -118,12 +118,11 @@ $categories = $con->query($categories_query);
 $statuses = $con->query($statuses_query);
 $suppliers = $con->query($suppliers_query);
 
-// Fetch materials from database with pagination and filters
-if (!empty($where_clause)) {
-    $sql = "SELECT * FROM materials $where_clause LIMIT $offset, $items_per_page";
-} else {
-    $sql = "SELECT * FROM materials LIMIT $offset, $items_per_page";
-}
+// Fetch only delivered materials from database with pagination and filters
+$where_conditions[] = "delivery_status = 'Delivered'";
+$where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "WHERE delivery_status = 'Delivered'";
+
+$sql = "SELECT * FROM materials $where_clause LIMIT $offset, $items_per_page";
 $result = $con->query($sql);
 
 // Add short_number_format function for summary cards
@@ -301,6 +300,8 @@ function short_number_format($num, $precision = 1) {
                                     <th>#</th>
                                     <th>Category</th>
                                     <th>Material Name</th>
+                                    <th>Brand</th>
+                                    <th>Specification</th>
                                     <th>Quantity</th>
                                     <th>Material Price</th>
                                     <th class="text-center">Actions</th>
@@ -314,6 +315,8 @@ function short_number_format($num, $precision = 1) {
                                     <td><?php echo $rownum++; ?></td>
                                     <td><?php echo htmlspecialchars($row['category']); ?></td>
                                     <td><?php echo htmlspecialchars($row['material_name']); ?></td>
+                                    <td><?php echo !empty($row['brand']) ? htmlspecialchars($row['brand']) : 'N/A'; ?></td>
+                                    <td><?php echo !empty($row['specification']) ? htmlspecialchars($row['specification']) : 'N/A'; ?></td>
                                     <td><?php echo $row['quantity']; ?></td>
                                     <td>₱ <?php echo number_format($row['material_price'], 2); ?></td>
                                     <td class="text-center">
@@ -333,37 +336,55 @@ function short_number_format($num, $precision = 1) {
                                                 <div class="modal-body">
                                                     <div class="container-fluid">
                                                         <div class="row mb-3">
-                                                            <div class="col-md-6 mb-2">
+                                                            <div class="col-md-8 mb-2">
                                                                 <h4 class="fw-bold mb-0 text-primary"><i class="fas fa-cube me-2"></i><?php echo htmlspecialchars($row['material_name']); ?></h4>
+                                                                <div class="text-muted small"><i class="fas fa-tag me-1"></i>Brand: <?php echo htmlspecialchars($row['brand'] ?? 'N/A'); ?></div>
+                                                                <div class="text-muted small"><i class="fas fa-warehouse me-1"></i>Location: <?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></div>
+                                                                <div class="text-muted small"><i class="fas fa-truck me-1"></i>Supplier: <?php echo htmlspecialchars($row['supplier_name']); ?></div>
                                                             </div>
-                                                            <div class="col-md-6 mb-2 text-md-end">
-                                                                <span class="fw-bold text-secondary"><i class="fas fa-truck me-1"></i>Supplier:</span> <?php echo htmlspecialchars($row['supplier_name']); ?>
+                                                            <div class="col-md-4 mb-2 text-md-end">
+                                                            
+                                                                
+                                                              <span class="fw-bold text-secondary d-block mb-1"><i class="fas fa-info-circle me-1"></i>Status:</span>
+                                                                <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : (($row['status'] == 'Low Stock') ? 'warning' : (($row['status'] == 'In Use') ? 'primary' : 'danger')); ?>">
+                                                                    <?php echo htmlspecialchars($row['status']); ?>
+                                                                </span>
                                                             </div>
                                                         </div>
+                                                        
                                                         <div class="row mb-3">
-                                                            <div class="col-md-6 mb-2">
-                                                                <span class="fw-bold text-secondary"><i class="fas fa-info-circle me-1"></i>Status:</span> <span class="badge bg-<?php echo $row['status'] == 'Low Stock' ? 'warning' : ($row['status'] == 'Available' ? 'success' : ($row['status'] == 'In Use' ? 'primary' : 'danger')); ?>"><?php echo $row['status']; ?></span>
-                                                            </div>
-                                                            <div class="col-md-6 mb-2 text-md-end">
-                                                                <span class="fw-bold text-secondary"><i class="fas fa-map-marker-alt me-1"></i>Location:</span> <?php echo htmlspecialchars($row['location']); ?>
+                                                            <div class="col-12 mb-3">
+                                                                <h6 class="fw-bold text-secondary"><i class="fas fa-file-alt me-2"></i>Specifications</h6>
+                                                                <div class="card bg-light">
+                                                                    <div class="card-body">
+                                                                        <?php echo !empty($row['specification']) ? nl2br(htmlspecialchars($row['specification'])) : 'No specifications provided.'; ?>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div class="row justify-content-center">
-                                                            <div class="col-12 col-md-10">
-                                                                <div class="card shadow-sm border-0 mb-2">
-                                                                    <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
-                                                                        <div class="mb-2 flex-fill">
-                                                                            <span class="fw-bold text-muted"><i class="fas fa-sort-numeric-up me-1"></i>Quantity:</span> <?php echo $row['quantity']; ?>
-                                                                        </div>
-                                                                        <div class="mb-2 flex-fill">
-                                                                            <span class="fw-bold text-muted"><i class="fas fa-ruler me-1"></i>Unit:</span> <?php echo htmlspecialchars($row['unit']); ?>
-                                                                        </div>
-                                                                        <div class="mb-2 flex-fill">
-                                                                            <span class="fw-bold text-muted"><i class="fas fa-coins me-1"></i>Material Price:</span> ₱ <?php echo number_format($row['material_price'], 2); ?>
-                                                                        </div>
-                                                                        <div class="mb-2 flex-fill">
-                                                                            <span class="fw-bold text-muted"><i class="fas fa-tags me-1"></i>Category:</span> <?php echo htmlspecialchars($row['category']); ?>
-                                                                        </div>
+
+                                                        <div class="row mb-3">
+                                                            <div class="col-md-4 mb-2">
+                                                                <div class="card h-100">
+                                                                    <div class="card-body">
+                                                                        <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-sort-numeric-up me-1"></i>Quantity</h6>
+                                                                        <p class="card-text h4"><?php echo number_format($row['quantity']); ?> <small class="text-muted"><?php echo htmlspecialchars($row['unit']); ?></small></p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4 mb-2">
+                                                                <div class="card h-100">
+                                                                    <div class="card-body">
+                                                                        <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-tags me-1"></i>Category</h6>
+                                                                        <p class="card-text"><?php echo htmlspecialchars($row['category']); ?></p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4 mb-2">
+                                                                <div class="card h-100">
+                                                                    <div class="card-body">
+                                                                        <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-coins me-1"></i>Price</h6>
+                                                                        <p class="card-text">₱ <?php echo number_format($row['material_price'], 2); ?></p>
                                                                     </div>
                                                                 </div>
                                                             </div>

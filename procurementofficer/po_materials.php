@@ -464,6 +464,7 @@ function short_number_format($num, $precision = 1) {
                                         <th>Quantity</th>
                                         <th>Unit</th>
                                         <th>Status</th>
+                                        <th>Delivery Status</th>
                                         <th>Supplier</th>
                                         <th>Total Amount</th>
                                         <th class="text-center">Actions</th>
@@ -502,6 +503,11 @@ function short_number_format($num, $precision = 1) {
                                                     <?php echo $row['status']; ?>
                                                 </span>
                                             </td>
+                                            <td>
+                                                <span class="badge bg-<?php echo ($row['delivery_status'] == 'Delivered') ? 'success' : (($row['delivery_status'] == 'In Transit') ? 'info' : (($row['delivery_status'] == 'Cancelled') ? 'danger' : 'warning')); ?>">
+                                                    <?php echo htmlspecialchars($row['delivery_status'] ?? 'N/A'); ?>
+                                                </span>
+                                            </td>
                                             <td><?php echo htmlspecialchars($row['supplier_name']); ?></td>
                                             <td>₱ <?php echo number_format($row['total_amount'], 2); ?></td>
                                             <td class="text-center">
@@ -530,62 +536,83 @@ function short_number_format($num, $precision = 1) {
                                         <!-- View Modal -->
                                             <div class="modal fade" id="viewModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="viewModalLabel<?php echo $row['id']; ?>" aria-hidden="true">
                                                 <div class="modal-dialog modal-lg modal-dialog-centered">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
                                                             <h5 class="modal-title" id="viewModalLabel<?php echo $row['id']; ?>">Material Details</h5>
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <div class="container-fluid">
-                                                            <div class="row mb-3">
-                                                                <div class="col-md-6 mb-2">
-                                                                    <h4 class="fw-bold mb-0 text-primary"><i class="fas fa-cube me-2"></i><?php echo htmlspecialchars($row['material_name']); ?></h4>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="container-fluid">
+                                                                <div class="row mb-3">
+                                                                    <div class="col-md-8 mb-2">
+                                                                        <h4 class="fw-bold mb-0 text-primary"><i class="fas fa-cube me-2"></i><?php echo htmlspecialchars($row['material_name']); ?></h4>
+                                                                        <div class="text-muted small"><i class="fas fa-tag me-1"></i>Brand: <?php echo htmlspecialchars($row['brand'] ?? 'N/A'); ?></div>
+                                                                        <div class="text-muted small"><i class="fas fa-warehouse me-1"></i>Location: <?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></div>
+                                                                        <div class="text-muted small"><i class="fas fa-truck me-1"></i>Supplier: <?php echo htmlspecialchars($row['supplier_name']); ?></div>
+                                                                    </div>
+                                                                    <div class="col-md-4 mb-2 text-md-end">
+                                                                        <span class="fw-bold text-secondary d-block mb-1"><i class="fas fa-truck me-1"></i>Delivery Status:</span>
+                                                                        <span class="badge bg-<?php echo ($row['delivery_status'] == 'Delivered') ? 'success' : (($row['delivery_status'] == 'In Transit') ? 'warning' : (($row['delivery_status'] == 'Processing') ? 'info' : 'secondary')); ?> mb-2">
+                                                                            <?php echo htmlspecialchars($row['delivery_status'] ?? 'N/A'); ?>
+                                                                        </span>
+                                                                        
+                                                                        <span class="fw-bold text-secondary d-block mb-1"><i class="fas fa-info-circle me-1"></i>Status:</span>
+                                                                        <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : (($row['status'] == 'Low Stock') ? 'warning' : (($row['status'] == 'In Use') ? 'primary' : 'danger')); ?>">
+                                                                            <?php echo htmlspecialchars($row['status']); ?>
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
-                                                                <div class="col-md-6 mb-2 text-md-end">
-                                                                    <span class="fw-bold text-secondary"><i class="fas fa-truck me-1"></i>Supplier:</span> <?php echo htmlspecialchars($row['supplier_name']); ?>
-                                                                </div>
-                                                            </div>
-                                                            <div class="row mb-3">
-                                                                <div class="col-md-6 mb-2">
-                                                                    <span class="fw-bold text-secondary"><i class="fas fa-info-circle me-1"></i>Status:</span> <span class="badge bg-<?php echo $row['status'] == 'Low Stock' ? 'warning' : ($row['status'] == 'Available' ? 'success' : ($row['status'] == 'In Use' ? 'primary' : 'danger')); ?>"><?php echo $row['status']; ?></span>
-                                                                </div>
-                                                                <div class="col-md-6 mb-2 text-md-end">
-                                                                    <span class="fw-bold text-secondary"><i class="fas fa-map-marker-alt me-1"></i>Location:</span> <?php echo htmlspecialchars($row['location']); ?>
-                                                                </div>
-                                                            </div>
-                                                            <div class="row justify-content-center">
-                                                                <div class="col-12 col-md-10">
-                                                                    <div class="card shadow-sm border-0 mb-2">
-                                                                        <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
-                                                                            <div class="mb-2 flex-fill">
-                                                                                <span class="fw-bold text-muted"><i class="fas fa-sort-numeric-up me-1"></i>Quantity:</span> <?php echo $row['quantity']; ?>
+                                                                
+                                                                <div class="row mb-3">
+                                                                    <div class="col-12 mb-3">
+                                                                        <h6 class="fw-bold text-secondary"><i class="fas fa-file-alt me-2"></i>Specifications</h6>
+                                                                        <div class="card bg-light">
+                                                                            <div class="card-body">
+                                                                                <?php echo !empty($row['specification']) ? nl2br(htmlspecialchars($row['specification'])) : 'No specifications provided.'; ?>
                                                                             </div>
-                                                                            <div class="mb-2 flex-fill">
-                                                                                <span class="fw-bold text-muted"><i class="fas fa-ruler me-1"></i>Unit:</span> <?php echo htmlspecialchars($row['unit']); ?>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="row mb-3">
+                                                                    <div class="col-md-4 mb-2">
+                                                                        <div class="card h-100">
+                                                                            <div class="card-body">
+                                                                                <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-sort-numeric-up me-1"></i>Quantity</h6>
+                                                                                <p class="card-text h4"><?php echo number_format($row['quantity']); ?> <small class="text-muted"><?php echo htmlspecialchars($row['unit']); ?></small></p>
                                                                             </div>
-                                                                            <div class="mb-2 flex-fill">
-                                                                                <span class="fw-bold text-muted"><i class="fas fa-coins me-1"></i>Material Price:</span> ₱ <?php echo number_format($row['material_price'], 2); ?>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-4 mb-2">
+                                                                        <div class="card h-100">
+                                                                            <div class="card-body">
+                                                                                <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-tags me-1"></i>Category</h6>
+                                                                                <p class="card-text"><?php echo htmlspecialchars($row['category']); ?></p>
                                                                             </div>
-                                                                            <div class="mb-2 flex-fill">
-                                                                                <span class="fw-bold text-muted"><i class="fas fa-tags me-1"></i>Category:</span> <?php echo htmlspecialchars($row['category']); ?>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-4 mb-2">
+                                                                        <div class="card h-100">
+                                                                            <div class="card-body">
+                                                                                <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-coins me-1"></i>Price</h6>
+                                                                                <p class="card-text">₱ <?php echo number_format($row['material_price'], 2); ?></p>
                                                                             </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="modal-footer">
+                                                        <div class="modal-footer">
                                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $row['id']; ?>" data-bs-dismiss="modal">Edit</button>
-                                                            <a href="#" class="btn btn-danger btn-sm text-white delete-material-btn" data-id="<?php echo $row['id']; ?>" data-name="<?php echo htmlspecialchars($row['material_name']); ?>">
+                                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $row['id']; ?>" data-bs-dismiss="modal">Edit</button>
+                                                            <a href="#" class="btn btn-danger text-white delete-material-btn" data-id="<?php echo $row['id']; ?>" data-name="<?php echo htmlspecialchars($row['material_name']); ?>">
                                                                 <i class="fas fa-trash"></i> Delete
                                                             </a>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        <!-- Edit Modal -->
+                                                                                <!-- Edit Modal -->
                                             <div class="modal fade" id="editModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="editModalLabel<?php echo $row['id']; ?>" aria-hidden="true">
                                                 <div class="modal-dialog modal-lg modal-dialog-centered">
                                                 <div class="modal-content">
@@ -696,6 +723,13 @@ function short_number_format($num, $precision = 1) {
                                                                         <div class="invalid-feedback">
                                                                             Please enter a valid cost (0-999,999.99).
                                                                         </div>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label>Delivery Status</label>
+                                                                        <select class="form-control" name="delivery_status">
+                                                                            <option value="Delivered" <?php echo (isset($row['delivery_status']) && $row['delivery_status'] == 'Delivered') ? 'selected' : ''; ?>>Delivered</option>
+                                                                            <option value="Cancelled" <?php echo (isset($row['delivery_status']) && $row['delivery_status'] == 'Cancelled') ? 'selected' : ''; ?>>Cancelled</option>
+                                                                        </select>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -836,9 +870,9 @@ function short_number_format($num, $precision = 1) {
           <div class="modal-body">
             <!-- WIZARD PAGE 1: ADDING MATERIALS -->
             <div id="add-material-page-1">
-              <div class="row">
+             
                 <!-- Column 1: Compare Suppliers -->
-                <div class="col-lg-6">
+                <div class="col">
                   <div class="card mb-4">
                     <div class="card-header bg-primary text-white">
                       <h6 class="mb-0"><i class="fas fa-balance-scale me-2"></i>Compare Suppliers</h6>
@@ -875,6 +909,8 @@ function short_number_format($num, $precision = 1) {
                                 </th>
                                 <th>Supplier</th>
                                 <th>Price</th>
+                                <th>Brand</th>
+                                <th>Specs</th>
                                 <th>Lead Time</th>
                                 <th>Best Deal</th>
                               </tr>
@@ -889,7 +925,7 @@ function short_number_format($num, $precision = 1) {
                 </div>
 
                 <!-- Column 2: Material Details -->
-                <div class="col-lg-6">
+                <div class="col">
                   <!-- Material Details Form -->
                   <div id="materialDetailsForm" style="display: none;">
                     <div class="card mb-4">
@@ -906,6 +942,10 @@ function short_number_format($num, $precision = 1) {
                             <div class="form-group mb-3">
                               <label>Category <span class="text-danger">*</span></label>
                               <input type="text" class="form-control" id="categoryInput" readonly>
+                            </div>
+                            <div class="form-group mb-3">
+                              <label>Brand</label>
+                              <input type="text" class="form-control" id="brandInput" readonly>
                             </div>
                             <div class="form-group mb-3">
                             <label>Location</label>
@@ -949,6 +989,10 @@ function short_number_format($num, $precision = 1) {
                               <input type="number" step="0.01" class="form-control" id="materialPriceInput" readonly>
                             </div>
                             <div class="form-group mb-3">
+                              <label>Specification</label>
+                              <input type="text" class="form-control" id="specificationInput" readonly>
+                            </div>
+                            <div class="form-group mb-3">
                               <label>Labor/Other Cost</label>
                               <input type="number" step="0.01" class="form-control" id="laborOtherInput" value="0" min="0" max="999999.99">
                               <div class="invalid-feedback">
@@ -971,7 +1015,7 @@ function short_number_format($num, $precision = 1) {
                   </div>
                 </div>
               </div>
-            </div>
+        
             
             <!-- WIZARD PAGE 2: VIEWING CART -->
             <div id="add-material-page-2" style="display: none;">
@@ -1416,10 +1460,13 @@ document.addEventListener('DOMContentLoaded', function() {
             row.innerHTML = `
                 <td>
                     <input type="checkbox" name="selectedSuppliers" value="${supplier.supplier_name}" 
-                           data-price="${supplier.material_price}" data-lead-time="${supplier.lead_time}" data-unit="${supplier.unit || ''}" data-quantity="${supplier.quantity || '0'}" data-labor_other="${supplier.labor_other || 0}" data-category="${supplier.category || ''}">
+                           data-price="${supplier.material_price}" data-lead-time="${supplier.lead_time}" data-unit="${supplier.unit || ''}" data-quantity="${supplier.quantity || '0'}" data-labor_other="${supplier.labor_other || 0}" data-category="${supplier.category || ''}" data-brand="${supplier.brand || ''}" 
+               data-specification="${supplier.specification || ''}">
                 </td>
                 <td><strong>${supplier.supplier_name}</strong></td>
                 <td>₱ ${supplier.material_price.toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td>${supplier.brand}</td>
+                <td>${supplier.specification}</td>
                 <td>${supplier.lead_time} days</td>
                 <td>
                     ${supplier.best_deal ? `<span class="badge bg-success">${supplier.best_deal}</span>` : ''}
@@ -1463,11 +1510,15 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('selectedSupplierInput').value = selectedSupplier.name;
             document.getElementById('categoryInput').value = selectedSupplier.category;
             document.getElementById('materialPriceInput').value = selectedSupplier.price;
-            document.getElementById('laborOtherInput').value = selectedSupplier.labor_other;
+            document.getElementById('brandInput').value = selectedSupplier.brand || '';
+            document.getElementById('specificationInput').value = selectedSupplier.specification || '';
+            document.getElementById('laborOtherInput').value = selectedSupplier.labor_other || '0';
             document.getElementById('laborOtherInput').readOnly = true;
         } else {
             document.getElementById('selectedSupplierInput').value = '';
             document.getElementById('categoryInput').value = '';
+            document.getElementById('brandInput').value = '';
+            document.getElementById('specificationInput').value = '';
             document.getElementById('materialPriceInput').value = '';
             document.getElementById('laborOtherInput').value = '';
             document.getElementById('laborOtherInput').readOnly = false;
@@ -1578,12 +1629,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 name: firstSupplier.value,
                 price: parseFloat(firstSupplier.getAttribute('data-price')),
                 lead_time: parseInt(firstSupplier.getAttribute('data-lead-time')),
-                unit: unitValue, // Get unit from the data attribute
+                unit: unitValue,
                 category: firstSupplier.getAttribute('data-category') || '',
                 quantity: parseInt(firstSupplier.getAttribute('data-quantity')),
-                labor_other: parseFloat(firstSupplier.getAttribute('data-labor_other')) // Get labor_other from data attribute
+                brand: firstSupplier.getAttribute('data-brand') || '',
+                specification: firstSupplier.getAttribute('data-specification') || '',
+                labor_other: parseFloat(firstSupplier.getAttribute('data-labor_other'))
             };
-            
             console.log('Selected supplier object:', selectedSupplier); // Debug: Log the full selected supplier object
             
             // Update the form fields with selected supplier info
@@ -1591,6 +1643,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('materialPriceInput').value = selectedSupplier.price;
             document.getElementById('unitInput').value = selectedSupplier.unit; // Set unit in the form
             document.getElementById('categoryInput').value = selectedSupplier.category;
+            document.getElementById('brandInput').value = selectedSupplier.brand;
+            document.getElementById('specificationInput').value = selectedSupplier.specification;
             document.getElementById('laborOtherInput').value = selectedSupplier.labor_other;
             document.getElementById('laborOtherInput').readOnly = true;
             
@@ -1692,6 +1746,8 @@ document.addEventListener('DOMContentLoaded', function() {
     addToCartBtn.addEventListener('click', function() {
         const materialName = document.getElementById('materialNameInput').value;
         const category = document.getElementById('categoryInput').value;
+        const brand = document.getElementById('brandInput').value;
+        const specification = document.getElementById('specificationInput').value;
         const quantity = document.getElementById('finalQuantityInput');
         const status = document.getElementById('statusSelect');
         const labor_other = document.getElementById('laborOtherInput');
@@ -1845,6 +1901,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const materialData = {
                 material_name: document.getElementById('materialNameInput').value,
                 category: document.getElementById('categoryInput').value,
+                brand: document.getElementById('brandInput').value,
+                specification: document.getElementById('specificationInput').value,
                 quantity: quantityValue,
                 unit: unit.value,
                 status: status.value,

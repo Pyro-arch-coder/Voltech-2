@@ -89,6 +89,7 @@ if (isset($_GET['delete'])) {
 // Get filter values
 $search = isset($_GET['search']) ? mysqli_real_escape_string($con, $_GET['search']) : '';
 $status_filter = isset($_GET['status']) ? mysqli_real_escape_string($con, $_GET['status']) : '';
+$delivery_status_filter = isset($_GET['delivery_status']) ? mysqli_real_escape_string($con, $_GET['delivery_status']) : '';
 
 // Get location filter from URL
 $location_filter = isset($_GET['location']) ? $_GET['location'] : '';
@@ -103,6 +104,9 @@ if (!empty($status_filter)) {
 }
 if (!empty($location_filter)) {
     $where_conditions[] = "location = " . ($location_filter === 'NULL' ? 'NULL' : "'$location_filter'");
+}
+if (!empty($delivery_status_filter)) {
+    $where_conditions[] = "delivery_status = '$delivery_status_filter'";
 }
 
 $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
@@ -138,6 +142,10 @@ $maintenance = $maintenance_query->fetch_assoc();
 // Get distinct status values for filter
 $statuses_query = "SELECT DISTINCT status FROM equipment ORDER BY status";
 $statuses = $con->query($statuses_query);
+
+// Get distinct delivery status values for filter (only 'On Delivery' and 'Delivered')
+$delivery_statuses_query = "SELECT 'On Delivery' as delivery_status UNION SELECT 'Delivered' as delivery_status";
+$delivery_statuses = $con->query($delivery_statuses_query);
 
 // Fetch equipment with pagination and filters
 $sql = "SELECT * FROM equipment $where_clause ORDER BY id DESC LIMIT $offset, $items_per_page";
@@ -290,11 +298,30 @@ $result = $con->query($sql);
                                 }
                                 ?>
                             </select>
+                            <select name="delivery_status" class="form-select" style="width: 200px;" id="deliveryStatusFilter">
+                                <option value="">All Delivery Status</option>
+                                <?php 
+                                if ($delivery_statuses) {
+                                    $delivery_statuses->data_seek(0);
+                                    while ($ds = $delivery_statuses->fetch_assoc()): 
+                                        if (!empty($ds['delivery_status'])):
+                                ?>
+                                    <option value="<?php echo htmlspecialchars($ds['delivery_status']); ?>" <?php echo ($delivery_status_filter === $ds['delivery_status']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($ds['delivery_status']); ?>
+                                    </option>
+                                <?php 
+                                        endif;
+                                    endwhile; 
+                                }
+                                ?>
+                            </select>
                         </form>
                         <script>
                         document.addEventListener('DOMContentLoaded', function() {
                             var searchInput = document.getElementById('searchInput');
                             var statusFilter = document.getElementById('statusFilter');
+                            var locationFilter = document.getElementById('locationFilter');
+                            var deliveryStatusFilter = document.getElementById('deliveryStatusFilter');
                             var searchForm = document.getElementById('searchForm');
                             if (searchInput && searchForm) {
                                 var searchTimeout;
@@ -317,6 +344,13 @@ $result = $con->query($sql);
                                     searchForm.submit();
                                 });
                             }
+                            [searchInput, statusFilter, locationFilter, deliveryStatusFilter].forEach(function(element) {
+                                if (element) {
+                                    element.addEventListener('change', function() {
+                                        searchForm.submit();
+                                    });
+                                }
+                            });
                         });
                         </script>
                         <div class="table-responsive mb-0">
@@ -325,9 +359,12 @@ $result = $con->query($sql);
                                     <tr>
                                         <th>No.</th>
                                         <th>Equipment Name</th>
+                                        <th>Brand</th>
+                                        <th>Specification</th>
                                         <th>Location</th>
                                         <th>Equipment Price</th>
                                         <th>Depreciation</th>
+                                        <th>Delivery Status</th>
                                         <th>Status</th>
                                         <th class="text-center">Actions</th>
                                     </tr>
@@ -340,6 +377,8 @@ $result = $con->query($sql);
                                     <tr>
                                         <td><?php echo $no++; ?></td>
                                                 <td><?php echo htmlspecialchars($row['equipment_name']); ?></td>
+                                                <td><?php echo htmlspecialchars($row['brand'] ?? 'N/A'); ?></td>
+                                                <td><?php echo !empty($row['specification']) ? htmlspecialchars(substr($row['specification'], 0, 30) . (strlen($row['specification']) > 30 ? '...' : '')) : 'N/A'; ?></td>
                                                 <td><?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></td>
                                                 <td>
                                                     <?php
@@ -359,6 +398,11 @@ $result = $con->query($sql);
                                                         echo 'N/A';
                                                     }
                                                     ?>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-<?php echo ($row['delivery_status'] == 'Delivered') ? 'success' : (($row['delivery_status'] == 'In Transit') ? 'info' : (($row['delivery_status'] == 'Cancelled') ? 'danger' : 'warning')); ?>">
+                                                        <?php echo htmlspecialchars($row['delivery_status'] ?? 'N/A'); ?>
+                                                    </span>
                                                 </td>
                                                 <td>
                                                     <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : (($row['status'] == 'In Use') ? 'warning' : (($row['status'] == 'Maintenance') ? 'info' : 'secondary')); ?>">
@@ -385,15 +429,15 @@ $result = $con->query($sql);
                         <nav aria-label="Page navigation" class="mt-3 mb-3">
                             <ul class="pagination justify-content-center custom-pagination-green mb-0">
                                 <li class="page-item<?php if($page <= 1) echo ' disabled'; ?>">
-                                    <a class="page-link" href="?page=<?php echo $page-1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location=' . urlencode($location_filter) : ''; ?>">Previous</a>
+                                    <a class="page-link" href="?page=<?php echo $page-1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location=' . urlencode($location_filter) : ''; ?><?php echo !empty($delivery_status_filter) ? '&delivery_status=' . urlencode($delivery_status_filter) : ''; ?>">Previous</a>
                                                 </li>
                                 <?php for($i = 1; $i <= $total_pages; $i++): ?>
                                     <li class="page-item<?php if($i == $page) echo ' active'; ?>">
-                                        <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location=' . urlencode($location_filter) : ''; ?>" <?php echo ($i == $page) ? 'style="background-color: #28a745; color: white;"' : ''; ?>><?php echo $i; ?></a>
+                                        <a class="page-link <?php echo ($i == $page) ? 'active' : ''; ?>" href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location=' . urlencode($location_filter) : ''; ?><?php echo !empty($delivery_status_filter) ? '&delivery_status=' . urlencode($delivery_status_filter) : ''; ?>"><?php echo $i; ?></a>
                                             </li>
                                             <?php endfor; ?>
                                 <li class="page-item<?php if($page >= $total_pages) echo ' disabled'; ?>">
-                                    <a class="page-link" href="?page=<?php echo $page+1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location=' . urlencode($location_filter) : ''; ?>">Next</a>
+                                    <a class="page-link" href="?page=<?php echo $page+1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location=' . urlencode($location_filter) : ''; ?><?php echo !empty($delivery_status_filter) ? '&delivery_status=' . urlencode($delivery_status_filter) : ''; ?>">Next</a>
                                                 </li>
                                         </ul>
                                     </nav>
@@ -437,6 +481,14 @@ $result = $con->query($sql);
                                     <label for="depreciationInput">Depreciation (Years)</label>
                                     <input type="number" step="0.01" min="0" class="form-control" id="depreciationInput" name="depreciation">
                                 </div>
+                                <div class="form-group mb-3">
+                                    <label for="brandInput">Brand</label>
+                                    <input type="text" class="form-control" id="brandInput" name="brand" placeholder="Enter brand name">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label for="specificationInput">Specification</label>
+                                    <textarea class="form-control" id="specificationInput" name="specification" rows="2" placeholder="Enter specifications"></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -466,31 +518,63 @@ $result = $con->query($sql);
                 </div>
                 <div class="modal-body">
                     <div class="container-fluid">
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-2">
-                                <h4 class="fw-bold mb-0 text-primary"><i class="fas fa-wrench me-2"></i><?php echo htmlspecialchars($row['equipment_name']); ?></h4>
-                                <div class="text-muted small"><i class="fas fa-map-marker-alt me-1"></i>Location: <?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></div>
-                            </div>
-                            <div class="col-md-6 mb-2 text-md-end">
-                                <span class="fw-bold text-secondary"><i class="fas fa-info-circle me-1"></i>Status:</span> <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : (($row['status'] == 'In Use') ? 'warning' : (($row['status'] == 'Maintenance') ? 'info' : 'secondary')); ?>"><?php echo htmlspecialchars($row['status']); ?></span>
-                            </div>
-                        </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-2">
-                                <span class="fw-bold text-secondary"><i class="fas fa-hourglass-half me-1"></i>Depreciation:</span> <?php if (isset($row['depreciation']) && $row['depreciation'] !== '') { $depr = $row['depreciation']; echo (intval($depr) == floatval($depr)) ? intval($depr) . ' years' : number_format($depr, 2) . ' years'; } else { echo 'N/A'; } ?>
-                            </div>
-                        </div>
-                        <div class="row justify-content-center">
-                            <div class="col-12 col-md-10">
-                                <div class="card shadow-sm border-0 mb-2">
-                                    <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
-                                        <div class="mb-2 flex-fill">
-                                            <span class="fw-bold text-muted"><i class="fas fa-coins me-1"></i>Equipment Price:</span> <?php echo isset($row['equipment_price']) && $row['equipment_price'] !== '' ? '₱ ' . number_format($row['equipment_price'], 2) : 'N/A'; ?>
+                                <div class="row mb-3">
+                                    <div class="col-md-8 mb-2">
+                                        <h4 class="fw-bold mb-0 text-primary"><i class="fas fa-wrench me-2"></i><?php echo htmlspecialchars($row['equipment_name']); ?></h4>
+                                        <div class="text-muted small"><i class="fas fa-tag me-1"></i>Brand: <?php echo htmlspecialchars($row['brand'] ?? 'N/A'); ?></div>
+                                        <div class="text-muted small"><i class="fas fa-map-marker-alt me-1"></i>Location: <?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></div>
+                                    </div>
+                                    <div class="col-md-4 mb-2 text-md-end">
+                                        <span class="fw-bold text-secondary d-block mb-1"><i class="fas fa-truck me-1"></i>Delivery Status:</span>
+                                        <span class="badge bg-<?php echo ($row['delivery_status'] == 'Delivered') ? 'success' : (($row['delivery_status'] == 'In Transit') ? 'info' : (($row['delivery_status'] == 'Cancelled') ? 'danger' : 'warning')); ?> mb-2">
+                                            <?php echo htmlspecialchars($row['delivery_status'] ?? 'N/A'); ?>
+                                        </span>
+                                        
+                                        <span class="fw-bold text-secondary d-block mb-1"><i class="fas fa-info-circle me-1"></i>Status:</span>
+                                        <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : (($row['status'] == 'In Use') ? 'warning' : (($row['status'] == 'Maintenance') ? 'info' : 'secondary')); ?>">
+                                            <?php echo htmlspecialchars($row['status']); ?>
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-12 mb-3">
+                                        <h6 class="fw-bold text-secondary"><i class="fas fa-file-alt me-2"></i>Specifications</h6>
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <?php echo !empty($row['specification']) ? nl2br(htmlspecialchars($row['specification'])) : 'No specifications provided.'; ?>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-4 mb-2">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-hourglass-half me-1"></i>Depreciation</h6>
+                                                <p class="card-text">
+                                                    <?php 
+                                                    if (isset($row['depreciation']) && $row['depreciation'] !== '') { 
+                                                        $depr = $row['depreciation']; 
+                                                        echo (intval($depr) == floatval($depr)) ? intval($depr) . ' years' : number_format($depr, 2) . ' years'; 
+                                                    } else { 
+                                                        echo 'N/A'; 
+                                                    } 
+                                                    ?>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8 mb-2">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-coins me-1"></i>Equipment Price</h6>
+                                                <p class="card-text"><?php echo isset($row['equipment_price']) && $row['equipment_price'] !== '' ? '₱ ' . number_format($row['equipment_price'], 2) : 'N/A'; ?></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -542,6 +626,13 @@ $result = $con->query($sql);
                                     <input type="number" step="0.01" min="0" class="form-control" name="depreciation" value="<?php echo isset($row['depreciation']) ? htmlspecialchars($row['depreciation']) : ''; ?>">
                                 </div>
                                 <div class="form-group mb-3">
+                                    <label>Delivery Status</label>
+                                    <select class="form-control" name="delivery_status" required>
+                                        <option value="Delivered" <?php echo (isset($row['delivery_status']) && $row['delivery_status'] == 'Delivered') ? 'selected' : ''; ?>>Delivered</option>
+                                        <option value="Cancelled" <?php echo (isset($row['delivery_status']) && $row['delivery_status'] == 'Cancelled') ? 'selected' : ''; ?>>Cancelled</option>
+                                    </select>
+                                </div>
+                                <div class="form-group mb-3">
                                     <label>Status</label>
                                     <select class="form-control" name="status" required>
                                         <option value="Available" <?php echo ($row['status'] == 'Available') ? 'selected' : ''; ?>>Available</option>
@@ -549,6 +640,16 @@ $result = $con->query($sql);
                                         <option value="Maintenance" <?php echo ($row['status'] == 'Maintenance') ? 'selected' : ''; ?>>Maintenance</option>
                                         <option value="Out of Service" <?php echo ($row['status'] == 'Out of Service') ? 'selected' : ''; ?>>Out of Service</option>
                                     </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label>Brand</label>
+                                    <input type="text" class="form-control" name="brand" value="<?php echo isset($row['brand']) ? htmlspecialchars($row['brand']) : ''; ?>" placeholder="Enter brand name">
+                                </div>
+                                <div class="form-group mb-3">
+                                    <label>Specification</label>
+                                    <textarea class="form-control" name="specification" rows="10" placeholder="Enter specifications"><?php echo isset($row['specification']) ? htmlspecialchars($row['specification']) : ''; ?></textarea>
                                 </div>
                             </div>
                         </div>

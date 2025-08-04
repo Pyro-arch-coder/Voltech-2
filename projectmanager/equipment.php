@@ -107,9 +107,9 @@ error_log("Status Filter: " . $status_filter);
 error_log("Location Filter: " . $location_filter);
 
 // Build WHERE clause
-$where_conditions = [];
+$where_conditions = ["delivery_status = 'Delivered'"]; // Only show delivered items by default
 if (!empty($search)) {
-    $where_conditions[] = "(equipment_name LIKE '%$search%' OR equipment_type LIKE '%$search%' OR status LIKE '%$search%' OR location LIKE '%$search%')";
+    $where_conditions[] = "(equipment_name LIKE '%$search%' OR brand LIKE '%$search%' OR specification LIKE '%$search%' OR location LIKE '%$search%' OR status LIKE '%$search%')";
 }
 if (!empty($status_filter)) {
     $where_conditions[] = "status = '" . mysqli_real_escape_string($con, $status_filter) . "'";
@@ -168,8 +168,8 @@ $inuse = $inuse_query->fetch_assoc();
 $maintenance_query = $con->query("SELECT COUNT(*) as total FROM equipment WHERE status = 'Maintenance'");
 $maintenance = $maintenance_query->fetch_assoc();
 
-// Get distinct status values for filter
-$statuses_query = "SELECT DISTINCT status FROM equipment ORDER BY status";
+// Get distinct status values for filter (only for delivered items)
+$statuses_query = "SELECT DISTINCT status FROM equipment WHERE delivery_status = 'Delivered' ORDER BY status";
 $statuses = $con->query($statuses_query);
 
 // Debug: Output the SQL query for testing
@@ -457,8 +457,8 @@ if (!$result) {
                                         while ($row = $result->fetch_assoc()): ?>
                                     <tr>
                                         <td><?php echo $no++; ?></td>
-                                                <td><?php echo htmlspecialchars($row['equipment_name']); ?></td>
-                                                <td><?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></td>
+                                        <td><?php echo htmlspecialchars($row['equipment_name']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></td>
                                                 <td>
                                                     <?php
                                                     if (isset($row['category']) && $row['category'] == 'Company') {
@@ -579,7 +579,7 @@ if (!$result) {
     
     while ($row = $result->fetch_assoc()): 
     ?>
-    <!-- Redesign the View Equipment Modal to match the card-based layout in materials.php -->
+    <!-- View Equipment Modal -->
     <div class="modal fade" id="viewModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="viewModalLabel<?php echo $row['id']; ?>" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
@@ -590,26 +590,54 @@ if (!$result) {
                 <div class="modal-body">
                     <div class="container-fluid">
                         <div class="row mb-3">
-                            <div class="col-md-6 mb-2">
+                            <div class="col-md-8 mb-2">
                                 <h4 class="fw-bold mb-0 text-primary"><i class="fas fa-wrench me-2"></i><?php echo htmlspecialchars($row['equipment_name']); ?></h4>
+                                <div class="text-muted small"><i class="fas fa-tag me-1"></i>Brand: <?php echo htmlspecialchars($row['brand'] ?? 'N/A'); ?></div>
                                 <div class="text-muted small"><i class="fas fa-map-marker-alt me-1"></i>Location: <?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></div>
                             </div>
-                            <div class="col-md-6 mb-2 text-md-end">
-                                <span class="fw-bold text-secondary"><i class="fas fa-info-circle me-1"></i>Status:</span> <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : (($row['status'] == 'In Use') ? 'warning' : (($row['status'] == 'Maintenance') ? 'info' : 'secondary')); ?>"><?php echo htmlspecialchars($row['status']); ?></span>
+                            <div class="col-md-4 mb-2 text-md-end">
+                                
+                                <span class="fw-bold text-secondary d-block mb-1"><i class="fas fa-info-circle me-1"></i>Status:</span>
+                                <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : (($row['status'] == 'In Use') ? 'warning' : (($row['status'] == 'Maintenance') ? 'info' : 'secondary')); ?>">
+                                    <?php echo htmlspecialchars($row['status']); ?>
+                                </span>
                             </div>
                         </div>
+                        
                         <div class="row mb-3">
-                            <div class="col-md-6 mb-2">
-                                <span class="fw-bold text-secondary"><i class="fas fa-hourglass-half me-1"></i>Depreciation:</span> <?php echo isset($row['depreciation']) ? htmlspecialchars($row['depreciation']) . ' years' : 'N/A'; ?>
+                            <div class="col-12 mb-3">
+                                <h6 class="fw-bold text-secondary"><i class="fas fa-file-alt me-2"></i>Specifications</h6>
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <?php echo !empty($row['specification']) ? nl2br(htmlspecialchars($row['specification'])) : 'No specifications provided.'; ?>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="row justify-content-center">
-                            <div class="col-12 col-md-10">
-                                <div class="card shadow-sm border-0 mb-2">
-                                    <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
-                                        <div class="mb-2 flex-fill">
-                                            <span class="fw-bold text-muted"><i class="fas fa-coins me-1"></i>Equipment Price:</span> ₱ <?php echo isset($row['equipment_price']) ? number_format($row['equipment_price'], 2) : 'N/A'; ?>
-                                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4 mb-2">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-hourglass-half me-1"></i>Depreciation</h6>
+                                        <p class="card-text">
+                                            <?php 
+                                            if (isset($row['depreciation']) && $row['depreciation'] !== '') { 
+                                                $depr = $row['depreciation']; 
+                                                echo (intval($depr) == floatval($depr)) ? intval($depr) . ' years' : number_format($depr, 2) . ' years'; 
+                                            } else { 
+                                                echo 'N/A'; 
+                                            } 
+                                            ?>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-8 mb-2">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-coins me-1"></i>Equipment Price</h6>
+                                        <p class="card-text"><?php echo isset($row['equipment_price']) && $row['equipment_price'] !== '' ? '₱ ' . number_format($row['equipment_price'], 2) : 'N/A'; ?></p>
                                     </div>
                                 </div>
                             </div>
