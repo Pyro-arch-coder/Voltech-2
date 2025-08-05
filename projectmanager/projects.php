@@ -482,6 +482,7 @@ if ($userid) {
                                       <h4 class="mb-0">List of Projects</h4>
                                       <div class="d-flex align-items-center gap-2">
                                         <a href="gantt.php" class="btn btn-primary"><i class="fas fa-chart-bar me-1"></i> Gantt Chart</a>
+                                        <a href="../forecasting/analogous_forecasting.php" class="btn btn-info text-white"><i class="fas fa-chart-line me-1"></i> Analogous Forecasting</a>
                                         <a href="project_archived.php" class="btn btn-danger"><i class="fas fa-archive me-1"></i> Archives</a>
                                         <button class="btn btn-success" style="width:180px;" data-bs-toggle="modal" data-bs-target="#AddProjectModal">
                                           <i class="fas fa-plus"></i> New Project
@@ -594,6 +595,9 @@ if ($userid) {
                                             
                                            
                                         </form>
+                                        <button class="btn btn-primary ms-2" id="filterButton">
+                                          <i class="fas fa-filter"></i> Filter
+                                        </button>
                                         <div class="ms-auto" style="flex:0 0 auto;text-align:right;">
                                           <!-- Removed Gantt Chart button from here -->
                                       </div>
