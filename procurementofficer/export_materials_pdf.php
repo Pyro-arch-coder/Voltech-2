@@ -1,9 +1,6 @@
 <?php
-require_once('fpdf.php');
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
+require_once('../fpdf.php');
+require_once '../config.php';
 
 // Fetch all materials
 $sql = "SELECT category, material_name, quantity, unit, status, supplier_name, total_amount FROM materials ORDER BY category, material_name";

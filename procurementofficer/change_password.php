@@ -1,7 +1,7 @@
 <?php
 session_start();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
-    $con = new mysqli("localhost", "root", "", "voltech2");
+    require_once '../config.php';
     if ($con->connect_error) {
         $response = ['success' => false, 'message' => 'Database connection failed.'];
         header('Content-Type: application/json');

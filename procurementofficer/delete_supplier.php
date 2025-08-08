@@ -4,11 +4,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    header('Location: po_suppliers.php?error=1');
-    exit();
-}
+require_once '../config.php';
 if (isset($_GET['id'])) {
     $id = (int)$_GET['id'];
     $delete_sql = "DELETE FROM suppliers WHERE id = $id";

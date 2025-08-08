@@ -9,7 +9,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['user_level'] != 3) {
 }
 
 // Database connection
-$con = new mysqli("localhost", "root", "", "voltech2");
+include_once "../config.php";
 if ($con->connect_error) {
     echo json_encode(['success' => false, 'message' => 'Database connection failed']);
     exit();

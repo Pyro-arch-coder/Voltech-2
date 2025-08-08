@@ -4,22 +4,23 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    header('Location: po_suppliers.php?error=1');
-    exit();
-}
+require_once '../config.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_supplier'])) {
     $id = (int)$_POST['edit_supplier_id'];
     $supplier_name = mysqli_real_escape_string($con, $_POST['supplier_name']);
-    $contact_person = mysqli_real_escape_string($con, $_POST['contact_person']);
+    $contact_firstname = mysqli_real_escape_string($con, $_POST['contact_firstname']);
+    $contact_lastname = mysqli_real_escape_string($con, $_POST['contact_lastname']);
     $contact_number = mysqli_real_escape_string($con, $_POST['contact_number']);
     $email = mysqli_real_escape_string($con, $_POST['email']);
     $address = mysqli_real_escape_string($con, $_POST['address']);
     $status = mysqli_real_escape_string($con, $_POST['status']);
     $now = date('Y-m-d H:i:s');
-    $update_sql = "UPDATE suppliers SET supplier_name='$supplier_name', contact_person='$contact_person', contact_number='$contact_number', email='$email', address='$address', status='$status', updated_at='$now' WHERE id=$id";
-    if ($con->query($update_sql)) {
+    
+    $update_sql = "UPDATE suppliers SET supplier_name=?, firstname=?, lastname=?, contact_number=?, email=?, address=?, status=?, updated_at=? WHERE id=?";
+    $update_stmt = $con->prepare($update_sql);
+    $update_stmt->bind_param("ssssssssi", $supplier_name, $contact_firstname, $contact_lastname, $contact_number, $email, $address, $status, $now, $id);
+    
+    if ($update_stmt->execute()) {
         header('Location: po_suppliers.php?updated=1');
     } else {
         $err = urlencode('Error updating supplier: ' . $con->error);

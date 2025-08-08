@@ -6,10 +6,7 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // Database connection
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
+include_once "../config.php";
 
 header('Content-Type: application/json');
 

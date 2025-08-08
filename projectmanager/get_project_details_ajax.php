@@ -5,10 +5,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header('HTTP/1.0 403 Forbidden');
     exit('Access Denied');
 }
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
+include_once "../config.php";
 $userid = $_SESSION['user_id'];
 $project_id = intval($_GET['id']);
 

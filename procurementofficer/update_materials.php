@@ -4,11 +4,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    header('Location: po_materials.php?error=1');
-    exit();
-}
+require_once '../config.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update']) && isset($_POST['id'])) {
     $id = (int)$_POST['id'];
     $material_name = mysqli_real_escape_string($con, $_POST['material_name']);

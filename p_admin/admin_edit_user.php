@@ -4,11 +4,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'DB connection error']);
-    exit();
-}
+require_once '../config.php';
 // Handle GET request to fetch user data
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
     $id = mysqli_real_escape_string($con, $_GET['id']);

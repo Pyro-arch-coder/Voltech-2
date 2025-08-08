@@ -1,7 +1,7 @@
 <?php
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     session_start();
-    $con = new mysqli("localhost", "root", "", "voltech2");
+    include_once "../config.php";
     if ($con->connect_error) {
         $response = ['success' => false, 'message' => 'Database connection failed.'];
         header('Content-Type: application/json');
@@ -48,7 +48,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech2");
+$con = new mysqli("localhost", "root", "", "voltech");
 if ($con->connect_error) {
     die("Connection failed: " . $con->connect_error);
 }

@@ -1,13 +1,10 @@
 <?php
-require_once('fpdf.php');
+require_once('../fpdf.php');
 
 // Database connection
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
+include_once "../config.php";
 
-$project_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$project_id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_GET['project_id']) ? intval($_GET['project_id']) : 0);
 if (!$project_id) {
     die('Invalid project ID.');
 }
@@ -47,9 +44,6 @@ $pdf->Cell(0,10,'Project Details',0,1,'C');
 $pdf->SetFont('Arial','',12);
 $pdf->Cell(0,8,'Project Name: ' . $project['project'],0,1);
 $pdf->Cell(0,8,'Location: ' . $project['location'],0,1);
-$pdf->Cell(0,8,'Category: ' . $project['category'],0,1);
-$pdf->Cell(0,8,'Deadline: ' . date('F d, Y', strtotime($project['deadline'])),0,1);
-$pdf->Cell(0,8,'Foreman: ' . $project['foreman'],0,1);
 $pdf->Ln(4);
 
 // Bill of Materials and Labor

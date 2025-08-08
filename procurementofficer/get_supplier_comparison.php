@@ -6,12 +6,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     exit();
 }
 
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    header('Content-Type: application/json');
-    echo json_encode(['error' => 'Database connection failed']);
-    exit();
-}
+require_once '../config.php';
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 

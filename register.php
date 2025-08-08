@@ -3,7 +3,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 require 'vendor/autoload.php';
-$con = new mysqli("localhost", "root", "", "voltech2");
+include("config.php");
 if ($con->connect_error) {
     die("Connection failed: " . $con->connect_error);
 }
@@ -54,19 +54,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         $mail->isSMTP();
                         $mail->Host       = 'smtp.gmail.com';
                         $mail->SMTPAuth   = true;
-                        $mail->Username   = 'your-email@gmail.com'; // Replace with your email
-                        $mail->Password   = 'your-app-password';    // Replace with your app password
+                        $mail->Username   = 'VoltechElectricalConstruction0@gmail.com'; // Replace with your email
+                        $mail->Password   = 'sban pumy bmia wwal';    // Replace with your app password
                         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                         $mail->Port       = 587;
 
                         //Recipients
-                        $mail->setFrom('your-email@gmail.com', 'Voltech System');
+                        $mail->setFrom('VoltechElectricalConstruction0@gmail.com', 'Voltech System');
                         $mail->addAddress($email, $firstname . ' ' . $lastname);
 
                         // Content
                         $mail->isHTML(true);
                         $mail->Subject = 'Verify Your Email Address';
-                        $verification_link = "http://localhost/Voltech2/verify.php?code=" . $verification_code;
+                        $verification_link = "http://voltechelectricalconstruction.com/verify.php?code=" . $verification_code;
                         $mail->Body = "Hello $firstname,<br><br>Please click the link below to verify your email address:<br><br>
                                       <a href='$verification_link'>Verify Email</a><br><br>
                                       If you didn't request this, you can ignore this email.<br><br>

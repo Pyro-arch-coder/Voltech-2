@@ -4,7 +4,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_level'] != 4 || !isset($_GET
     header('Location: po_dashboard.php');
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech2");
+require_once '../config.php';
 $id = intval($_GET['id']);
 
 // Mark the notification as read (no user_id check needed)

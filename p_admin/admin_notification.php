@@ -3,7 +3,7 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 $admin_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
-$con = new mysqli("localhost", "root", "", "voltech2");
+require_once '../config.php';
 $unread_count = 0;
 $notifications = [];
 if ($admin_id) {

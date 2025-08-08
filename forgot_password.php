@@ -14,7 +14,7 @@ $conn = null;
 
 try {
     // Database connection
-    $con = new mysqli("localhost", "root", "", "voltech2");
+    include("config.php");
     if ($con->connect_error) {
         throw new Exception("Connection failed: " . $con->connect_error);
     }

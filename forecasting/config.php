@@ -2,7 +2,7 @@
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', '');
-define('DB_NAME', 'voltech2');
+define('DB_NAME', 'voltech');
 
 // Error reporting
 error_reporting(E_ALL);

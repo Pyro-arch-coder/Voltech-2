@@ -1,7 +1,7 @@
 <?php
 session_start();
 try {
-    $con = new mysqli("localhost", "root", "", "voltech2");
+    include("config.php");
     
     if ($con->connect_error) {
         throw new Exception("Connection failed: " . $con->connect_error);
@@ -60,8 +60,11 @@ if ($con && $_SERVER["REQUEST_METHOD"] == "POST") {
                 case 4:
                     header("Location: procurementofficer/po_dashboard.php");
                     break;
+                case 5:
+                    header("Location: p_supplier/supplier_dashboard.php");
+                    break;
                 default:
-                    header("Location: projectmanager/pm_dashboard.ph");
+                    header("Location: projectmanager/pm_dashboard.php");
                     break;
             }
             exit();

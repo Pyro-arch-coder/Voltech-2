@@ -4,10 +4,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
+require_once '../config.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $expensecategory = mysqli_real_escape_string($con, $_POST['expensecategory']);
     $expenseamount = floatval($_POST['expenseamount']);

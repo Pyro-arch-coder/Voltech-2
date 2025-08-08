@@ -22,12 +22,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
 }
 
 // Database connection
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    sendJsonResponse(false, 'Database connection failed');
-}
-$con->set_charset("utf8mb4");
-
+require_once '../config.php';
 // Handle POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {

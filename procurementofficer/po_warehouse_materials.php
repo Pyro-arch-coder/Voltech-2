@@ -4,10 +4,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
+require_once '../config.php';
 $userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 $user_email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
 $user_firstname = isset($_SESSION['firstname']) ? $_SESSION['firstname'] : '';
@@ -32,7 +29,6 @@ if ($userid) {
 $add_error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_warehouse'])) {
     $warehouse = trim(mysqli_real_escape_string($con, $_POST['warehouse']));
-    $category = trim(mysqli_real_escape_string($con, $_POST['category']));
     $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
     
     // Validation
@@ -42,25 +38,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_warehouse'])) {
         $add_error = 'Warehouse name cannot exceed 100 characters.';
     } elseif (!preg_match('/^[A-Za-z0-9\s\-\.&]+$/', $warehouse)) {
         $add_error = 'Warehouse name can only contain letters, numbers, spaces, hyphens, dots, and ampersands.';
-    } elseif (empty($category) || strlen($category) < 2) {
-        $add_error = 'Category must be at least 2 characters long.';
-    } elseif (strlen($category) > 50) {
-        $add_error = 'Category cannot exceed 50 characters.';
-    } elseif (!preg_match('/^[A-Za-z0-9\s\-\.&]+$/', $category)) {
-        $add_error = 'Category can only contain letters, numbers, spaces, hyphens, dots, and ampersands.';
     } else {
         // Check if warehouse already exists
-        $check_sql = "SELECT id FROM warehouses WHERE warehouse = ? AND category = ?";
+        $check_sql = "SELECT id FROM warehouses WHERE warehouse = ?";
         $check_stmt = $con->prepare($check_sql);
-        $check_stmt->bind_param("ss", $warehouse, $category);
+        $check_stmt->bind_param("s", $warehouse);
         $check_stmt->execute();
         $check_result = $check_stmt->get_result();
         
         if ($check_result->num_rows > 0) {
-            $add_error = 'This warehouse and category combination already exists.';
+            $add_error = 'This warehouse already exists.';
         } else {
-            $stmt = $con->prepare("INSERT INTO warehouses (warehouse, category, user_id, created_at) VALUES (?, ?, ?, NOW())");
-            $stmt->bind_param('ssi', $warehouse, $category, $user_id);
+            $stmt = $con->prepare("INSERT INTO warehouses (warehouse, user_id, created_at) VALUES (?, ?, NOW())");
+            $stmt->bind_param('si', $warehouse, $user_id);
             if ($stmt->execute()) {
                 // Insert notification for admin if Procurement Officer
                 if (isset($_SESSION['user_level']) && $_SESSION['user_level'] == 4) {
@@ -194,19 +184,6 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
         <div class="container-fluid px-4 py-4">
             <div class="card mb-5 shadow rounded-3">
                 <div class="card-body p-4">
-                    <!-- Feedback Modal (Unified for Success/Error) -->
-                    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
-                      <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content text-center">
-                          <div class="modal-body">
-                            <span id="feedbackIcon" style="font-size: 3rem;"></span>
-                            <h4 id="feedbackTitle"></h4>
-                            <p id="feedbackMessage"></p>
-                            <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                     <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-2">
                         <h4 class="mb-0">Warehouse Management</h4>
                         <button type="button" class="btn btn-success ms-auto" data-bs-toggle="modal" data-bs-target="#addWarehouseModal">
@@ -217,44 +194,6 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                     <?php if ($add_error): ?>
                         <div class="alert alert-danger"><?php echo $add_error; ?></div>
                     <?php endif; ?>
-                    <!-- Add Warehouse Modal -->
-                    <div class="modal fade" id="addWarehouseModal" tabindex="-1" aria-labelledby="addWarehouseModalLabel" aria-hidden="true">
-                      <div class="modal-dialog modal-lg modal-dialog-centered">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h5 class="modal-title" id="addWarehouseModalLabel">Add Warehouse</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                          </div>
-                          <form method="POST" novalidate>
-                            <div class="modal-body">
-                              <div class="row">
-                                <div class="col-md-6">
-                                  <div class="form-group mb-3">
-                                    <label>Warehouse *</label>
-                                    <input type="text" class="form-control" name="warehouse" placeholder="Warehouse" required minlength="2" maxlength="100" pattern="[A-Za-z0-9\s\-\.&]+" title="Warehouse name can only contain letters, numbers, spaces, hyphens, dots, and ampersands">
-                                    <div class="invalid-feedback">Please enter a valid warehouse name (2-100 characters).</div>
-                                  </div>
-                                  <div class="form-group mb-3">
-                                    <label>Slots *</label>
-                                    <input type="number" class="form-control" name="slots" placeholder="Slots" required min="1" max="999999" title="Slots must be a positive number">
-                                    <div class="invalid-feedback">Please enter a valid number of slots (1-999999).</div>
-                                  </div>
-                                </div>
-                                <div class="col-md-6">
-                                  
-                                </div>
-                              </div>
-                            </div>
-                            <div class="modal-footer justify-content-end">
-                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                              <button type="submit" name="add_warehouse" class="btn btn-success">Add</button>
-                            </div>
-                          </form>
-                        </div>
-                      </div>
-                    </div>
-                    <!-- Remove <h4 class="mb-3">Warehouses List</h4> -->
-                    <!-- Add filter/search form above the table -->
                     <form method="GET" class="d-flex flex-wrap gap-2 mb-3" id="searchForm" style="min-width:260px; max-width:900px;">
                         <div class="input-group" style="min-width:220px; max-width:320px;">
                             <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
@@ -279,54 +218,24 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php $i=1+$offset; while($row = $warehouses->fetch_assoc()): ?>
-                                <tr>
+                               <?php $i = 1; ?>
+                                 <?php while($row = $warehouses->fetch_assoc()): ?>
+                                  <tr>
                                     <td><?php echo $i++; ?></td>
                                     <td><?php echo htmlspecialchars($row['warehouse']); ?></td>
-                                    
-                                   
-                                    <td>
-                                        <button type="button" class="btn btn-warning btn-sm me-1" data-bs-toggle="modal" data-bs-target="#editWarehouseModal<?php echo $row['id']; ?>">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </button>
-                                        <button type="button" class="btn btn-danger btn-sm delete-warehouse-btn" data-id="<?php echo $row['id']; ?>" data-name="<?php echo htmlspecialchars($row['warehouse']); ?>">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </button>
+                                    <td class="text-nowrap">
+                                      <button class="btn btn-warning btn-sm edit-warehouse-btn me-1" 
+                                              data-id="<?php echo $row['id']; ?>" 
+                                              data-name="<?php echo htmlspecialchars($row['warehouse']); ?>">
+                                        <i class="fas fa-edit"></i> Edit
+                                      </button>
+                                      <button class="btn btn-danger btn-sm delete-warehouse-btn" 
+                                              data-id="<?php echo $row['id']; ?>"
+                                              data-name="<?php echo htmlspecialchars($row['warehouse']); ?>">
+                                        <i class="fas fa-trash"></i> Delete
+                                      </button>
                                     </td>
-                                </tr>
-                                <!-- Edit Warehouse Modal -->
-                                <div class="modal fade" id="editWarehouseModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="editWarehouseModalLabel<?php echo $row['id']; ?>" aria-hidden="true">
-                                  <div class="modal-dialog modal-lg modal-dialog-centered">
-                                    <div class="modal-content">
-                                      <div class="modal-header">
-                                        <h5 class="modal-title" id="editWarehouseModalLabel<?php echo $row['id']; ?>">Edit Warehouse</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                      </div>
-                                      <form method="POST" action="update_warehouse_material.php" novalidate>
-                                        <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                                        <input type="hidden" name="update" value="1">
-                                        <div class="modal-body">
-                                          <div class="row">
-                                            <div class="col-md-6">
-                                              <div class="form-group mb-3">
-                                                <label>Warehouse *</label>
-                                                <input type="text" class="form-control" name="warehouse" value="<?php echo htmlspecialchars($row['warehouse']); ?>" required minlength="2" maxlength="100" pattern="[A-Za-z0-9\s\-\.&]+" title="Warehouse name can only contain letters, numbers, spaces, hyphens, dots, and ampersands">
-                                                <div class="invalid-feedback">Please enter a valid warehouse name (2-100 characters).</div>
-                                              </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                              
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <div class="modal-footer justify-content-end">
-                                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                          <button type="submit" class="btn btn-primary">Update</button>
-                                        </div>
-                                      </form>
-                                    </div>
-                                  </div>
-                                </div>
+                                  </tr>
                                 <?php endwhile; ?>
                             </tbody>
                         </table>
@@ -352,6 +261,69 @@ $warehouses = $con->query("SELECT * FROM warehouses $where_clause ORDER BY id DE
         </div>
     </div>
 </div>
+<!-- Error Message Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="errorModalLabel">Error</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="errorMessage"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Include all warehouse modals -->
+<?php include 'modals/modal_warehouse.php'; ?>
+
+<script>
+// Function to show error message in modal
+function showErrorModal(message) {
+  document.getElementById('errorMessage').textContent = message;
+  const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+  errorModal.show();
+}
+
+// Check for error in URL and show modal if needed
+document.addEventListener('DOMContentLoaded', function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const errorType = urlParams.get('error');
+  
+  if (errorType) {
+    let errorMessage = 'An error occurred. Please try again.';
+    
+    switch(errorType) {
+      case 'invalid_name':
+        errorMessage = 'Invalid warehouse name. Name must be between 2-100 characters.';
+        break;
+      case 'name_exists':
+        errorMessage = 'A warehouse with this name already exists. Please choose a different name.';
+        break;
+      case 'update_failed':
+        errorMessage = 'Failed to update warehouse. Please try again.';
+        break;
+      case 'warehouse_not_empty':
+        errorMessage = 'Cannot delete warehouse. It contains items. Please remove all items first.';
+        break;
+      case 'delete_failed':
+        errorMessage = 'Failed to delete warehouse. Please try again.';
+        break;
+    }
+    
+    showErrorModal(errorMessage);
+    
+    // Clean up the URL without refreshing the page
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, document.title, newUrl);
+  }
+});
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="po_warehouse_materials.js"></script>
 <script>
@@ -522,30 +494,6 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       form.querySelector('[name="warehouse"]').classList.remove('is-invalid');
       form.querySelector('[name="warehouse"]').classList.add('is-valid');
-    }
-
-    // Validate category
-    if (category.length < 2) {
-      form.querySelector('[name="category"]').classList.add('is-invalid');
-      isValid = false;
-    } else if (category.length > 50) {
-      form.querySelector('[name="category"]').classList.add('is-invalid');
-      isValid = false;
-    } else if (!/^[A-Za-z0-9\s\-\.&]+$/.test(category)) {
-      form.querySelector('[name="category"]').classList.add('is-invalid');
-      isValid = false;
-    } else {
-      form.querySelector('[name="category"]').classList.remove('is-invalid');
-      form.querySelector('[name="category"]').classList.add('is-valid');
-    }
-
-    // Validate slots
-    if (slots <= 0 || slots > 999999) {
-      form.querySelector('[name="slots"]').classList.add('is-invalid');
-      isValid = false;
-    } else {
-      form.querySelector('[name="slots"]').classList.remove('is-invalid');
-      form.querySelector('[name="slots"]').classList.add('is-valid');
     }
 
     return isValid;

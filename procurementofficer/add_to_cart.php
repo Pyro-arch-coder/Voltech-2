@@ -1,6 +1,6 @@
 <?php
 session_start();
-$con = new mysqli("localhost", "root", "", "voltech2");
+require_once '../config.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cart'])) {
     foreach ($_POST['cart'] as $material_id) {
         $material_id = intval($material_id);

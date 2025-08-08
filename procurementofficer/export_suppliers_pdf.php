@@ -1,9 +1,6 @@
 <?php
-require_once('fpdf.php');
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
+require_once('../fpdf.php');
+require_once '../config.php';
 
 // Fetch all suppliers
 $suppliers = $con->query("SELECT * FROM suppliers ORDER BY supplier_name");
@@ -26,7 +23,7 @@ while ($supplier = $suppliers->fetch_assoc()) {
     $pdf->SetFont('Arial','B',12);
     $pdf->Cell(0,8,'Supplier: ' . $supplier['supplier_name'],0,1,'L');
     $pdf->SetFont('Arial','',10);
-    $pdf->Cell(0,6,'Contact Person: ' . $supplier['contact_person'],0,1,'L');
+    $pdf->Cell(0,6,'Contact Person: ' . $supplier['firstname'] . ' ' . $supplier['lastname'],0,1,'L');
     $pdf->Cell(0,6,'Contact Number: ' . $supplier['contact_number'],0,1,'L');
     $pdf->Ln(1);
     // Fetch materials for this supplier

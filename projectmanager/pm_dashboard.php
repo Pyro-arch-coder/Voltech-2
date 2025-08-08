@@ -4,10 +4,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
+include_once "../config.php";
 $userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 $user_email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
 $user_firstname = isset($_SESSION['firstname']) ? $_SESSION['firstname'] : '';
@@ -158,7 +155,7 @@ $proj_sql = "SELECT project_id, project, category FROM projects WHERE user_id='$
 $proj_res = mysqli_query($con, $proj_sql);
 while ($proj = mysqli_fetch_assoc($proj_res)) {
     $pid = $proj['project_id'];
-    $cat = ucfirst(strtolower(trim($proj['category'])));
+    $cat = ucfirst(strtolower(trim((string) $proj['category'])));
     if (!in_array($cat, $categories)) continue;
     // Calculate estimated expense as in Estimate Expense Project Comparison
     $emp_total = 0;

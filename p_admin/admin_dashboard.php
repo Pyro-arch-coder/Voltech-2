@@ -4,10 +4,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
+require_once '../config.php';
 $userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 $user_email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
 $user_firstname = isset($_SESSION['firstname']) ? $_SESSION['firstname'] : '';
@@ -346,7 +343,7 @@ if ($userid) {
                 <div class="row g-3 my-2">
                   <div class="col-12 mb-3 d-flex flex-column flex-md-row align-items-center justify-content-between">
                     <!-- Left: Date Range + Export (no background) -->
-                    <form class="row g-2 align-items-end flex-nowrap mb-3 mb-md-0" method="post" action="export_dashboard_pdf.php" target="_blank">
+                    <form class="row g-2 align-items-end flex-nowrap mb-3 mb-md-0" method="post" action="export_dasshboard_pdf.php" target="_blank">
                       <div class="col-auto">
                         <label for="start_date" class="form-label mb-0">Start Date</label>
                         <input type="date" class="form-control" id="start_date" name="start_date" required>
@@ -788,7 +785,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  var exportForm = document.querySelector('form[action="export_dashboard_pdf.php"]');
+  var exportForm = document.querySelector('form[action="export_dasshboard_pdf.php"]');
   var exportBtn = exportForm.querySelector('.btn-success');
   var confirmExportBtn = document.getElementById('confirmExportDashboardPdf');
   var exportModal = new bootstrap.Modal(document.getElementById('exportDashboardPdfModal'));

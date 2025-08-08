@@ -1,11 +1,8 @@
 <?php
-require_once('fpdf.php');
+require_once('../fpdf.php');
 
 // Database connection
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
+include_once "../config.php";
 
 $project_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 if (!$project_id) {

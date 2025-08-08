@@ -3,7 +3,7 @@ if (!isset($_GET['user_id']) || !isset($_GET['user_level'])) {
     echo '<div class="alert alert-danger">Invalid request.</div>';
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech2");
+require_once '../config.php';
 if ($con->connect_error) {
     echo '<div class="alert alert-danger">Database connection failed.</div>';
     exit();

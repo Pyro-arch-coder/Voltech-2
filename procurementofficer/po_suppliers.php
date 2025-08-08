@@ -4,152 +4,13 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-    $con = new mysqli("localhost", "root", "", "voltech2");
-    if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-    }
+require_once '../config.php';
     $userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 $user_email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
 $user_firstname = isset($_SESSION['firstname']) ? $_SESSION['firstname'] : '';
 $user_lastname = isset($_SESSION['lastname']) ? $_SESSION['lastname'] : '';
 $user_name = trim($user_firstname . ' ' . $user_lastname);
 $current_page = basename($_SERVER['PHP_SELF']);
-
-// --- Handle Add Supplier Materials (AJAX) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_supplier_material'])) {
-    header('Content-Type: application/json');
-    $response = ['success' => false, 'message' => ''];
-    
-    $supplier_id = isset($_POST['supplier_id']) ? intval($_POST['supplier_id']) : 0;
-    $material_name = isset($_POST['material_name']) ? trim($_POST['material_name']) : '';
-    $brand = isset($_POST['brand']) ? trim($_POST['brand']) : null;
-    $specification = isset($_POST['specification']) ? trim($_POST['specification']) : null;
-    $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 0;
-    $unit = isset($_POST['unit']) ? trim($_POST['unit']) : '';
-    $material_price = isset($_POST['material_price']) ? floatval($_POST['material_price']) : 0;
-    $category = isset($_POST['category']) ? trim($_POST['category']) : '';
-    $low_stock_threshold = isset($_POST['low_stock_threshold']) ? intval($_POST['low_stock_threshold']) : 10;
-    $lead_time = isset($_POST['lead_time']) ? intval($_POST['lead_time']) : 0;
-    $labor_other = isset($_POST['labor_other']) ? floatval($_POST['labor_other']) : 0;
-    
-    // Validation
-    if (!$supplier_id) {
-        $response['message'] = 'Invalid supplier ID.';
-    } elseif (empty($material_name) || strlen($material_name) < 2) {
-        $response['message'] = 'Material name must be at least 2 characters long.';
-    } elseif ($quantity < 0) {
-        $response['message'] = 'Quantity cannot be negative.';
-    } elseif (empty($unit)) {
-        $response['message'] = 'Please select a unit.';
-    } elseif ($material_price <= 0) {
-        $response['message'] = 'Material price must be greater than 0.';
-    } elseif ($low_stock_threshold < 0) {
-        $response['message'] = 'Low stock threshold cannot be negative.';
-    } elseif ($lead_time < 0) {
-        $response['message'] = 'Lead time cannot be negative.';
-    } else {
-        // Check if material already exists for this supplier
-        $check_sql = "SELECT id FROM suppliers_materials WHERE supplier_id = ? AND material_name = ?";
-        $check_stmt = $con->prepare($check_sql);
-        $check_stmt->bind_param("is", $supplier_id, $material_name);
-        $check_stmt->execute();
-        $check_result = $check_stmt->get_result();
-        
-        if ($check_result->num_rows > 0) {
-            $response['message'] = 'This material already exists for this supplier.';
-        } else {
-            // Insert into suppliers_materials table with new fields including brand and specification
-            $insert_sql = "INSERT INTO suppliers_materials (supplier_id, material_name, brand, specification, category, quantity, unit, material_price, labor_other, low_stock_threshold, lead_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            $insert_stmt = $con->prepare($insert_sql);
-            $insert_stmt->bind_param("isssssdddii", $supplier_id, $material_name, $brand, $specification, $category, $quantity, $unit, $material_price, $labor_other, $low_stock_threshold, $lead_time);
-            
-            if ($insert_stmt->execute()) {
-                $response['success'] = true;
-                $response['message'] = 'Material added successfully!';
-            } else {
-                $response['message'] = 'Failed to add material: ' . $con->error;
-            }
-            $insert_stmt->close();
-        }
-        $check_stmt->close();
-    }
-    
-    echo json_encode($response);
-    exit();
-}
-
-// --- Handle Delete Supplier Material (AJAX) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_supplier_material'])) {
-    header('Content-Type: application/json');
-    $response = ['success' => false, 'message' => ''];
-    
-    $material_id = isset($_POST['material_id']) ? intval($_POST['material_id']) : 0;
-    
-    if (!$material_id) {
-        $response['message'] = 'Invalid material ID.';
-    } else {
-        $delete_sql = "DELETE FROM suppliers_materials WHERE id = ?";
-        $delete_stmt = $con->prepare($delete_sql);
-        $delete_stmt->bind_param("i", $material_id);
-        
-        if ($delete_stmt->execute()) {
-            $response['success'] = true;
-            $response['message'] = 'Material deleted successfully!';
-        } else {
-            $response['message'] = 'Failed to delete material: ' . $con->error;
-        }
-        $delete_stmt->close();
-    }
-    
-    echo json_encode($response);
-    exit();
-}
-
-// --- Handle Edit Supplier Material (AJAX) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['edit_supplier_material'])) {
-    header('Content-Type: application/json');
-    $response = ['success' => false, 'message' => ''];
-    $material_id = isset($_POST['material_id']) ? intval($_POST['material_id']) : 0;
-    $material_name = isset($_POST['material_name']) ? trim($_POST['material_name']) : '';
-    $brand = isset($_POST['brand']) ? trim($_POST['brand']) : null;
-    $specification = isset($_POST['specification']) ? trim($_POST['specification']) : null;
-    $quantity = isset($_POST['quantity']) ? intval($_POST['quantity']) : 0;
-    $unit = isset($_POST['unit']) ? trim($_POST['unit']) : '';
-    $status = isset($_POST['status']) ? trim($_POST['status']) : 'Available';
-    $material_price = isset($_POST['material_price']) ? floatval($_POST['material_price']) : 0;
-    $category = isset($_POST['category']) ? trim($_POST['category']) : '';
-    $low_stock_threshold = isset($_POST['low_stock_threshold']) ? intval($_POST['low_stock_threshold']) : 10;
-    $lead_time = isset($_POST['lead_time']) ? intval($_POST['lead_time']) : 0;
-    $labor_other = isset($_POST['labor_other']) ? floatval($_POST['labor_other']) : 0;
-    if (!$material_id) {
-        $response['message'] = 'Invalid material ID.';
-    } elseif (empty($material_name) || strlen($material_name) < 2) {
-        $response['message'] = 'Material name must be at least 2 characters long.';
-    } elseif ($quantity < 0) {
-        $response['message'] = 'Quantity cannot be negative.';
-    } elseif (empty($unit)) {
-        $response['message'] = 'Please select a unit.';
-    } elseif ($material_price <= 0) {
-        $response['message'] = 'Material price must be greater than 0.';
-    } elseif ($low_stock_threshold < 0) {
-        $response['message'] = 'Low stock threshold cannot be negative.';
-    } elseif ($lead_time < 0) {
-        $response['message'] = 'Lead time cannot be negative.';
-    } else {
-        $update_sql = "UPDATE suppliers_materials SET material_name=?, brand=?, specification=?, category=?, quantity=?, unit=?, status=?, material_price=?, labor_other=?, low_stock_threshold=?, lead_time=? WHERE id=?";
-        $update_stmt = $con->prepare($update_sql);
-        $update_stmt->bind_param("ssssisssddii", $material_name, $brand, $specification, $category, $quantity, $unit, $status, $material_price, $labor_other, $low_stock_threshold, $lead_time, $material_id);
-        if ($update_stmt->execute()) {
-            $response['success'] = true;
-            $response['message'] = 'Material updated successfully!';
-        } else {
-            $response['message'] = 'Failed to update material: ' . $con->error;
-        }
-        $update_stmt->close();
-    }
-    echo json_encode($response);
-    exit();
-}
 
 // --- Change Password Backend Handler (AJAX) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
@@ -349,7 +210,7 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                             <tr>
                                                 <td><?php echo $no++; ?></td>
                                                 <td><?php echo htmlspecialchars($row['supplier_name']); ?></td>
-                                                <td><?php echo htmlspecialchars($row['contact_person']); ?></td>
+                                                <td><?php echo htmlspecialchars($row['firstname'] . ' ' . $row['lastname']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['email']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['contact_number']); ?></td>
                                                 <td><?php echo htmlspecialchars($row['status']); ?></td>
@@ -363,7 +224,8 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                                                         <button type="button" class="btn btn-warning btn-sm text-dark edit-supplier-btn" 
                                                             data-id="<?php echo $row['id']; ?>"
                                                             data-name="<?php echo htmlspecialchars($row['supplier_name']); ?>"
-                                                            data-person="<?php echo htmlspecialchars($row['contact_person']); ?>"
+                                                            data-firstname="<?php echo htmlspecialchars($row['firstname']); ?>"
+                                                            data-lastname="<?php echo htmlspecialchars($row['lastname']); ?>"
                                                             data-number="<?php echo htmlspecialchars($row['contact_number']); ?>"
                                                             data-email="<?php echo htmlspecialchars($row['email']); ?>"
                                                             data-address="<?php echo htmlspecialchars($row['address']); ?>"
@@ -405,201 +267,12 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
                         <?php endif; ?>
                     </div>
                 </div>
-                <!-- Add Supplier Modal (same as before, but right-aligned buttons) -->
-                <!-- Edit Supplier Modal (structure like Add, fields prefilled by JS) -->
-                <div class="modal fade" id="editSupplierModal" tabindex="-1" aria-labelledby="editSupplierModalLabel" aria-hidden="true">
-                  <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="editSupplierModalLabel">Edit Supplier</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                      </div>
-                      <form action="update_supplier.php" method="POST" novalidate>
-                        <input type="hidden" name="edit_supplier_id" id="edit_supplier_id">
-                        <div class="modal-body">
-                          <div class="row">
-                            <div class="col-md-6">
-                              <div class="form-group mb-3">
-                                <label>Supplier Name *</label>
-                                <input type="text" class="form-control" name="supplier_name" id="edit_supplier_name" required minlength="2" maxlength="100" pattern="[A-Za-z0-9\s\-\.&]+" title="Supplier name can only contain letters, numbers, spaces, hyphens, dots, and ampersands">
-                                <div class="invalid-feedback">Please enter a valid supplier name (2-100 characters).</div>
-                              </div>
-                              <div class="form-group mb-3">
-                                <label>Contact Person</label>
-                                <input type="text" class="form-control" name="contact_person" id="edit_contact_person" maxlength="100" pattern="[A-Za-z\s\.]+" title="Contact person name can only contain letters, spaces, and dots">
-                                <div class="invalid-feedback">Please enter a valid contact person name.</div>
-                              </div>
-                              <div class="form-group mb-3">
-                                <label>Contact Number</label>
-                                <input type="tel" class="form-control" name="contact_number" id="edit_contact_number" maxlength="20" pattern="[\d\s\-\+\(\)]+" title="Contact number can only contain digits, spaces, hyphens, plus signs, and parentheses">
-                                <div class="invalid-feedback">Please enter a valid contact number.</div>
-                              </div>
-                            </div>
-                            <div class="col-md-6">
-                              <div class="form-group mb-3">
-                                <label>Email</label>
-                                <input type="email" class="form-control" name="email" id="edit_email" maxlength="100">
-                                <div class="invalid-feedback">Please enter a valid email address.</div>
-                              </div>
-                              <div class="form-group mb-3">
-                                <label>Address</label>
-                                <textarea class="form-control" name="address" id="edit_address" rows="2" maxlength="500" title="Address can contain up to 500 characters"></textarea>
-                                <div class="invalid-feedback">Please enter a valid address (max 500 characters).</div>
-                              </div>
-                              <div class="form-group mb-3">
-                                <label>Status *</label>
-                                <select class="form-control" name="status" id="edit_supplier_status" required>
-                                  <option value="Active">Active</option>
-                                  <option value="Inactive">Inactive</option>
-                                </select>
-                                <div class="invalid-feedback">Please select a status.</div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="modal-footer justify-content-end">
-                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                          <button type="submit" name="edit_supplier" class="btn btn-success">Update Supplier</button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-                <!-- Feedback Modal (Unified for Success/Error) with higher z-index -->
-                <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true" style="z-index: 9999;">
-                    <div class="modal-dialog modal-dialog-centered" style="z-index: 10000;">
-                        <div class="modal-content text-center">
-                            <div class="modal-body">
-                                <span id="feedbackIcon" style="font-size: 3rem;"></span>
-                                <h4 id="feedbackTitle"></h4>
-                                <p id="feedbackMessage"></p>
-                            </div>
-                            <div class="modal-footer justify-content-center">
-                                <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Supplier Modal -->
-    <div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="addSupplierModalLabel">Add New Supplier</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <form action="add_supplier.php" method="POST" novalidate>
-            <div class="modal-body">
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="form-group mb-3">
-                    <label>Supplier Name *</label>
-                    <input type="text" class="form-control" name="supplier_name" required minlength="2" maxlength="100" pattern="[A-Za-z0-9\s\-\.&]+" title="Supplier name can only contain letters, numbers, spaces, hyphens, dots, and ampersands">
-                    <div class="invalid-feedback">Please enter a valid supplier name (2-100 characters).</div>
-                  </div>
-                  <div class="form-group mb-3">
-                    <label>Contact Person</label>
-                    <input type="text" class="form-control" name="contact_person" maxlength="100" pattern="[A-Za-z\s\.]+" title="Contact person name can only contain letters, spaces, and dots">
-                    <div class="invalid-feedback">Please enter a valid contact person name.</div>
-                  </div>
-                  <div class="form-group mb-3">
-                    <label>Contact Number</label>
-                    <input type="tel" class="form-control" name="contact_number" maxlength="20" pattern="[\d\s\-\+\(\)]+" title="Contact number can only contain digits, spaces, hyphens, plus signs, and parentheses">
-                    <div class="invalid-feedback">Please enter a valid contact number.</div>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-group mb-3">
-                    <label>Email</label>
-                    <input type="email" class="form-control" name="email" maxlength="100">
-                    <div class="invalid-feedback">Please enter a valid email address.</div>
-                  </div>
-                  <div class="form-group mb-3">
-                    <label>Address *</label>
-                    <div class="row g-2">
-                      <div class="col-12 mb-2">
-                        <select class="form-select" id="add_region" required><option value="">Select Region</option></select>
-                        <div class="invalid-feedback">Please select a region.</div>
-                      </div>
-                      <div class="col-12 mb-2">
-                        <select class="form-select" id="add_province" required disabled><option value="">Select Province</option></select>
-                        <div class="invalid-feedback">Please select a province.</div>
-                      </div>
-                      <div class="col-12 mb-2">
-                        <select class="form-select" id="add_city" required disabled><option value="">Select City/Municipality</option></select>
-                        <div class="invalid-feedback">Please select a city/municipality.</div>
-                      </div>
-                      <div class="col-12 mb-2">
-                        <select class="form-select" id="add_barangay" required disabled><option value="">Select Barangay</option></select>
-                        <div class="invalid-feedback">Please select a barangay.</div>
-                      </div>
-                    </div>
-                    <input type="hidden" name="address" id="add_address_hidden" required>
-                  </div>
-                  <div class="form-group mb-3">
-                    <label>Status *</label>
-                    <select class="form-control" name="status" required disabled>
-                      <option value="Active" selected>Active</option>
-                    </select>
-                    <input type="hidden" name="status" value="Active">
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" name="add_supplier" class="btn btn-success">Add Supplier</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Confirm Delete</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to delete <strong id="supplierName"></strong>?</p>
-                    <p class="text-danger">This action cannot be undone.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <a href="#" id="confirmDelete" class="btn btn-danger">Delete</a>
-                </div>
-            </div>
-        </div>
-    </div>
-        </div>
-    </div>
+             
     <!-- /#page-content-wrapper -->
     </div>
 
-    <!-- Logout Confirmation Modal -->
-    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="logoutModalLabel">Confirm Logout</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to log out?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <a href="../logout.php" class="btn btn-danger">Logout</a>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Include all modals -->
+    <?php include 'modals/modal_suppliers.php'; ?>
 
     <!-- Change Password Modal -->
     <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
@@ -634,385 +307,36 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="po_suppliers.js"></script>
-
-    <!-- Supplier Materials Modal -->
-    <div class="modal fade" id="supplierMaterialsModal" tabindex="-1" aria-labelledby="supplierMaterialsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="supplierMaterialsModalLabel">Supplier Materials</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6 class="text-primary" id="supplierNameDisplay"></h6>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addMaterialModal">
-                                <i class="fas fa-plus"></i> Add Material
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped" id="materialsTable">
-                            <thead class="bg-info text-white">
-                                <tr>
-                                    <th>Material Name</th>
-                                    <th>Quantity</th>
-                                    <th>Unit</th>
-                                    <th>Status</th>
-                                    <th>Price</th>
-                                    <th>Low Stock</th>
-                                    <th>Lead Time</th>
-                                    <th class="text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="materialsTableBody">
-                                <!-- Materials will be loaded here via AJAX -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Material Modal -->
-    <div class="modal fade" id="addMaterialModal" tabindex="-1" aria-labelledby="addMaterialModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addMaterialModalLabel">Add Material</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="addMaterialForm" novalidate>
-                    <div class="modal-body">
-                        <input type="hidden" id="supplierId" name="supplier_id">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label>Material Name *</label>
-                                    <input type="text" class="form-control" name="material_name" required minlength="2" maxlength="100" pattern="[A-Za-z0-9\s\-\.]+" title="Material name can only contain letters, numbers, spaces, hyphens, and dots">
-                                    <div class="invalid-feedback">Please enter a valid material name (2-100 characters).</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Brand *</label>
-                                    <input type="text" class="form-control" name="brand" required minlength="2" maxlength="100" pattern="[A-Za-z0-9\s\-\.]+" placeholder="Enter brand name">
-                                    <div class="invalid-feedback">Please enter a valid brand name (2-100 characters).</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Specification *</label>
-                                    <textarea class="form-control" name="specification" required minlength="5" maxlength="500" rows="2" placeholder="Enter material specifications"></textarea>
-                                    <div class="invalid-feedback">Please enter specifications (5-500 characters).</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Category *</label>
-                                    <select class="form-control" name="category" required>
-                                        <option value="">Select Category</option>
-                                        <?php 
-                                        $categories = $con->query("SELECT DISTINCT category FROM supplier_category WHERE category IS NOT NULL AND category != '' ORDER BY category");
-                                        while($cat = $categories->fetch_assoc()): 
-                                        ?>
-                                            <option value="<?php echo htmlspecialchars($cat['category']); ?>"><?php echo htmlspecialchars($cat['category']); ?></option>
-                                        <?php endwhile; ?>
-                                    </select>
-                                    <div class="invalid-feedback">Please select a category.</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Quantity</label>
-                                    <input type="number" min="0" max="999999" class="form-control" name="quantity" value="0">
-                                    <div class="invalid-feedback">Quantity must be between 0 and 999,999.</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Unit *</label>
-                                    <select class="form-control" name="unit" required>
-                                        <option value="">Select Unit</option>
-                                        <option value="kg">Kilogram (kg)</option>
-                                        <option value="g">Gram (g)</option>
-                                        <option value="t">Ton (t)</option>
-                                        <option value="m³">Cubic Meter (m³)</option>
-                                        <option value="ft³">Cubic Feet (ft³)</option>
-                                        <option value="L">Liter (L)</option>
-                                        <option value="mL">Milliliter (mL)</option>
-                                        <option value="m">Meter (m)</option>
-                                        <option value="mm">Millimeter (mm)</option>
-                                        <option value="cm">Centimeter (cm)</option>
-                                        <option value="ft">Feet (ft)</option>
-                                        <option value="in">Inch (in)</option>
-                                        <option value="pcs">Pieces (pcs)</option>
-                                        <option value="bndl">Bundle (bndl)</option>
-                                        <option value="rl">Roll (rl)</option>
-                                        <option value="set">Set</option>
-                                        <option value="sack/bag">Sack/Bag</option>
-                                        <option value="m²">Square Meter (m²)</option>
-                                        <option value="ft²">Square Feet (ft²)</option>
-                                    </select>
-                                    <div class="invalid-feedback">Please select a unit.</div>
-                                </div>
-
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label>Material Price *</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="number" step="0.01" min="0.01" max="999999.99" class="form-control" name="material_price" required>
-                                    </div>
-                                    <div class="invalid-feedback">Please enter a valid price (greater than 0).</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Low Stock Threshold</label>
-                                    <input type="number" min="0" max="999999" class="form-control" name="low_stock_threshold" value="10">
-                                    <div class="invalid-feedback">Low stock threshold must be between 0 and 999,999.</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Lead Time (Days)</label>
-                                    <input type="number" min="0" max="365" class="form-control" name="lead_time" value="0">
-                                    <div class="invalid-feedback">Lead time must be between 0 and 365 days.</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Labor/Other Cost</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="number" step="0.01" min="0" max="999999.99" class="form-control" name="labor_other" value="0">
-                                    </div>
-                                    <div class="invalid-feedback">Please enter a valid cost (0-999,999.99).</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">Add Material</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Material Modal -->
-    <div class="modal fade" id="editMaterialModal" tabindex="-1" aria-labelledby="editMaterialModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editMaterialModalLabel">Edit Material</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="editMaterialForm" novalidate>
-                    <input type="hidden" id="edit_material_id" name="material_id">
-                    <div class="modal-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label>Material Name *</label>
-                                    <input type="text" class="form-control" name="material_name" id="edit_material_name" required minlength="2" maxlength="100" pattern="[A-Za-z0-9\s\-\.]+" title="Material name can only contain letters, numbers, spaces, hyphens, and dots">
-                                    <div class="invalid-feedback">Please enter a valid material name (2-100 characters).</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Brand</label>
-                                    <input type="text" class="form-control" name="brand" id="edit_brand" maxlength="100" placeholder="Enter brand name">
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Specification</label>
-                                    <textarea class="form-control" name="specification" id="edit_specification" rows="2" maxlength="500" placeholder="Enter material specifications"></textarea>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Quantity</label>
-                                    <input type="number" min="0" max="999999" class="form-control" name="quantity" id="edit_quantity" value="0">
-                                    <div class="invalid-feedback">Quantity must be between 0 and 999,999.</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Unit *</label>
-                                    <select class="form-control" name="unit" id="edit_unit" required>
-                                        <option value="">Select Unit</option>
-                                        <option value="kg">Kilogram (kg)</option>
-                                        <option value="g">Gram (g)</option>
-                                        <option value="t">Ton (t)</option>
-                                        <option value="m³">Cubic Meter (m³)</option>
-                                        <option value="ft³">Cubic Feet (ft³)</option>
-                                        <option value="L">Liter (L)</option>
-                                        <option value="mL">Milliliter (mL)</option>
-                                        <option value="m">Meter (m)</option>
-                                        <option value="mm">Millimeter (mm)</option>
-                                        <option value="cm">Centimeter (cm)</option>
-                                        <option value="ft">Feet (ft)</option>
-                                        <option value="in">Inch (in)</option>
-                                        <option value="pcs">Pieces (pcs)</option>
-                                        <option value="bndl">Bundle (bndl)</option>
-                                        <option value="rl">Roll (rl)</option>
-                                        <option value="set">Set</option>
-                                        <option value="sack/bag">Sack/Bag</option>
-                                        <option value="m²">Square Meter (m²)</option>
-                                        <option value="ft²">Square Feet (ft²)</option>
-                                    </select>
-                                    <div class="invalid-feedback">Please select a unit.</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Category *</label>
-                                    <select class="form-control" name="category" id="edit_category" required>
-                                        <option value="">Select Category</option>
-                                        <?php 
-                                        $categories = $con->query("SELECT DISTINCT category FROM supplier_category WHERE category IS NOT NULL AND category != '' ORDER BY category");
-                                        while($cat = $categories->fetch_assoc()): 
-                                        ?>
-                                            <option value="<?php echo htmlspecialchars($cat['category']); ?>"><?php echo htmlspecialchars($cat['category']); ?></option>
-                                        <?php endwhile; ?>
-                                    </select>
-                                    <div class="invalid-feedback">Please select a category.</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Status</label>
-                                    <select class="form-control" name="status" id="edit_material_status">
-                                        <option value="Available">Available</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group mb-3">
-                                    <label>Material Price *</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="number" step="0.01" min="0.01" max="999999.99" class="form-control" name="material_price" id="edit_material_price" required>
-                                    </div>
-                                    <div class="invalid-feedback">Please enter a valid price (greater than 0).</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Low Stock Threshold</label>
-                                    <input type="number" min="0" max="999999" class="form-control" name="low_stock_threshold" id="edit_low_stock_threshold" value="10">
-                                    <div class="invalid-feedback">Low stock threshold must be between 0 and 999,999.</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Lead Time (Days)</label>
-                                    <input type="number" min="0" max="365" class="form-control" name="lead_time" id="edit_lead_time" value="0">
-                                    <div class="invalid-feedback">Lead time must be between 0 and 365 days.</div>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Labor/Other Cost</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">₱</span>
-                                        <input type="number" step="0.01" min="0" max="999999.99" class="form-control" name="labor_other" id="edit_labor_other" value="0">
-                                    </div>
-                                    <div class="invalid-feedback">Please enter a valid cost (0-999,999.99).</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-success">Update Material</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- View Material Modal -->
-    <div class="modal fade" id="viewMaterialModal" tabindex="-1" aria-labelledby="viewMaterialModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="viewMaterialModalLabel">Material Details</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h5 class="fw-bold">Basic Information</h5>
-                            <hr>
-                            <div class="mb-2">
-                                <span class="fw-bold">Material Name:</span>
-                                <span id="view_material_name" class="ms-2"></span>
-                            </div>
-                            <div class="mb-2">
-                                <span class="fw-bold">Brand:</span>
-                                <span id="view_brand" class="ms-2"></span>
-                            </div>
-                            <div class="mb-2">
-                                <span class="fw-bold">Category:</span>
-                                <span id="view_category" class="ms-2"></span>
-                            </div>
-                            <div class="mb-2">
-                                <span class="fw-bold">Status:</span>
-                                <span id="view_status" class="ms-2"></span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h5 class="fw-bold">Pricing & Inventory</h5>
-                            <hr>
-                            <div class="mb-2">
-                                <span class="fw-bold">Quantity:</span>
-                                <span id="view_quantity" class="ms-2"></span>
-                                <span id="view_unit"></span>
-                            </div>
-                            <div class="mb-2">
-                                <span class="fw-bold">Material Price:</span>
-                                <span id="view_material_price" class="ms-2"></span>
-                            </div>
-                            <div class="mb-2">
-                                <span class="fw-bold">Labor/Other Cost:</span>
-                                <span id="view_labor_other" class="ms-2"></span>
-                            </div>
-                            <div class="mb-2">
-                                <span class="fw-bold">Low Stock Threshold:</span>
-                                <span id="view_low_stock_threshold" class="ms-2"></span>
-                            </div>
-                            <div class="mb-2">
-                                <span class="fw-bold">Lead Time:</span>
-                                <span id="view_lead_time" class="ms-2"></span> days
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12">
-                            <h5 class="fw-bold">Specifications</h5>
-                            <hr>
-                            <div id="view_specification" class="bg-light p-3 rounded">
-                                <!-- Specifications will be displayed here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+   
     <script>
     function showFeedbackModal(success, message, details, action) {
-  var icon = document.getElementById('feedbackIcon');
-  var title = document.getElementById('feedbackTitle');
-  var msg = document.getElementById('feedbackMessage');
-  if (success) {
-            icon.innerHTML = '<i class="fas fa-check-circle" style="color:#28a745;"></i>';
-    title.textContent = 'Success!';
-    msg.textContent = message;
-  } else {
-            icon.innerHTML = '<i class="fas fa-times-circle" style="color:#dc3545;"></i>';
-    title.textContent = 'Error!';
-            msg.textContent = message;
-  }
-  var feedbackModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
-  feedbackModal.show();
-        // Remove query param from URL after showing
-        window.history.replaceState({}, document.title, window.location.pathname);
+    var icon = document.getElementById('feedbackIcon');
+    var title = document.getElementById('feedbackTitle');
+    var msg = document.getElementById('feedbackMessage');
+    if (success) {
+                icon.innerHTML = '<i class="fas fa-check-circle" style="color:#28a745;"></i>';
+        title.textContent = 'Success!';
+        msg.textContent = message;
+    } else {
+                icon.innerHTML = '<i class="fas fa-times-circle" style="color:#dc3545;"></i>';
+        title.textContent = 'Error!';
+                msg.textContent = message;
     }
-    (function() {
-      var params = new URLSearchParams(window.location.search);
-      if (params.get('success') === '1') {
-        showFeedbackModal(true, 'Supplier added successfully!', '', 'added');
-      } else if (params.get('updated') === '1') {
-        showFeedbackModal(true, 'Supplier updated successfully!', '', 'updated');
-      } else if (params.get('deleted') === '1') {
-        showFeedbackModal(true, 'Supplier deleted successfully!', '', 'deleted');
-      }
-    })();
+    var feedbackModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+    feedbackModal.show();
+            // Remove query param from URL after showing
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        (function() {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('success') === '1') {
+            showFeedbackModal(true, 'Supplier added successfully!', '', 'added');
+        } else if (params.get('updated') === '1') {
+            showFeedbackModal(true, 'Supplier updated successfully!', '', 'updated');
+        } else if (params.get('deleted') === '1') {
+            showFeedbackModal(true, 'Supplier deleted successfully!', '', 'deleted');
+        }
+        })();
 
     // Materials Modal Functionality
     document.addEventListener('DOMContentLoaded', function() {
@@ -1117,441 +441,129 @@ $all_suppliers = $con->query("SELECT id, supplier_name FROM suppliers ORDER BY s
             });
         }
 
-        // Handle Add Material form submission
-        document.getElementById('addMaterialForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Clear previous validation states
-            this.classList.remove('was-validated');
-            
-            // Add custom validation for category
-            const categorySelect = this.querySelector('select[name="category"]');
-            if (!categorySelect.value) {
-                categorySelect.setCustomValidity('Please select a category');
-                categorySelect.reportValidity();
-                return;
-            } else {
-                categorySelect.setCustomValidity('');
-            }
-            
-            // Custom validation
-            let isValid = true;
-            const formData = new FormData(this);
-            
-            // Validate material name
-            const materialName = formData.get('material_name');
-            const materialNameInput = this.querySelector('[name="material_name"]');
-            if (!materialName || materialName.trim().length < 2) {
-                materialNameInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                materialNameInput.classList.remove('is-invalid');
-                materialNameInput.classList.add('is-valid');
-            }
-            
-            // Validate unit
-            const unit = formData.get('unit');
-            const unitSelect = this.querySelector('[name="unit"]');
-            if (!unit) {
-                unitSelect.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                unitSelect.classList.remove('is-invalid');
-                unitSelect.classList.add('is-valid');
-            }
-            
-            // Validate material price
-            const materialPrice = parseFloat(formData.get('material_price'));
-            const materialPriceInput = this.querySelector('[name="material_price"]');
-            if (!materialPrice || materialPrice <= 0) {
-                materialPriceInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                materialPriceInput.classList.remove('is-invalid');
-                materialPriceInput.classList.add('is-valid');
-            }
-            
-            // Validate quantity
-            const quantity = parseInt(formData.get('quantity'));
-            const quantityInput = this.querySelector('[name="quantity"]');
-            if (quantity < 0) {
-                quantityInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                quantityInput.classList.remove('is-invalid');
-                quantityInput.classList.add('is-valid');
-            }
-            
-            // Validate low stock threshold
-            const lowStockThreshold = parseInt(formData.get('low_stock_threshold'));
-            const lowStockInput = this.querySelector('[name="low_stock_threshold"]');
-            
-            if (lowStockThreshold < 0) {
-                lowStockInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                lowStockInput.classList.remove('is-invalid');
-                lowStockInput.classList.add('is-valid');
-            }
-            
-            // Validate lead time
-            const leadTime = parseInt(formData.get('lead_time'));
-            const leadTimeInput = this.querySelector('[name="lead_time"]');
-            if (leadTime < 0) {
-                leadTimeInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                leadTimeInput.classList.remove('is-invalid');
-                leadTimeInput.classList.add('is-valid');
-            }
-            
-            // Validate labor/other cost
-            const laborOther = parseFloat(formData.get('labor_other'));
-            const laborOtherInput = this.querySelector('[name="labor_other"]');
-            if (laborOther < 0) {
-                laborOtherInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                laborOtherInput.classList.remove('is-invalid');
-                laborOtherInput.classList.add('is-valid');
-            }
-            
-            if (!isValid) {
-                this.classList.add('was-validated');
-                return;
-            }
-            
-            // Add the AJAX flag
-            formData.append('add_supplier_material', '1');
-            
-            // Get the selected category
-            const category = this.querySelector('select[name="category"]').value;
-            formData.set('category', category);
-            
-            fetch('', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showFeedbackModal(true, data.message);
-                    document.getElementById('addMaterialForm').reset();
-                    // Clear validation states
-                    document.getElementById('addMaterialForm').querySelectorAll('.is-valid, .is-invalid').forEach(el => {
-                        el.classList.remove('is-valid', 'is-invalid');
-                    });
-                    const addMaterialModal = bootstrap.Modal.getInstance(document.getElementById('addMaterialModal'));
-                    addMaterialModal.hide();
-                    
-                    // Reload materials table
-                    const supplierId = document.getElementById('supplierId').value;
-                    loadSupplierMaterials(supplierId);
-                } else {
-                    showFeedbackModal(false, data.message);
-                }
-            })
-            .catch(error => {
-                showFeedbackModal(false, 'An error occurred. Please try again.');
-            });
+    // Global variables for pagination
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let allMaterials = [];
+    let currentSupplierId = null;
+
+    // Function to display materials for the current page
+    function displayMaterials() {
+        const tbody = document.getElementById('materialsTableBody');
+        tbody.innerHTML = '';
+        
+        if (allMaterials.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No materials found for this supplier</td></tr>';
+            return;
+        }
+        
+        // Calculate pagination
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, allMaterials.length);
+        const paginatedItems = allMaterials.slice(startIndex, endIndex);
+        
+        // Populate table
+        paginatedItems.forEach(material => {
+            const row = `
+                <tr>
+                    <td>${material.material_name || '-'}</td>
+                    <td>${material.brand || '-'}</td>
+                    <td>${material.unit || '-'}</td>
+                    <td>₱ ${parseFloat(material.material_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                    <td>${material.specification || '-'}</td>
+                    <td>${material.lead_time || '0'} days</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
         });
-
-        // Handle Edit Material form submission
-        document.getElementById('editMaterialForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            this.classList.remove('was-validated');
-            let isValid = true;
-            const formData = new FormData(this);
-            // Validate material name
-            const materialName = formData.get('material_name');
-            const materialNameInput = this.querySelector('[name="material_name"]');
-            if (!materialName || materialName.trim().length < 2) {
-                materialNameInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                materialNameInput.classList.remove('is-invalid');
-                materialNameInput.classList.add('is-valid');
-            }
-            // Validate unit
-            const unit = formData.get('unit');
-            const unitSelect = this.querySelector('[name="unit"]');
-            if (!unit) {
-                unitSelect.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                unitSelect.classList.remove('is-invalid');
-                unitSelect.classList.add('is-valid');
-            }
-            // Validate material price
-            const materialPrice = parseFloat(formData.get('material_price'));
-            const materialPriceInput = this.querySelector('[name="material_price"]');
-            if (!materialPrice || materialPrice <= 0) {
-                materialPriceInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                materialPriceInput.classList.remove('is-invalid');
-                materialPriceInput.classList.add('is-valid');
-            }
-            // Validate quantity
-            const quantity = parseInt(formData.get('quantity'));
-            const quantityInput = this.querySelector('[name="quantity"]');
-            if (quantity < 0) {
-                quantityInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                quantityInput.classList.remove('is-invalid');
-                quantityInput.classList.add('is-valid');
-            }
-            // Validate low stock threshold
-            const lowStockThreshold = parseInt(formData.get('low_stock_threshold'));
-            const lowStockInput = this.querySelector('[name="low_stock_threshold"]');
-            if (lowStockThreshold < 0) {
-                lowStockInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                lowStockInput.classList.remove('is-invalid');
-                lowStockInput.classList.add('is-valid');
-            }
-            // Validate lead time
-            const leadTime = parseInt(formData.get('lead_time'));
-            const leadTimeInput = this.querySelector('[name="lead_time"]');
-            if (leadTime < 0) {
-                leadTimeInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                leadTimeInput.classList.remove('is-invalid');
-                leadTimeInput.classList.add('is-valid');
-            }
-            // Validate labor/other cost
-            const laborOther = parseFloat(formData.get('labor_other'));
-            const laborOtherInput = this.querySelector('[name="labor_other"]');
-            if (laborOther < 0) {
-                laborOtherInput.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                laborOtherInput.classList.remove('is-invalid');
-                laborOtherInput.classList.add('is-valid');
-            }
-            if (!isValid) {
-                this.classList.add('was-validated');
-                return;
-            }
-            // Add the AJAX flag and category
-            formData.append('edit_supplier_material', '1');
-            
-            // Get the selected category and add it to the form data
-            const category = this.querySelector('select[name="category"]').value;
-            formData.set('category', category);
-            
-            fetch('', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showFeedbackModal(true, data.message);
-                    // Close modal
-                    const editMaterialModal = bootstrap.Modal.getInstance(document.getElementById('editMaterialModal'));
-                    editMaterialModal.hide();
-                    // Reload materials table
-                    const supplierId = document.getElementById('supplierId').value;
-                    loadSupplierMaterials(supplierId);
-                } else {
-                    showFeedbackModal(false, data.message);
-                }
-            })
-            .catch(error => {
-                showFeedbackModal(false, 'An error occurred. Please try again.');
-            });
-        });
-
-        // Handle edit material button click
-        document.addEventListener('click', function(e) {
-            const editBtn = e.target.closest('.edit-material-btn');
-            if (editBtn) {
-                e.preventDefault();
-                
-                // Set form values
-                document.getElementById('edit_material_id').value = editBtn.getAttribute('data-id');
-                document.getElementById('edit_material_name').value = editBtn.getAttribute('data-name');
-                document.getElementById('edit_brand').value = editBtn.getAttribute('data-brand');
-                document.getElementById('edit_specification').value = editBtn.getAttribute('data-specification');
-                document.getElementById('edit_quantity').value = editBtn.getAttribute('data-quantity');
-                document.getElementById('edit_unit').value = editBtn.getAttribute('data-unit');
-                document.getElementById('edit_material_status').value = editBtn.getAttribute('data-status');
-                document.getElementById('edit_material_price').value = editBtn.getAttribute('data-price');
-                document.getElementById('edit_low_stock_threshold').value = editBtn.getAttribute('data-low_stock');
-                document.getElementById('edit_lead_time').value = editBtn.getAttribute('data-lead_time');
-                document.getElementById('edit_labor_other').value = editBtn.getAttribute('data-labor_other');
-                
-                // Set the category value
-                const category = editBtn.getAttribute('data-category');
-                const categorySelect = document.getElementById('edit_category');
-                if (category && categorySelect) {
-                    // First, set the value
-                    categorySelect.value = category;
-                    
-                    // Then trigger the change event to ensure any dependent UI updates
-                    const event = new Event('change');
-                    categorySelect.dispatchEvent(event);
-                }
-                
-                // Show the modal
-                const editModal = new bootstrap.Modal(document.getElementById('editMaterialModal'));
-                editModal.show();
-                
-                return;
-            }
-        });
-
-        // Handle view material button click
-        document.addEventListener('click', function(e) {
-            const viewBtn = e.target.closest('.view-material-btn');
-            if (viewBtn) {
-                e.preventDefault();
-                
-                // Set modal values
-                document.getElementById('view_material_name').textContent = viewBtn.getAttribute('data-name');
-                document.getElementById('view_brand').textContent = viewBtn.getAttribute('data-brand');
-                document.getElementById('view_category').textContent = viewBtn.getAttribute('data-category');
-                document.getElementById('view_status').textContent = viewBtn.getAttribute('data-status');
-                document.getElementById('view_quantity').textContent = viewBtn.getAttribute('data-quantity');
-                document.getElementById('view_unit').textContent = viewBtn.getAttribute('data-unit');
-                
-                // Format currency
-                const price = parseFloat(viewBtn.getAttribute('data-price'));
-                document.getElementById('view_material_price').textContent = '₱' + price.toLocaleString('en-US', { 
-                    minimumFractionDigits: 2, 
-                    maximumFractionDigits: 2 
-                });
-                
-                const laborOther = parseFloat(viewBtn.getAttribute('data-labor_other'));
-                document.getElementById('view_labor_other').textContent = '₱' + laborOther.toLocaleString('en-US', { 
-                    minimumFractionDigits: 2, 
-                    maximumFractionDigits: 2 
-                });
-                
-                document.getElementById('view_low_stock_threshold').textContent = viewBtn.getAttribute('data-low_stock');
-                document.getElementById('view_lead_time').textContent = viewBtn.getAttribute('data-lead_time');
-                
-                // Handle specifications (preserve line breaks)
-                const specText = viewBtn.getAttribute('data-specification') || 'No specifications provided.';
-                document.getElementById('view_specification').innerHTML = specText.replace(/\n/g, '<br>');
-                
-                // Show the modal
-                const viewModal = new bootstrap.Modal(document.getElementById('viewMaterialModal'));
-                viewModal.show();
-                
-                return;
-            }
-        });
-
-        // Handle delete material
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('delete-material-btn')) {
-                e.preventDefault();
-                
-                if (confirm('Are you sure you want to delete this material?')) {
-                    const materialId = e.target.getAttribute('data-id');
-                    
-                    const formData = new FormData();
-                    formData.append('delete_supplier_material', '1');
-                    formData.append('material_id', materialId);
-                    
-                    fetch('', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showFeedbackModal(true, data.message);
-                            const supplierId = document.getElementById('supplierId').value;
-                            loadSupplierMaterials(supplierId);
-                        } else {
-                            showFeedbackModal(false, data.message);
-                        }
-                    })
-                    .catch(error => {
-                        showFeedbackModal(false, 'An error occurred. Please try again.');
-                    });
-                }
-            }
-        });
-    });
-
-    // Function to load categories into dropdown
-  
-
-    // Function to load supplier materials
+        
+        // Update pagination info
+        updatePaginationInfo();
+    }
+    
+    // Function to update pagination information
+    function updatePaginationInfo() {
+        const startIndex = (currentPage - 1) * itemsPerPage + 1;
+        const endIndex = Math.min(startIndex + itemsPerPage - 1, allMaterials.length);
+        const totalItems = allMaterials.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        
+        // Update pagination info text
+        document.getElementById('startItem').textContent = startIndex;
+        document.getElementById('endItem').textContent = endIndex;
+        document.getElementById('totalItems').textContent = totalItems;
+        document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+        
+        // Update pagination buttons
+        const prevBtn = document.getElementById('prevPage');
+        const nextBtn = document.getElementById('nextPage');
+        
+        prevBtn.classList.toggle('disabled', currentPage === 1);
+        nextBtn.classList.toggle('disabled', currentPage >= totalPages);
+    }
+    
+    // Function to load supplier materials with pagination
     function loadSupplierMaterials(supplierId) {
+        currentSupplierId = supplierId;
+        currentPage = 1; // Reset to first page when loading new supplier
+        
         fetch(`get_supplier_materials.php?supplier_id=${supplierId}`)
             .then(response => response.json())
             .then(data => {
-                const tbody = document.getElementById('materialsTableBody');
-                tbody.innerHTML = '';
+                allMaterials = data;
+                displayMaterials();
                 
-                if (data.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No materials found for this supplier</td></tr>';
-                } else {
-                    data.forEach(material => {
-                        const row = `
-                            <tr>
-                                <td>${material.material_name}</td>
-                                <td>${material.quantity}</td>
-                                <td>${material.unit}</td>
-                                <td>${material.status}</td>
-                                <td>₱ ${parseFloat(material.material_price).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
-                                <td>${material.low_stock_threshold}</td>
-                                <td>${material.lead_time} days</td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-info btn-sm view-material-btn me-1" 
-                                        data-id="${material.id}" 
-                                        data-name="${material.material_name}" 
-                                        data-brand="${material.brand || 'N/A'}" 
-                                        data-specification="${material.specification || 'No specifications provided.'}" 
-                                        data-category="${material.category || 'N/A'}"
-                                        data-quantity="${material.quantity}" 
-                                        data-unit="${material.unit}" 
-                                        data-status="${material.status}" 
-                                        data-price="${material.material_price}" 
-                                        data-low_stock="${material.low_stock_threshold}" 
-                                        data-lead_time="${material.lead_time}" 
-                                        data-labor_other="${material.labor_other !== undefined && material.labor_other !== null ? material.labor_other : 0}">
-                                        <i class="fas fa-eye"></i> View
-                                    </button>
-                                    <button type="button" class="btn btn-warning btn-sm edit-material-btn me-1" 
-                                        data-id="${material.id}" 
-                                        data-name="${material.material_name}" 
-                                        data-brand="${material.brand || ''}" 
-                                        data-specification="${material.specification || ''}" 
-                                        data-category="${material.category || ''}"
-                                        data-quantity="${material.quantity}" 
-                                        data-unit="${material.unit}" 
-                                        data-status="${material.status}" 
-                                        data-price="${material.material_price}" 
-                                        data-low_stock="${material.low_stock_threshold}" 
-                                        data-lead_time="${material.lead_time}" 
-                                        data-labor_other="${material.labor_other !== undefined && material.labor_other !== null ? material.labor_other : 0}">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </button>
-                                    <button type="button" class="btn btn-danger btn-sm delete-material-btn" data-id="${material.id}">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                        tbody.innerHTML += row;
-                    });
-                }
+                // Add event listeners for pagination buttons
+                document.getElementById('prevPage').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (currentPage > 1) {
+                        currentPage--;
+                        displayMaterials();
+                    }
+                });
+                
+                document.getElementById('nextPage').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const totalPages = Math.ceil(allMaterials.length / itemsPerPage);
+                    if (currentPage < totalPages) {
+                        currentPage++;
+                        displayMaterials();
+                    }
+                });
             })
             .catch(error => {
                 console.error('Error loading materials:', error);
                 document.getElementById('materialsTableBody').innerHTML = 
-                    '<tr><td colspan="7" class="text-center text-danger">Error loading materials</td></tr>';
+                    '<tr><td colspan="6" class="text-center text-danger">Error loading materials</td></tr>';
             });
     }
+
+});
+
+    document.querySelectorAll('.edit-supplier-btn').forEach(function(button) {
+    button.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        const name = this.getAttribute('data-name');
+        const firstname = this.getAttribute('data-firstname');
+        const lastname = this.getAttribute('data-lastname');
+        const number = this.getAttribute('data-number');
+        const email = this.getAttribute('data-email');
+        const address = this.getAttribute('data-address');
+        const status = this.getAttribute('data-status');
+
+        document.getElementById('edit_supplier_id').value = id;
+        document.getElementById('edit_supplier_name').value = name;
+        document.getElementById('edit_contact_firstname').value = firstname;
+        document.getElementById('edit_contact_lastname').value = lastname;
+        document.getElementById('edit_contact_number').value = number;
+        document.getElementById('edit_email').value = email;
+        document.getElementById('edit_address').value = address;
+        document.getElementById('edit_supplier_status').value = status;
+
+        var modal = new bootstrap.Modal(document.getElementById('editSupplierModal'));
+        modal.show();
+    });
+    });
 </script>
 
 <script>
@@ -1590,49 +602,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  document.body.addEventListener('click', function(e) {
-    var btn = e.target.closest('.edit-material-btn');
-    if (btn) {
-      document.getElementById('edit_material_id').value = btn.getAttribute('data-id');
-      document.getElementById('edit_material_name').value = btn.getAttribute('data-name');
-      document.getElementById('edit_quantity').value = btn.getAttribute('data-quantity');
-      document.getElementById('edit_unit').value = btn.getAttribute('data-unit');
-      document.getElementById('edit_material_status').value = btn.getAttribute('data-status');
-      document.getElementById('edit_brand').value = btn.getAttribute('data-brand') || '';
-      document.getElementById('edit_specification').value = btn.getAttribute('data-specification') || '';
-      document.getElementById('edit_material_price').value = btn.getAttribute('data-price');
-      document.getElementById('edit_low_stock_threshold').value = btn.getAttribute('data-low_stock');
-      document.getElementById('edit_lead_time').value = btn.getAttribute('data-lead_time');
-      let laborOther = btn.getAttribute('data-labor_other');
-      document.getElementById('edit_labor_other').value = (laborOther !== null && laborOther !== '') ? laborOther : 0;
-      console.log('labor_other:', btn.getAttribute('data-labor_other'));
-      var modal = new bootstrap.Modal(document.getElementById('editMaterialModal'));
-      modal.show();
-    }
-  });
-});
-</script>
-
-<!-- Export PDF Confirmation Modal (only one per page) -->
-<div class="modal fade" id="exportSuppliersPdfModal" tabindex="-1" aria-labelledby="exportSuppliersPdfModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="exportSuppliersPdfModalLabel">Export as PDF</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p>Are you sure you want to export the suppliers list and their materials as PDF?</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <a href="#" id="confirmExportSuppliersPdf" class="btn btn-danger">Export</a>
-      </div>
-    </div>
-  </div>
-</div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   document.querySelectorAll('.exportSuppliersPdfBtn').forEach(function(exportBtn) {

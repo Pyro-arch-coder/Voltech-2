@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$con = new mysqli("localhost", "root", "", "Voltech2");
+$con = new mysqli("localhost", "root", "", "voltech");
 
 if ($con->connect_error) {
     die("Connection failed: " . $con->connect_error);

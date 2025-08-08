@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
     btn.addEventListener('click', function() {
       document.getElementById('edit_supplier_id').value = this.getAttribute('data-id');
       document.getElementById('edit_supplier_name').value = this.getAttribute('data-name');
-      document.getElementById('edit_contact_person').value = this.getAttribute('data-person');
+      document.getElementById('edit_contact_firstname').value = this.getAttribute('data-firstname');
+      document.getElementById('edit_contact_lastname').value = this.getAttribute('data-lastname');
       document.getElementById('edit_contact_number').value = this.getAttribute('data-number');
       document.getElementById('edit_email').value = this.getAttribute('data-email');
       document.getElementById('edit_address').value = this.getAttribute('data-address');
@@ -103,7 +104,13 @@ function filterSupplierNameInput(e) {
   if (value.length > 50) value = value.slice(0, 50);
   e.target.value = value;
 }
-function filterContactPersonInput(e) {
+function filterContactFirstnameInput(e) {
+  let value = e.target.value;
+  value = value.replace(/[^A-Za-z ]+/g, '');
+  if (value.length > 50) value = value.slice(0, 50);
+  e.target.value = value;
+}
+function filterContactLastnameInput(e) {
   let value = e.target.value;
   value = value.replace(/[^A-Za-z ]+/g, '');
   if (value.length > 50) value = value.slice(0, 50);
@@ -128,13 +135,15 @@ function filterAddressInput(e) {
 var addForm = document.querySelector('#addSupplierModal form');
 if (addForm) {
   var addName = addForm.querySelector('input[name="supplier_name"]');
-  var addPerson = addForm.querySelector('input[name="contact_person"]');
+  var addFirstname = addForm.querySelector('input[name="contact_firstname"]');
+  var addLastname = addForm.querySelector('input[name="contact_lastname"]');
   var addNumber = addForm.querySelector('input[name="contact_number"]');
   var addEmail = addForm.querySelector('input[name="email"]');
   var addAddress = addForm.querySelector('textarea[name="address"]');
   var addStatus = addForm.querySelector('select[name="status"]');
   if (addName) addName.addEventListener('input', filterSupplierNameInput);
-  if (addPerson) addPerson.addEventListener('input', filterContactPersonInput);
+  if (addFirstname) addFirstname.addEventListener('input', filterContactFirstnameInput);
+  if (addLastname) addLastname.addEventListener('input', filterContactLastnameInput);
   if (addNumber) addNumber.addEventListener('input', filterContactNumberInput);
   if (addEmail) addEmail.addEventListener('input', filterEmailInput);
   if (addAddress) addAddress.addEventListener('input', filterAddressInput);
@@ -151,17 +160,29 @@ if (addForm) {
     } else {
       addName.setCustomValidity('');
     }
-    // Contact Person: optional, only letters/spaces, max 50
-    if (addPerson.value && !/^[A-Za-z ]+$/.test(addPerson.value)) {
-      addPerson.setCustomValidity('Contact Person must only contain letters and spaces.');
-      addPerson.reportValidity();
+    // Contact First Name: optional, only letters/spaces, max 50
+    if (addFirstname.value && !/^[A-Za-z ]+$/.test(addFirstname.value)) {
+      addFirstname.setCustomValidity('First Name must only contain letters and spaces.');
+      addFirstname.reportValidity();
       e.preventDefault(); return;
-    } else if (addPerson.value.length > 50) {
-      addPerson.setCustomValidity('Contact Person must be at most 50 characters.');
-      addPerson.reportValidity();
+    } else if (addFirstname.value.length > 50) {
+      addFirstname.setCustomValidity('First Name must be at most 50 characters.');
+      addFirstname.reportValidity();
       e.preventDefault(); return;
     } else {
-      addPerson.setCustomValidity('');
+      addFirstname.setCustomValidity('');
+    }
+    // Contact Last Name: optional, only letters/spaces, max 50
+    if (addLastname.value && !/^[A-Za-z ]+$/.test(addLastname.value)) {
+      addLastname.setCustomValidity('Last Name must only contain letters and spaces.');
+      addLastname.reportValidity();
+      e.preventDefault(); return;
+    } else if (addLastname.value.length > 50) {
+      addLastname.setCustomValidity('Last Name must be at most 50 characters.');
+      addLastname.reportValidity();
+      e.preventDefault(); return;
+    } else {
+      addLastname.setCustomValidity('');
     }
     // Contact Number: optional, if filled must be 11 digits and start with 09
     if (addNumber.value && !/^09\d{9}$/.test(addNumber.value)) {
@@ -196,7 +217,7 @@ if (addForm) {
       addStatus.setCustomValidity('');
     }
   });
-  [addName, addPerson, addNumber, addEmail, addAddress, addStatus].forEach(function(input) {
+  [addName, addFirstname, addLastname, addNumber, addEmail, addAddress, addStatus].forEach(function(input) {
     if (input) input.addEventListener('input', function() { input.setCustomValidity(''); });
   });
 }
@@ -204,13 +225,15 @@ if (addForm) {
 var editForm = document.querySelector('#editSupplierModal form');
 if (editForm) {
   var editName = editForm.querySelector('input[name="supplier_name"]');
-  var editPerson = editForm.querySelector('input[name="contact_person"]');
+  var editFirstname = editForm.querySelector('input[name="contact_firstname"]');
+  var editLastname = editForm.querySelector('input[name="contact_lastname"]');
   var editNumber = editForm.querySelector('input[name="contact_number"]');
   var editEmail = editForm.querySelector('input[name="email"]');
   var editAddress = editForm.querySelector('textarea[name="address"]');
   var editStatus = editForm.querySelector('select[name="status"]');
   if (editName) editName.addEventListener('input', filterSupplierNameInput);
-  if (editPerson) editPerson.addEventListener('input', filterContactPersonInput);
+  if (editFirstname) editFirstname.addEventListener('input', filterContactFirstnameInput);
+  if (editLastname) editLastname.addEventListener('input', filterContactLastnameInput);
   if (editNumber) editNumber.addEventListener('input', filterContactNumberInput);
   if (editEmail) editEmail.addEventListener('input', filterEmailInput);
   if (editAddress) editAddress.addEventListener('input', filterAddressInput);
@@ -227,17 +250,29 @@ if (editForm) {
     } else {
       editName.setCustomValidity('');
     }
-    // Contact Person: optional, only letters/spaces, max 50
-    if (editPerson.value && !/^[A-Za-z ]+$/.test(editPerson.value)) {
-      editPerson.setCustomValidity('Contact Person must only contain letters and spaces.');
-      editPerson.reportValidity();
+    // Contact First Name: optional, only letters/spaces, max 50
+    if (editFirstname.value && !/^[A-Za-z ]+$/.test(editFirstname.value)) {
+      editFirstname.setCustomValidity('First Name must only contain letters and spaces.');
+      editFirstname.reportValidity();
       e.preventDefault(); return;
-    } else if (editPerson.value.length > 50) {
-      editPerson.setCustomValidity('Contact Person must be at most 50 characters.');
-      editPerson.reportValidity();
+    } else if (editFirstname.value.length > 50) {
+      editFirstname.setCustomValidity('First Name must be at most 50 characters.');
+      editFirstname.reportValidity();
       e.preventDefault(); return;
     } else {
-      editPerson.setCustomValidity('');
+      editFirstname.setCustomValidity('');
+    }
+    // Contact Last Name: optional, only letters/spaces, max 50
+    if (editLastname.value && !/^[A-Za-z ]+$/.test(editLastname.value)) {
+      editLastname.setCustomValidity('Last Name must only contain letters and spaces.');
+      editLastname.reportValidity();
+      e.preventDefault(); return;
+    } else if (editLastname.value.length > 50) {
+      editLastname.setCustomValidity('Last Name must be at most 50 characters.');
+      editLastname.reportValidity();
+      e.preventDefault(); return;
+    } else {
+      editLastname.setCustomValidity('');
     }
     // Contact Number: optional, if filled must be 11 digits and start with 09
     if (editNumber.value && !/^09\d{9}$/.test(editNumber.value)) {
@@ -272,7 +307,7 @@ if (editForm) {
       editStatus.setCustomValidity('');
     }
   });
-  [editName, editPerson, editNumber, editEmail, editAddress, editStatus].forEach(function(input) {
+  [editName, editFirstname, editLastname, editNumber, editEmail, editAddress, editStatus].forEach(function(input) {
     if (input) input.addEventListener('input', function() { input.setCustomValidity(''); });
   });
 }

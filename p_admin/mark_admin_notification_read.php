@@ -1,7 +1,7 @@
 <?php
 session_start();
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$con = new mysqli("localhost", "root", "", "voltech2");
+require_once '../config.php';
 if ($id > 0) {
     $con->query("UPDATE notifications_admin SET is_read = 1 WHERE id = $id");
 }

@@ -1,9 +1,6 @@
 <?php
-require_once('fpdf.php');
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
+require_once('../fpdf.php');
+include_once "../config.php";
 
 // Fetch all expenses
 $sql = "SELECT expensedate, expensecategory, expense, description FROM expenses ORDER BY expensedate DESC";

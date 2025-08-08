@@ -2,71 +2,125 @@
 session_start();
 header('Content-Type: application/json');
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Check if user is logged in and has the right permissions
 if (!isset($_SESSION['logged_in']) || $_SESSION['user_level'] != 3) {
     echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
     exit();
 }
 
-// Database connection
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'Database connection failed']);
-    exit();
+include_once "../config.php";
+
+// Check if blueprints table exists
+$tableCheck = $con->query("SHOW TABLES LIKE 'blueprints'");
+if ($tableCheck->num_rows == 0) {
+    // Create blueprints table with project_id
+    $createTable = "CREATE TABLE blueprints (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        project_id INT,
+        name VARCHAR(255) NOT NULL,
+        image_path VARCHAR(500) NOT NULL,
+        status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE SET NULL
+    )";
+    
+    if (!$con->query($createTable)) {
+        echo json_encode(['success' => false, 'message' => 'Failed to create blueprints table: ' . $con->error]);
+        exit();
+    }
 }
 
 // Validate form data
-if (empty($_POST['planName']) || empty($_POST['planLocation']) || !isset($_FILES['planImage'])) {
-    echo json_encode(['success' => false, 'message' => 'All fields are required']);
+if (empty($_POST['planName']) || !isset($_FILES['planImage']) || empty($_POST['project_id'])) {
+    echo json_encode(['success' => false, 'message' => 'Project name, file, and project ID are required']);
     exit();
 }
 
 $name = trim($_POST['planName']);
-$location = trim($_POST['planLocation']);
+$project_id = intval($_POST['project_id']); // sanitize
 $file = $_FILES['planImage'];
 
-// Validate file upload
-$allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
-$maxFileSize = 5 * 1024 * 1024; // 5MB
+// File upload validation
+$allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'dwg'];
+$maxFileSize = 10 * 1024 * 1024; // 10MB
 
-if (!in_array($file['type'], $allowedTypes)) {
-    echo json_encode(['success' => false, 'message' => 'Only JPG, PNG, and GIF files are allowed']);
+$fileExt = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+if (!in_array($fileExt, $allowedExtensions)) {
+    echo json_encode(['success' => false, 'message' => 'Only JPG, PNG, GIF, PDF, and DWG files are allowed']);
     exit();
 }
 
 if ($file['size'] > $maxFileSize) {
-    echo json_encode(['success' => false, 'message' => 'File size exceeds 5MB limit']);
+    echo json_encode(['success' => false, 'message' => 'File size exceeds 10MB limit']);
     exit();
 }
 
-// Create uploads directory if it doesn't exist
+// Handle upload directory
 $uploadDir = '../uploads/floor_plans/';
 if (!file_exists($uploadDir)) {
-    mkdir($uploadDir, 0777, true);
+    if (!mkdir($uploadDir, 0777, true)) {
+        echo json_encode(['success' => false, 'message' => 'Failed to create upload directory']);
+        exit();
+    }
 }
 
-// Generate a unique filename
-$fileExt = pathinfo($file['name'], PATHINFO_EXTENSION);
 $fileName = uniqid('floorplan_') . '.' . $fileExt;
 $targetPath = $uploadDir . $fileName;
 
-// Move the uploaded file
 if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-    // Save to database
     $imagePath = 'uploads/floor_plans/' . $fileName;
-    $stmt = $con->prepare("INSERT INTO floor_plans (name, location, image_path) VALUES (?, ?, ?)");
-    $stmt->bind_param("sss", $name, $location, $imagePath);
-    
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Floor plan saved successfully']);
-    } else {
-        // Delete the uploaded file if database insert fails
+    $status = 'Pending';
+
+    $stmt = $con->prepare("INSERT INTO blueprints (project_id, name, image_path, status) VALUES (?, ?, ?, ?)");
+    if (!$stmt) {
         unlink($targetPath);
-        echo json_encode(['success' => false, 'message' => 'Failed to save floor plan to database']);
+        echo json_encode(['success' => false, 'message' => 'Database prepare failed: ' . $con->error]);
+        exit();
     }
+
+    $stmt->bind_param("isss", $project_id, $name, $imagePath, $status);
+
+    if ($stmt->execute()) {
+        // Get project and client details for notification
+        $projectStmt = $con->prepare("SELECT user_id, project, client_email FROM projects WHERE project_id = ?");
+        $projectStmt->bind_param("i", $project_id);
+        $projectStmt->execute();
+        $projectResult = $projectStmt->get_result();
+        
+        if ($projectRow = $projectResult->fetch_assoc()) {
+            $user_id = $projectRow['user_id'];
+            $project_name = $projectRow['project'];
+            $client_email = $projectRow['client_email'];
+            
+            // Insert notification
+            $notifType = 'blueprint_upload';
+            $message = "A new blueprint has been uploaded for project: $project_name";
+            
+            $notifStmt = $con->prepare("INSERT INTO notifications_client (user_id, client_email, notif_type, message) VALUES (?, ?, ?, ?)");
+            $notifStmt->bind_param("isss", $user_id, $client_email, $notifType, $message);
+            $notifStmt->execute();
+            $notifStmt->close();
+        }
+        $projectStmt->close();
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'Floor plan saved successfully',
+            'imagePath' => $imagePath,
+            'fileName' => $fileName
+        ]);
+    } else {
+        unlink($targetPath);
+        echo json_encode(['success' => false, 'message' => 'Failed to save floor plan to database: ' . $stmt->error]);
+    }
+
     $stmt->close();
 } else {
-    echo json_encode(['success' => false, 'message' => 'Failed to upload file']);
+    echo json_encode(['success' => false, 'message' => 'Failed to move uploaded file']);
 }
 
 $con->close();
