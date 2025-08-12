@@ -90,22 +90,100 @@ document.addEventListener('DOMContentLoaded', function () {
         // Remove any 'uploads/permits/' or 'permits/' from the beginning of the path (case insensitive)
         cleanPath = cleanPath.replace(/^(?:uploads[\/\\])?permits[\/\\]?/i, '');
     
-        // Construct the final path based on your root (like showPdfViewer)
-        // If your prod path is /Voltech-2/projectmanager/, update accordingly!
         const baseUrl = window.location.origin;
+        // The files are actually stored in projectmanager/uploads/permits/
         const fullPath = `${baseUrl}/Voltech-2/projectmanager/uploads/permits/${cleanPath}`;
     
-        // Set download link
+        // Set download link with proper filename
+        const fileName = cleanPath.split('/').pop();
         downloadBtn.href = fullPath;
-        downloadBtn.download = cleanPath.split('/').pop();
-    
-        // Preview file in modal
-        if (filePath.toLowerCase().endsWith('.pdf')) {
-            previewDiv.innerHTML = `<iframe src="${fullPath}" class="w-100 h-100" style="min-height:70vh;"></iframe>`;
-        } else if (/\.(jpg|jpeg|png|gif|webp)$/i.test(filePath)) {
-            previewDiv.innerHTML = `<img src="${fullPath}" class="img-fluid rounded border" alt="Permit Preview" style="max-height:70vh;">`;
-        } else {
-            previewDiv.innerHTML = `<div class="alert alert-info"><i class="fas fa-file me-2"></i> File type not previewable. Please download to view.</div>`;
+        downloadBtn.download = fileName;
+        downloadBtn.setAttribute('target', '_blank'); // Open in new tab for better UX
+        downloadBtn.setAttribute('rel', 'noopener noreferrer'); // Security best practice
+        
+        // Check if file exists before setting up preview
+        const checkFileExists = async (url) => {
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        };
+        
+        // Check file existence and set appropriate content
+        checkFileExists(fullPath).then(exists => {
+            if (!exists) {
+                previewDiv.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        The permit file could not be found. It may have been moved or deleted.
+                        <div class="mt-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="window.location.reload()">
+                                <i class="fas fa-sync-alt me-1"></i> Refresh
+                            </button>
+                        </div>
+                    </div>`;
+                // Disable download button if file doesn't exist
+                if (downloadBtn) downloadBtn.classList.add('disabled');
+                return;
+            }
+            
+            // If file exists, show preview based on file type
+            if (filePath.toLowerCase().endsWith('.pdf')) {
+                const iframe = document.createElement('iframe');
+                iframe.src = fullPath;
+                iframe.className = 'w-100 h-100';
+                iframe.style.minHeight = '70vh';
+                iframe.onerror = () => {
+                    previewDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Unable to load PDF preview. The file may be corrupted.
+                        </div>`;
+                };
+                previewDiv.innerHTML = '';
+                previewDiv.appendChild(iframe);
+            } else if (/\.(jpg|jpeg|png|gif|webp)$/i.test(filePath)) {
+                const img = new Image();
+                img.src = fullPath;
+                img.className = 'img-fluid rounded border';
+                img.alt = 'Permit Preview';
+                img.style.maxHeight = '70vh';
+                img.onerror = () => {
+                    previewDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Unable to load image preview. The file may be corrupted.
+                        </div>`;
+                };
+                previewDiv.innerHTML = '';
+                previewDiv.appendChild(img);
+            } else {
+                previewDiv.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-file me-2"></i>
+                        File type not previewable. Please download to view.
+                    </div>`;
+            }
+        });
+        
+        // Enable download button if file exists
+        if (downloadBtn) {
+            downloadBtn.classList.remove('disabled');
+            // Force file download when the download button is clicked
+            downloadBtn.onclick = function(e) {
+                if (downloadBtn.classList.contains('disabled')) {
+                    e.preventDefault();
+                    return false;
+                }
+                // Let the default download behavior happen
+                // The page will refresh after a short delay to update the UI
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+                return true;
+            };
         }
     
         // Get the modal element and initialize

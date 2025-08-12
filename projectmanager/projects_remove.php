@@ -3,10 +3,21 @@
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_project_employee'])) {
     $row_id = intval($_POST['row_id']);
     $project_id = intval($_GET['id']);
-    mysqli_query($con, "DELETE FROM project_add_employee WHERE id='$row_id' AND project_id='$project_id'");
+
+    // Kunin muna yung employee_id para ma-update status mamaya
+    $result = mysqli_query($con, "SELECT employee_id FROM project_add_employee WHERE id='$row_id' AND project_id='$project_id'");
+    if ($result && mysqli_num_rows($result) > 0) {
+        $row = mysqli_fetch_assoc($result);
+        $employee_id = intval($row['employee_id']);
+
+        // Burahin sa project_add_employee
+        mysqli_query($con, "DELETE FROM project_add_employee WHERE id='$row_id' AND project_id='$project_id'");
+    }
+
     header("Location: project_actual.php?id=$project_id&empdeleted=1");
     exit();
 }
+
 // Remove Material from Project
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_project_material'])) {
     $row_id = intval($_POST['row_id']);
@@ -63,66 +74,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['report_equipment'])) 
     exit();
 }
 // Handle LGU Permit upload
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && basename($_SERVER['PHP_SELF']) === 'upload_lgu.php') {
-    $project_id = intval($_POST['project_id']);
-    if (isset($_FILES['file_photo']) && $_FILES['file_photo']['error'] === UPLOAD_ERR_OK) {
-        $ext = pathinfo($_FILES['file_photo']['name'], PATHINFO_EXTENSION);
-        $filename = 'lgu_' . $project_id . '_' . time() . '.' . $ext;
-        $target = '../uploads/project_files/' . $filename;
-        if (move_uploaded_file($_FILES['file_photo']['tmp_name'], $target)) {
-            mysqli_query($con, "UPDATE projects SET file_photo_lgu='$filename' WHERE project_id='$project_id'");
-            header("Location: project_actual.php?id=$project_id&upload_success=1");
-            exit();
-        }
-    }
-    header("Location: project_actual.php?id=$project_id&upload_error=lgu");
-    exit();
-}
-// Handle Barangay Clearance upload
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && basename($_SERVER['PHP_SELF']) === 'upload_barangay.php') {
-    $project_id = intval($_POST['project_id']);
-    if (isset($_FILES['file_photo']) && $_FILES['file_photo']['error'] === UPLOAD_ERR_OK) {
-        $ext = pathinfo($_FILES['file_photo']['name'], PATHINFO_EXTENSION);
-        $filename = 'barangay_' . $project_id . '_' . time() . '.' . $ext;
-        $target = '../uploads/project_files/' . $filename;
-        if (move_uploaded_file($_FILES['file_photo']['tmp_name'], $target)) {
-            mysqli_query($con, "UPDATE projects SET file_photo_barangay='$filename' WHERE project_id='$project_id'");
-            header("Location: project_actual.php?id=$project_id&upload_success=1");
-            exit();
-        }
-    }
-    header("Location: project_actual.php?id=$project_id&upload_error=barangay");
-    exit();
-}
-// Handle Fire Clearance upload
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && basename($_SERVER['PHP_SELF']) === 'upload_fire.php') {
-    $project_id = intval($_POST['project_id']);
-    if (isset($_FILES['file_photo']) && $_FILES['file_photo']['error'] === UPLOAD_ERR_OK) {
-        $ext = pathinfo($_FILES['file_photo']['name'], PATHINFO_EXTENSION);
-        $filename = 'fire_' . $project_id . '_' . time() . '.' . $ext;
-        $target = '../uploads/project_files/' . $filename;
-        if (move_uploaded_file($_FILES['file_photo']['tmp_name'], $target)) {
-            mysqli_query($con, "UPDATE projects SET file_photo_fire='$filename' WHERE project_id='$project_id'");
-            header("Location: project_actual.php?id=$project_id&upload_success=1");
-            exit();
-        }
-    }
-    header("Location: project_actual.php?id=$project_id&upload_error=fire");
-    exit();
-}
-// Handle Occupancy Permit upload
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && basename($_SERVER['PHP_SELF']) === 'upload_occupancy.php') {
-    $project_id = intval($_POST['project_id']);
-    if (isset($_FILES['file_photo']) && $_FILES['file_photo']['error'] === UPLOAD_ERR_OK) {
-        $ext = pathinfo($_FILES['file_photo']['name'], PATHINFO_EXTENSION);
-        $filename = 'occupancy_' . $project_id . '_' . time() . '.' . $ext;
-        $target = '../uploads/project_files/' . $filename;
-        if (move_uploaded_file($_FILES['file_photo']['tmp_name'], $target)) {
-            mysqli_query($con, "UPDATE projects SET file_photo_occupancy='$filename' WHERE project_id='$project_id'");
-            header("Location: project_actual.php?id=$project_id&upload_success=1");
-            exit();
-        }
-    }
-    header("Location: project_actual.php?id=$project_id&upload_error=occupancy");
-    exit();
-}

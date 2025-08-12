@@ -10,7 +10,7 @@
     <div class="card mb-3 shadow-sm">
         <div class="card-header bg-success text-white d-flex align-items-center">
             <span class="flex-grow-1">Project Materials</span>
-            <button class="btn btn-light btn-sm ml-auto" data-bs-toggle="modal" data-bs-target="#addMaterialsModal">
+            <button type="button" class="btn btn-light btn-sm ml-auto" id="addMaterialsBtn" data-bs-toggle="modal" data-bs-target="#addMaterialsModal">
                 <i class="fas fa-plus-square me-1"></i> Add Materials
             </button>
             <button type="button" class="btn btn-light btn-sm ms-2" id="exportCostEstimationBtn">
@@ -45,10 +45,12 @@
                         $offset = ($page - 1) * $records_per_page;
                         
                         if ($project_id) {
-                            // Get total number of records and calculate grand total
-                            $count_sql = "SELECT COUNT(*) as total, COALESCE(SUM(total), 0) as grand_total 
-                                         FROM project_estimating_materials 
-                                         WHERE project_id = $project_id";
+                            // Get total number of records and calculate grand total from ALL materials
+                            $count_sql = "SELECT COUNT(*) as total, 
+                                         COALESCE(SUM((pem.material_price + COALESCE(m.labor_other, 0)) * pem.quantity), 0) as grand_total 
+                                         FROM project_estimating_materials pem
+                                         LEFT JOIN materials m ON pem.material_id = m.id
+                                         WHERE pem.project_id = $project_id";
                             $count_result = $con->query($count_sql);
                             $count_data = $count_result->fetch_assoc();
                             $total_records = $count_data['total'];
@@ -56,7 +58,7 @@
                             $total_pages = ceil($total_records / $records_per_page);
                             
                             // Get records for the current page
-                            $sql = "SELECT pem.*, m.supplier_name 
+                            $sql = "SELECT pem.*, m.supplier_name, m.labor_other 
                                     FROM project_estimating_materials pem
                                     LEFT JOIN materials m ON pem.material_id = m.id
                                     WHERE pem.project_id = $project_id
@@ -75,9 +77,25 @@
                                     echo '<td>' . htmlspecialchars($row['unit']) . '</td>';
                                     echo '<td>' . number_format($row['material_price'], 2) . '</td>';
                                     echo '<td>' . (isset($row['labor_other']) ? number_format($row['labor_other'], 2) : '0.00') . '</td>';
-                                    echo '<td>' . $row['quantity'] . '</td>';
+                                    echo '<td>
+                                            <div class="quantity-controls">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary quantity-decrease quantity-btn">
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                                <input type="number" class="form-control form-control-sm text-center mx-1 quantity-input" 
+                                                       value="' . $row['quantity'] . '" min="1" step="1" 
+                                                       data-pem-id="' . $row['id'] . '" 
+                                                       data-price="' . $row['material_price'] . '" 
+                                                       data-labor="' . (isset($row['labor_other']) ? $row['labor_other'] : '0') . '"
+                                                       onchange="updateMaterialQuantity(' . $row['id'] . ', this.value)"
+                                                       onkeydown="return event.key !== \'e\' && event.key !== \'E\' && event.key !== \'-\' && event.key !== \'+\';">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary quantity-increase quantity-btn">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+                                          </td>';
                                     echo '<td>' . (isset($row['supplier_name']) ? htmlspecialchars($row['supplier_name']) : 'N/A') . '</td>';
-                                    echo '<td style="font-weight:bold;color:#222;">₱' . number_format($row['total'], 2) . '</td>';
+                                    echo '<td style="font-weight:bold;color:#222;">₱' . number_format((($row['material_price'] + (isset($row['labor_other']) ? $row['labor_other'] : 0)) * $row['quantity']), 2) . '</td>';
                                     echo '<td><button class="btn btn-danger btn-sm remove-material" onclick="removeMaterial(' . $row['id'] . ')"><i class="fas fa-trash"></i> Remove</button></td>';
                                     echo '</tr>';
                                 }
@@ -132,3 +150,38 @@
 
 <!-- Include the step2_estimation.js script -->
 <script src="js/step2_estimation.js"></script>
+
+<style>
+/* Quantity controls styling */
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quantity-input {
+    width: 80px !important;
+    text-align: center;
+    -moz-appearance: textfield;
+}
+
+.quantity-btn {
+    min-width: 32px !important;
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Hide number input arrows for all browsers */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+    -moz-appearance: textfield;
+}
+</style>

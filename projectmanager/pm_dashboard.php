@@ -25,7 +25,7 @@ while ($row = mysqli_fetch_assoc($res)) {
 $top_projects = [];
 $top_labels = [];
 $top_progress = [];
-$top_sql = "SELECT p.project_id, p.project, AVG(d.progress) as avg_progress FROM projects p LEFT JOIN project_divisions d ON p.project_id = d.project_id WHERE p.user_id='$userid' GROUP BY p.project_id, p.project ORDER BY avg_progress DESC LIMIT 3";
+$top_sql = "SELECT p.project_id, p.project, AVG(d.progress) as avg_progress FROM projects p LEFT JOIN project_timeline d ON p.project_id = d.project_id WHERE p.user_id='$userid' GROUP BY p.project_id, p.project ORDER BY avg_progress DESC LIMIT 3";
 $top_res = mysqli_query($con, $top_sql);
 while ($row = mysqli_fetch_assoc($top_res)) {
     $top_projects[] = $row;
@@ -441,87 +441,61 @@ if ($userid) {
 
                 <!-- Charts Section -->
                 <div class="row my-4">
-                    <div class="col-md-4 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Yearly Expenses</h5>
-                                <canvas id="expensesChart" height="300" style="height: 300px;"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Project Most Progress</h5>
-                                <canvas id="projectProgressChart" height="300" style="height: 300px;"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Estimate Expense Project Comparison</h5>
-                                <canvas id="estimateExpenseChart" height="300" style="height: 300px;"></canvas>
-                            </div>
+                <div class="col-md-6 mb-4 d-flex">
+                    <div class="card shadow flex-fill">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">Yearly Expenses</h5>
+                            <canvas id="expensesChart" height="300" style="height: 300px;"></canvas>
                         </div>
                     </div>
                 </div>
-                <div class="row my-4">
-                    <div class="col-md-4 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Estimate Expense For All Projects</h5>
-                                <canvas id="allProjectsEstimateBarChart" height="300" style="height: 300px;"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Category Estimation</h5>
-                                <canvas id="categoryEstimationLineChart" height="300" style="height: 300px;"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Project Category Distribution</h5>
-                                <canvas id="projectCategoryBarChart" height="300" style="height: 300px;"></canvas>
-                            </div>
+                <div class="col-md-6 mb-4 d-flex">
+                    <div class="card shadow flex-fill">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">Project Most Progress</h5>
+                            <canvas id="projectProgressChart" height="300" style="height: 300px;"></canvas>
                         </div>
                     </div>
                 </div>
-                <div class="row my-4">
-                    <div class="col-md-4 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">House Projects</h5>
-                                <div class="mb-2 fw-bold">Average Cost Total: ₱ <?php echo count($projects_by_category['House']) > 0 ? number_format($totals_by_category['House'] / count($projects_by_category['House']), 2) : '0.00'; ?></div>
-                                <canvas id="houseProjectsChart" height="300"  style="height: 300px;"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Renovation Projects</h5>
-                                <div class="mb-2 fw-bold">Average Cost Total: ₱ <?php echo count($projects_by_category['Renovation']) > 0 ? number_format($totals_by_category['Renovation'] / count($projects_by_category['Renovation']), 2) : '0.00'; ?></div>
-                                <canvas id="renovationProjectsChart" height="300"  style="height: 300px;"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Building Projects</h5>
-                                <div class="mb-2 fw-bold">Average Cost Total: ₱ <?php echo count($projects_by_category['Building']) > 0 ? number_format($totals_by_category['Building'] / count($projects_by_category['Building']), 2) : '0.00'; ?></div>
-                                <canvas id="buildingProjectsChart" height="300"  style="height: 300px;"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            </div>
 
+            <div class="row my-4">
+                <div class="col-md-6 mb-4 d-flex">
+                    <div class="card shadow flex-fill">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">Estimate Expense Project Comparison</h5>
+                            <canvas id="estimateExpenseChart" height="300" style="height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4 d-flex">
+                    <div class="card shadow flex-fill">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">Estimate Expense For All Projects</h5>
+                            <canvas id="allProjectsEstimateBarChart" height="300" style="height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row my-4">
+                <div class="col-md-6 mb-4 d-flex">
+                    <div class="card shadow flex-fill">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">Category Estimation</h5>
+                            <canvas id="categoryEstimationLineChart" height="300" style="height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4 d-flex">
+                    <div class="card shadow flex-fill">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">Project Category Distribution</h5>
+                            <canvas id="projectCategoryBarChart" height="300" style="height: 300px;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
             </div>
         </div>
     </div>
@@ -746,67 +720,6 @@ if ($userid) {
         }
     });
 
-    const houseProjects = <?php echo json_encode($projects_by_category['House']); ?>;
-    const renovationProjects = <?php echo json_encode($projects_by_category['Renovation']); ?>;
-    const buildingProjects = <?php echo json_encode($projects_by_category['Building']); ?>;
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // House: Standard Bar Chart
-        new Chart(document.getElementById('houseProjectsChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: houseProjects.map(p => p.name),
-                datasets: [{
-                    label: 'Estimated Expense (₱)',
-                    data: houseProjects.map(p => p.total),
-                    backgroundColor: 'rgba(0, 123, 255, 0.7)'
-                }]
-            },
-            options: { responsive: true }
-        });
-
-        // Renovation: Stacked Bar Chart (vertical)
-        new Chart(document.getElementById('renovationProjectsChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: renovationProjects.map(p => p.name),
-                datasets: [{
-                    label: 'Estimated Expense (₱)',
-                    data: renovationProjects.map(p => p.total),
-                    backgroundColor: 'rgba(255, 193, 7, 0.7)'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: true } },
-                scales: {
-                    x: { stacked: true },
-                    y: { stacked: true, beginAtZero: true }
-                }
-            }
-        });
-
-        // Building: Grouped Bar Chart (vertical, different color)
-        new Chart(document.getElementById('buildingProjectsChart').getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: buildingProjects.map(p => p.name),
-                datasets: [{
-                    label: 'Estimated Expense (₱)',
-                    data: buildingProjects.map(p => p.total),
-                    backgroundColor: 'rgba(40, 167, 69, 0.7)'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: true } },
-                scales: {
-                    x: { stacked: false },
-                    y: { stacked: false, beginAtZero: true }
-                }
-            }
-        });
-    });
     </script>
     <script>
         var el = document.getElementById("wrapper");

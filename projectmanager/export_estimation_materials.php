@@ -25,7 +25,12 @@ $mat_total = 0;
 $mat_query = $con->query("SELECT pem.*, m.material_name, m.unit, m.material_price, m.labor_other FROM project_estimating_materials pem LEFT JOIN materials m ON pem.material_id = m.id WHERE pem.project_id = '$project_id'");
 while($row = $mat_query->fetch_assoc()) {
     $materials[] = $row;
-    $mat_total += floatval($row['total'] ?? 0);
+    // Calculate total using the same formula as grand total: (material_price + labor_other) * quantity
+    $material_price = floatval($row['material_price'] ?? 0);
+    $labor_other = floatval($row['labor_other'] ?? 0);
+    $quantity = floatval($row['quantity'] ?? 0);
+    $item_total = ($material_price + $labor_other) * $quantity;
+    $mat_total += $item_total;
 }
 
 // Create PDF instance

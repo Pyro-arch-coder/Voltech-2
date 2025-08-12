@@ -43,13 +43,11 @@ while($row = $equipments->fetch_assoc()) {
     }
 }
 
+// Create a single instance of FPDF
 $pdf = new FPDF();
 $pdf->AddPage();
-// Logo (left)
-$pdf->Image('../uploads/voltech_logo_transparent.png', 10, 10, 28);
-// Business name and info (right)
-$pdf = new FPDF();
-$pdf->AddPage();
+
+// Add logo and header
 $pdf->Image('../uploads/logo.jpg', 10, 10, 190, 40); // 40mm tall header image
 $pdf->SetY(55); // 10 (top) + 40 (image) + 5 (space)
 // Header Section
@@ -61,7 +59,14 @@ $pdf->Cell(0,8,'Project Name: ' . $project['project'],0,1);
 $pdf->Cell(0,8,'Location: ' . $project['location'],0,1);
 $pdf->Cell(0,8,'Category: ' . $project['category'],0,1);
 $pdf->Cell(0,8,'Deadline: ' . date('F d, Y', strtotime($project['deadline'])),0,1);
-$pdf->Cell(0,8,'Foreman: ' . $project['foreman'],0,1);
+// Get foreman name from project_add_employee where position is 'Foreman'
+$foreman_query = $con->query("SELECT CONCAT(e.first_name, ' ', e.last_name) as foreman_name 
+    FROM project_add_employee pae 
+    JOIN employees e ON pae.employee_id = e.employee_id 
+    WHERE pae.project_id = '$project_id' AND pae.position = 'Foreman' 
+    LIMIT 1");
+$foreman = $foreman_query->num_rows > 0 ? $foreman_query->fetch_assoc()['foreman_name'] : 'Not assigned';
+$pdf->Cell(0,8,'Foreman: ' . $foreman,0,1);
 $pdf->Ln(4);
 
 // Bill of Materials and Labor

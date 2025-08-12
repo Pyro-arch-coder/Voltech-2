@@ -66,8 +66,14 @@ if (!isset($_GET['id'])) {
 
 $project_id = $_GET['id'];
 
-// Fetch project details
-$project_query = mysqli_query($con, "SELECT * FROM projects WHERE project_id='$project_id' AND user_id='$userid'");
+// Fetch project details with foreman information
+$project_query = mysqli_query($con, 
+    "SELECT p.*, 
+            CONCAT(e.first_name, ' ', e.last_name) AS foreman_name
+     FROM projects p
+     LEFT JOIN project_add_employee pae ON p.project_id = pae.project_id AND pae.position = 'Foreman'
+     LEFT JOIN employees e ON pae.employee_id = e.employee_id
+     WHERE p.project_id='$project_id' AND p.user_id='$userid'");
 
 // If project not found or doesn't belong to user, redirect
 if (mysqli_num_rows($project_query) == 0) {
@@ -75,24 +81,8 @@ if (mysqli_num_rows($project_query) == 0) {
     exit();
 }
 
+// Fetch project data
 $project = mysqli_fetch_assoc($project_query);
-
-// Handle project update
-if (isset($_POST['update_project'])) {
-    $projectname = $_POST['projectname'];
-    $projectlocation = $_POST['projectlocation'];
-    $projectbudget = floatval($_POST['projectbudget']);
-    $projectstartdate = $_POST['projectstartdate'];
-    $projectdeadline = $_POST['projectdeadline'];
-    
-    // Update project
-    $update_query = "UPDATE projects SET project='$projectname', location='$projectlocation', budget='$projectbudget', start_date='$projectstartdate', deadline='$projectdeadline' WHERE project_id='$project_id' AND user_id='$userid'";
-    mysqli_query($con, $update_query) or die(mysqli_error($con));
-
-    // Refresh the page to show updated data
-    header("Location: project_actual.php?id=$project_id&updated=1");
-    exit();
-}
 
 // Handle project status update (Finish/Cancel)
 if (isset($_POST['update_project_status'])) {
@@ -225,8 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['return_project_materi
   $return_quantity = isset($_POST['return_quantity']) ? intval($_POST['return_quantity']) : 0;
   
   if ($return_quantity <= 0) {
-      $_SESSION['error'] = "Invalid return quantity";
-      header("Location: project_actual.php?id=$project_id");
+      header("Location: project_actual.php?id=$project_id&return_error=Invalid+return+quantity");
       exit();
   }
   
@@ -235,9 +224,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['return_project_materi
   
   try {
       // Get the current material details with FOR UPDATE to lock the row
-      $mat_query = mysqli_query($con, "SELECT material_id, quantity FROM project_add_materials WHERE id='$row_id' AND project_id='$project_id' FOR UPDATE");
+      $mat_query = mysqli_query($con, "SELECT material_id, quantity, material_name FROM project_add_materials WHERE id='$row_id' AND project_id='$project_id' FOR UPDATE");
       if ($mat_row = mysqli_fetch_assoc($mat_query)) {
           $material_id = intval($mat_row['material_id']);
+          $material_name = mysqli_real_escape_string($con, $mat_row['material_name']);
           $current_quantity = intval($mat_row['quantity']);
           
           if ($return_quantity > $current_quantity) {
@@ -260,33 +250,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['return_project_materi
           
           // Commit the transaction
           mysqli_commit($con);
-          $_SESSION['success'] = "Material returned successfully";
+          
+          // Redirect with success message
+          header("Location: project_actual.php?id=$project_id&return_success=1&material_name=" . urlencode($material_name) . "&quantity=$return_quantity");
+          exit();
       } else {
           throw new Exception("Material not found");
       }
   } catch (Exception $e) {
       // Rollback the transaction on error
       mysqli_rollback($con);
-      $_SESSION['error'] = "Error returning material: " . $e->getMessage();
+      header("Location: project_actual.php?id=$project_id&return_error=" . urlencode($e->getMessage()));
+      exit();
   }
-  
-  header("Location: project_actual.php?id=$project_id");
-  exit();
 }
 
 // Handle additional cost saving
 if (isset($_POST['save_additional_cost']) && isset($_POST['add_cost_row_id'])) {
   $row_id = intval($_POST['add_cost_row_id']);
   $additional_cost = floatval($_POST['additional_cost']);
+  $project_id = intval($_GET['id']);
   
-  // Update only the additional_cost column
-  mysqli_query($con, "UPDATE project_add_materials SET 
-    additional_cost = '$additional_cost'
-    WHERE id='$row_id'");
-    
-  // Store success message in session to persist after redirect
-  $_SESSION['success_message'] = 'Additional cost has been updated successfully.';
-  header("Location: project_actual.php?id=" . $project_id . "#materials");
+  try {
+      // Get material name for success message
+      $mat_query = mysqli_query($con, "SELECT material_name FROM project_add_materials WHERE id='$row_id'");
+      $mat_row = mysqli_fetch_assoc($mat_query);
+      $material_name = mysqli_real_escape_string($con, $mat_row['material_name']);
+      
+      // Update only the additional_cost column
+      $result = mysqli_query($con, "UPDATE project_add_materials SET 
+        additional_cost = '$additional_cost'
+        WHERE id='$row_id'");
+        
+      if ($result) {
+          // Redirect with success message
+          header("Location: project_actual.php?id=$project_id&cost_success=1&material_name=" . urlencode($material_name) . "#materials");
+      } else {
+          throw new Exception("Failed to update additional cost: " . mysqli_error($con));
+      }
+  } catch (Exception $e) {
+      header("Location: project_actual.php?id=$project_id&cost_error=" . urlencode($e->getMessage()) . "#materials");
+  }
   exit();
 }
 
@@ -349,14 +353,27 @@ while ($row = mysqli_fetch_assoc($equip_query)) {
 $final_labor_cost = $material_labor_total- $emp_total;
 $grand_total =  $mat_total + $equip_total;
 
-// Fetch division progress for chart
+// Initialize division progress for chart
 $div_chart_labels = [];
 $div_chart_data = [];
-$div_chart_query = mysqli_query($con, "SELECT division_name, progress FROM project_divisions WHERE project_id='$project_id'");
-while ($row = mysqli_fetch_assoc($div_chart_query)) {
-    $div_chart_labels[] = $row['division_name'];
-    $div_chart_data[] = (int)$row['progress'];
+
+// Try to fetch division progress if the table exists
+try {
+    $div_chart_query = mysqli_query($con, "SHOW TABLES LIKE 'project_divisions'");
+    if (mysqli_num_rows($div_chart_query) > 0) {
+        $div_chart_query = mysqli_query($con, "SELECT division_name, progress FROM project_divisions WHERE project_id='$project_id'");
+        if ($div_chart_query) {
+            while ($row = mysqli_fetch_assoc($div_chart_query)) {
+                $div_chart_labels[] = $row['division_name'];
+                $div_chart_data[] = (int)$row['progress'];
+            }
+        }
+    }
+} catch (Exception $e) {
+    // Table doesn't exist or other error occurred
+    error_log("Error fetching division progress: " . $e->getMessage());
 }
+
 // Calculate remaining days
 $today = new DateTime();
 $deadline = new DateTime($project['deadline']);
@@ -473,8 +490,17 @@ if ($userid) {
               <div class="card-header bg-success text-white d-flex align-items-center justify-content-between">
                 <h4 class="mb-0">Project Actual Details</h4>
                 <div class="d-flex gap-2">
-                  <a href="projects.php" class="btn btn-light btn-sm">
-                    <i class="fa fa-arrow-left"></i> Back to Projects
+                  <?php
+                  // Update project progress to 7 (Schedule) in the database
+                  if (isset($project_id) && $project_id) {
+                      $update_query = "UPDATE projects SET step_progress = 7, progress_indicator = 7 WHERE project_id = ? AND user_id = ?";
+                      $stmt = $con->prepare($update_query);
+                      $stmt->bind_param("ii", $project_id, $userid);
+                      $stmt->execute();
+                  }
+                  ?>
+                  <a href="project_process.php?project_id=<?php echo $project_id; ?>" class="btn btn-light btn-sm">
+                    <i class="fa fa-arrow-left"></i> View Sechedule
                   </a>
                   <a href="#" class="btn btn-danger btn-sm" id="exportProjectPdfBtn">
                     <i class="fas fa-file-export"></i> Generate
@@ -504,6 +530,24 @@ if ($userid) {
                     document.addEventListener('DOMContentLoaded', function() {
                       const successModal = new bootstrap.Modal(document.getElementById('statusUpdateSuccessModal'));
                       successModal.show();
+                      
+                      // Remove status update parameters from URL without refreshing the page
+                      if (window.history.replaceState) {
+                        const url = new URL(window.location);
+                        url.searchParams.delete('status_updated');
+                        url.searchParams.delete('new_status');
+                        window.history.replaceState({}, '', url);
+                      }
+                      
+                      // Also handle modal close event to prevent showing again if user navigates back
+                      document.getElementById('statusUpdateSuccessModal').addEventListener('hidden.bs.modal', function () {
+                        if (window.history.replaceState) {
+                          const url = new URL(window.location);
+                          url.searchParams.delete('status_updated');
+                          url.searchParams.delete('new_status');
+                          window.history.replaceState({}, '', url);
+                        }
+                      });
                     });
                   </script>
                 <?php endif; ?>
@@ -519,9 +563,16 @@ if ($userid) {
                     <div class="card mb-4 shadow-sm">
                       <div class="card-header bg-success text-white d-flex align-items-center">
                         <h5 class="mb-0 flex-grow-1">Project Information</h5>
-                        <button type="button" class="btn btn-light btn-sm ml-auto" data-bs-toggle="modal" data-bs-target="#editProjectModal"><i class="fas fa-edit me-1"></i> Edit Project</button>
-                        <button type="button" class="btn btn-light btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#viewPermitsModal"><i class="fas fa-file-alt me-1"></i> View Permits</button>
-                        <button type="button" class="btn btn-light btn-sm ms-2 upload-files-btn" data-project-id="<?php echo $project_id; ?>" data-bs-toggle="modal" data-bs-target="#uploadFilesModal"><i class="fas fa-upload me-1"></i> Upload</button>
+                        <div class="d-flex gap-2 ms-auto">
+                          <button type="button" class="btn btn-light btn-sm <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
+                            data-bs-toggle="modal" data-bs-target="#editProjectInfoModal" 
+                            <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>>
+                            <i class="fas fa-edit me-1"></i> Edit Project
+                          </button>
+                          <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#viewPermitsModal">
+                            <i class="fas fa-file-alt me-1"></i> View Permits
+                          </button>
+                        </div>
                       </div>
                       <div class="card-body">
                         <!-- First Row -->
@@ -545,7 +596,7 @@ if ($userid) {
                                 </div>
                                 <div class="d-flex justify-content-between">
                                   <span class="text-muted">Foreman:</span>
-                                  <span class="fw-bold"><?php echo htmlspecialchars($project['foreman'] ?? 'Not Assigned'); ?></span>
+                                  <span class="fw-bold"><?php echo !empty($project['foreman_name']) ? htmlspecialchars($project['foreman_name']) : 'Not Assigned'; ?></span>
                                 </div>
                               </div>
                             </div>
@@ -664,37 +715,141 @@ if ($userid) {
                   <div class="col-md-6">
                     <!-- Division Progress Chart Card -->
                     <div class="card mb-4 shadow-sm">
-
                       <div class="card-header bg-success text-white d-flex align-items-center">
-                        <h5 class="mb-0 flex-grow-1">Project Progress</h5>
+                        <h5 class="mb-0 flex-grow-1">Task Progress</h5>
                         <a href="project_progress.php?id=<?php echo $project_id; ?>" class="btn btn-light btn-sm ml-auto"><i class="fas fa-angle-double-right me-1"></i> Show more</a>
                       </div>
                       <div class="card-body">
-                        <!-- Per-division chart -->
-                        <div class="mb-3">
-                          <canvas id="divisionProgressChart" height="260"></canvas>
-                        </div>
-                         <!-- Progress Section -->
-                         <div class="bg-light p-3 rounded mb-3">
-                          <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="mb-0"><i class="fas fa-tasks text-success me-2"></i>Project Progress</h6>
-                          </div>
-                          <div class="progress mb-2" style="height: 25px;">
-                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" 
-                                 style="width: <?php echo $overall_progress; ?>%;" 
-                                 aria-valuenow="<?php echo $overall_progress; ?>" 
-                                 aria-valuemin="0" 
-                                 aria-valuemax="100">
-                              <?php echo $overall_progress; ?>%
-                            </div>
-                          </div>
-                          <div class="d-flex justify-content-between">
-                            <small class="text-muted">Start: <?php echo date("M d, Y", strtotime($project['start_date'])); ?></small>
-                            <small class="text-muted">Deadline: <?php echo date("M d, Y", strtotime($project['deadline'])); ?></small>
-                          </div>
+                        <?php
+                        // Fetch tasks from project_timeline
+                        $task_query = "SELECT id, task_name, progress, start_date, end_date FROM project_timeline 
+                                     WHERE project_id = ? ORDER BY start_date ASC";
+                        $stmt = $con->prepare($task_query);
+                        $stmt->bind_param("i", $project_id);
+                        $stmt->execute();
+                        $tasks_result = $stmt->get_result();
+                        $tasks = [];
+                        $task_names = [];
+                        $task_progress = [];
+                        $total_progress = 0;
+                        $task_count = 0;
+                        
+                        if ($tasks_result && $tasks_result->num_rows > 0) {
+                            while ($task = $tasks_result->fetch_assoc()) {
+                                $tasks[] = $task;
+                                $task_names[] = $task['task_name'];
+                                $task_progress[] = $task['progress'];
+                                $total_progress += $task['progress'];
+                                $task_count++;
+                            }
+                            $overall_progress = $task_count > 0 ? round($total_progress / $task_count) : 0;
+                            
+                            // Prepare data for chart
+                            $chart_labels = json_encode($task_names);
+                            $chart_data = json_encode($task_progress);
+                        } else {
+                            $overall_progress = 0;
+                            echo '<div class="alert alert-info">No tasks found for this project.</div>';
+                        }
+                        ?>
+                        
+                        <!-- Task Progress Chart -->
+                        <div class="mb-4" style="height: 300px;">
+                            <canvas id="taskProgressChart"></canvas>
                         </div>
                         
-                        <p class="mb-0"><i class="fas fa-info-circle text-primary me-1"></i> The chart shows the progress of each division for this project.</p>
+                        <?php if (!empty($tasks)): ?>
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const ctx = document.getElementById('taskProgressChart').getContext('2d');
+                            const taskProgressChart = new Chart(ctx, {
+                                type: 'bar',
+                                data: {
+                                    labels: <?php echo $chart_labels; ?>,
+                                    datasets: [{
+                                        label: 'Task Progress (%)',
+                                        data: <?php echo $chart_data; ?>,
+                                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                                        borderColor: 'rgba(40, 167, 69, 1)',
+                                        borderWidth: 1,
+                                        borderRadius: 4
+                                    }]
+                                },
+                                options: {
+                                    indexAxis: 'y',
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                        x: {
+                                            beginAtZero: true,
+                                            max: 100,
+                                            title: {
+                                                display: true,
+                                                text: 'Progress (%)',
+                                                font: {
+                                                    weight: 'bold'
+                                                }
+                                            },
+                                            grid: {
+                                                display: false
+                                            }
+                                        },
+                                        y: {
+                                            grid: {
+                                                display: false
+                                            },
+                                            ticks: {
+                                                autoSkip: false
+                                            }
+                                        }
+                                    },
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(context) {
+                                                    return context.raw + '%';
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        });
+                        </script>
+                        <?php endif; ?>
+                        
+                        <!-- Overall Progress -->
+                        <div class="bg-light p-3 rounded mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0"><i class="fas fa-tasks text-success me-2"></i>Overall Progress</h6>
+                                <span class="badge bg-success rounded-pill"><?php echo count($tasks); ?> tasks</span>
+                            </div>
+                            <div class="progress mb-2" style="height: 25px;">
+                                <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" 
+                                     style="width: <?php echo $overall_progress; ?>%"
+                                     aria-valuenow="<?php echo $overall_progress; ?>" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    <?php echo $overall_progress; ?>%
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">
+                                    <i class="far fa-calendar-alt me-1"></i> 
+                                    Start: <?php echo date("M d, Y", strtotime($project['start_date'])); ?>
+                                </small>
+                                <small class="text-muted">
+                                    <i class="far fa-calendar-check me-1"></i>
+                                    Deadline: <?php echo date("M d, Y", strtotime($project['deadline'])); ?>
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <p class="mb-0"><i class="fas fa-info-circle text-primary me-1"></i> Showing progress of all tasks in the project timeline.</p>
                       </div>
                     </div>
                     
@@ -727,7 +882,9 @@ if ($userid) {
                         <div class="card shadow-sm">
                             <div class="card-header bg-success text-white d-flex align-items-center">
                                 <span class="flex-grow-1">Project Team</span>
-                                <button class="btn btn-light btn-sm ms-auto" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                                <button class="btn btn-light btn-sm ms-auto <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
+                                    data-bs-toggle="modal" data-bs-target="#addEmployeeModal"
+                                    <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>>
                                     <i class="fas fa-user-plus me-1"></i> Add Employee
                                 </button>
                             </div>
@@ -784,7 +941,9 @@ if ($userid) {
                                                 <td>
                                                     <form method="post" style="display:inline;">
                                                         <input type="hidden" name="row_id" value="<?php echo $emp['id']; ?>">
-                                                        <button type="submit" name="remove_project_employee" class="btn btn-sm btn-danger" onclick="return confirm('Remove this employee?')">
+                                                        <button type="submit" name="remove_project_employee" class="btn btn-sm btn-danger <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
+                                                            <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?> 
+                                                            onclick="return confirm('Remove this employee?')">
                                                             <i class="fas fa-trash"></i> Remove
                                                         </button>
                                                     </form>
@@ -816,7 +975,13 @@ if ($userid) {
                         <div class="card mb-3 shadow-sm mt-3">
                             <div class="card-header bg-success text-white d-flex align-items-center">
                                 <span class="flex-grow-1">Project Materials</span>
-                                <button class="btn btn-light btn-sm ml-auto" data-bs-toggle="modal" data-bs-target="#addMaterialsModal"><i class="fas fa-plus-square me-1"></i> Add Materials</button>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-light btn-sm <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
+                                        data-bs-toggle="modal" data-bs-target="#addMaterialsModal"
+                                        <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>>
+                                        <i class="fas fa-plus-square me-1"></i> Add Materials
+                                    </button>
+                                </div>
                             </div>
                             <div class="card-body p-0">
                                 <div class="table-responsive">
@@ -848,14 +1013,25 @@ if ($userid) {
                                                 <td>
                                                     <?php $add_cost = isset($mat['additional_cost']) ? floatval($mat['additional_cost']) : 0; ?>
                                                     <span class="text-primary">₱<?php echo number_format($add_cost, 2); ?></span>
-                                                    <button type="button" class="btn btn-link btn-sm p-0 ms-1" data-bs-toggle="modal" data-bs-target="#addCostModal<?php echo $mat['id']; ?>" title="Add/Edit Additional Cost"><i class="fas fa-plus-circle"></i></button>
+                                                    <button type="button" class="btn btn-link btn-sm p-0 ms-1 <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
+                                                        data-bs-toggle="modal" data-bs-target="#addCostModal<?php echo $mat['id']; ?>" 
+                                                        title="Add/Edit Additional Cost"
+                                                        <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>>
+                                                        <i class="fas fa-plus-circle"></i>
+                                                    </button>
                                                 </td>
                                                 <td style="font-weight:bold;color:#222;">₱<?php 
                                                     $row_total = (($mat['labor_other'] + $mat['material_price']) * $mat['quantity']) + $mat['additional_cost'];
                                                     echo number_format($row_total, 2); 
                                                 ?></td>
                                                 <td>
-                                                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#returnMaterialModal" data-row-id="<?php echo $mat['id']; ?>" data-max-qty="<?php echo $mat['quantity']; ?>"><i class="fas fa-undo"></i> Return</button>
+                                                    <button type="button" class="btn btn-sm btn-warning <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
+                                                        data-bs-toggle="modal" data-bs-target="#returnMaterialModal" 
+                                                        data-row-id="<?php echo $mat['id']; ?>" 
+                                                        data-max-qty="<?php echo $mat['quantity']; ?>"
+                                                        <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>>
+                                                        <i class="fas fa-undo"></i> Return
+                                                    </button>
                                                 </td>
                                             </tr>
                                             <!-- Add/Edit Additional Cost Modal -->
@@ -911,7 +1087,11 @@ if ($userid) {
                         <div class="card shadow-sm">
                             <div class="card-header bg-success text-white d-flex align-items-center">
                                 <span class="flex-grow-1">Project Equipment</span>
-                                <button class="btn btn-light btn-sm ml-auto" data-bs-toggle="modal" data-bs-target="#addEquipmentModal"><i class="fas fa-plus-square me-1"></i> Add Equipment</button>
+                                <button class="btn btn-light btn-sm ml-auto <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
+                                    data-bs-toggle="modal" data-bs-target="#addEquipmentModal"
+                                    <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>>
+                                    <i class="fas fa-plus-square me-1"></i> Add Equipment
+                                </button>
                             </div>
                             <div class="card-body p-0">
                               <div class="table-responsive">
@@ -968,6 +1148,7 @@ if ($userid) {
                                   <?php elseif ($eq['status'] === 'returned'): ?>
                                     <span class="badge bg-success">Returned</span>
                                   <?php else: ?>
+                                    <?php if ($project['status'] !== 'Finished'): ?>
                                     <form method="post" style="display:inline;">
                                       <input type="hidden" name="row_id" value="<?php echo $eq['id']; ?>">
                                       <button type="submit" name="return_project_equipment" class="btn btn-sm btn-warning" onclick="return confirm('Mark this equipment as returned?')">
@@ -980,6 +1161,10 @@ if ($userid) {
                                       <input type="hidden" name="report_remarks" value="Damage Equipment">
                                       <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Mark this equipment as damaged?')"><i class="fas fa-exclamation-triangle"></i> Report Damage</button>
                                     </form>
+                                    <?php else: ?>
+                                    <button type="button" class="btn btn-sm btn-warning disabled" disabled><i class="fas fa-undo"></i> Return</button>
+                                    <button type="button" class="btn btn-sm btn-danger disabled" disabled><i class="fas fa-exclamation-triangle"></i> Report Damage</button>
+                                    <?php endif; ?>
                                   <?php endif; ?>
                                 </td>
                               </tr>
@@ -1196,92 +1381,7 @@ if ($userid) {
   }
 });
 </script>
-<script>
-// Set project_id for all forms in the modal when opening
-const uploadFilesModal = document.getElementById('uploadFilesModal');
-uploadFilesModal.addEventListener('show.bs.modal', function (event) {
-  const triggerBtn = event.relatedTarget;
-  let projectId = null;
-  if (triggerBtn && triggerBtn.getAttribute('data-project-id')) {
-    projectId = triggerBtn.getAttribute('data-project-id');
-  } else {
-    // fallback: try to get from a global or selection
-    projectId = document.getElementById('modal_project_id')?.value || '';
-  }
-  document.getElementById('modal_project_id_lgu').value = projectId;
-  document.getElementById('modal_project_id_barangay').value = projectId;
-  document.getElementById('modal_project_id_fire').value = projectId;
-  document.getElementById('modal_project_id_occupancy').value = projectId;
-});
-// Image preview for each file input
-const previewMap = {
-  'lgu': 'preview_file_photo_lgu',
-  'barangay': 'preview_file_photo_barangay',
-  'fire': 'preview_file_photo_fire',
-  'occupancy': 'preview_file_photo_occupancy'
-};
-document.querySelectorAll('.single-upload-form').forEach(function(form) {
-  const fileInput = form.querySelector('input[type="file"]');
-  const formId = form.getAttribute('action').replace('upload_', '').replace('.php', '');
-  const previewImg = document.getElementById('preview_file_photo_' + formId);
-  fileInput.addEventListener('change', function() {
-    if (fileInput.files && fileInput.files[0]) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        previewImg.src = e.target.result;
-        previewImg.classList.remove('d-none');
-      };
-      reader.readAsDataURL(fileInput.files[0]);
-    } else {
-      previewImg.classList.add('d-none');
-      previewImg.src = '';
-    }
-  });
-});
-</script>
 
-<?php if (isset($_GET['upload_success'])): ?>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    showFeedbackModal(true, 'Files uploaded successfully.', '', 'upload_success');
-});
-</script>
-<?php endif; ?>
-<?php if (isset($_GET['upload_error'])): ?>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    showFeedbackModal(false, 'Failed to upload files.', <?php echo json_encode(strip_tags($_GET['upload_error'])); ?>, 'upload_error');
-});
-</script>
-<?php endif; ?>
-
-<!-- Add JS for client-side validation of file input before upload -->
-<script>
-document.querySelectorAll('.single-upload-form').forEach(function(form) {
-  const fileInput = form.querySelector('input[type="file"]');
-  const invalidFeedback = fileInput.nextElementSibling; // the .invalid-feedback div
-
-  form.addEventListener('submit', function(e) {
-    if (!fileInput.files || !fileInput.files[0]) {
-      e.preventDefault();
-      fileInput.classList.add('is-invalid');
-      if (invalidFeedback) invalidFeedback.style.display = 'block';
-      fileInput.focus();
-    } else {
-      fileInput.classList.remove('is-invalid');
-      if (invalidFeedback) invalidFeedback.style.display = 'none';
-    }
-  });
-
-  // Hide error when user selects a file
-  fileInput.addEventListener('change', function() {
-    if (fileInput.files && fileInput.files[0]) {
-      fileInput.classList.remove('is-invalid');
-      if (invalidFeedback) invalidFeedback.style.display = 'none';
-    }
-  });
-});
-</script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   if (window.location.search.includes('upload_success=1')) {
@@ -1441,23 +1541,65 @@ function showFeedbackModal(success, message, error_code = '', query_param = '') 
 }
 document.addEventListener('DOMContentLoaded', function() {
   var params = new URLSearchParams(window.location.search);
-  if (window.location.search.includes('addmat=1')) {
-    showFeedbackModal(true, 'Material added successfully!', 'addmat', 'addmat');
-  } else if (window.location.search.includes('addequip=1')) {
-    showFeedbackModal(true, 'Equipment added successfully!', 'addequip', 'addequip');
-  } else if (window.location.search.includes('addcost=1')) {
-    showFeedbackModal(true, 'Additional cost saved successfully!', 'addcost', 'addcost');
-  } else if (window.location.search.includes('addemp=1')) {
-    showFeedbackModal(true, 'Employee added to project successfully!', 'addemp', 'addemp');
-  } else if (window.location.search.includes('removeemp=1')) {
-    showFeedbackModal(true, 'Employee removed from project successfully!', 'removeemp', 'removeemp');
-  } else if (params.get('addmat') === '1') {
+  
+  // Show success/error message for material return
+  if (params.get('return_success') === '1') {
+    const materialName = params.get('material_name') || 'Material';
+    const quantity = params.get('quantity') || 0;
+    showFeedbackModal(true, `Successfully returned ${quantity} unit(s) of ${materialName}`);
+    
+    // Clean up URL
+    params.delete('return_success');
+    params.delete('material_name');
+    params.delete('quantity');
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  } else if (params.has('return_error')) {
+    const errorMsg = params.get('return_error') || 'An error occurred while returning the material';
+    showFeedbackModal(false, errorMsg);
+    
+    // Clean up URL
+    params.delete('return_error');
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  }
+  
+  // Show success/error message for additional cost
+  if (params.get('cost_success') === '1') {
+    const materialName = params.get('material_name') || 'Material';
+    showFeedbackModal(true, `Additional cost for ${materialName} has been updated successfully`);
+    
+    // Clean up URL
+    params.delete('cost_success');
+    params.delete('material_name');
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  } else if (params.has('cost_error')) {
+    const errorMsg = params.get('cost_error') || 'An error occurred while updating additional cost';
+    showFeedbackModal(false, errorMsg);
+    
+    // Clean up URL
+    params.delete('cost_error');
+    window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}`);
+  }
+  
+  // Show success message for material addition
+  if (params.get('addmat') === '1') {
     showFeedbackModal(true, 'Material added successfully!');
     params.delete('addmat');
     window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
   } else if (params.get('removemat') === '1') {
     showFeedbackModal(true, 'Material removed successfully!');
     params.delete('removemat');
+    window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
+  } else if (params.get('addequip') === '1') {
+    showFeedbackModal(true, 'Equipment added successfully!');
+    params.delete('addequip');
+    window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
+  } else if (params.get('addemp') === '1') {
+    showFeedbackModal(true, 'Employee added to project successfully!');
+    params.delete('addemp');
+    window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
+  } else if (params.get('removeemp') === '1') {
+    showFeedbackModal(true, 'Employee removed from project successfully!');
+    params.delete('removeemp');
     window.history.replaceState({}, document.title, window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
   }
 });
@@ -1884,6 +2026,7 @@ if (window.location.search.includes('addequip=1')) {
   url.searchParams.delete('addequip');
   window.history.replaceState({}, document.title, url.toString());
 }
+
 
 </body>
 

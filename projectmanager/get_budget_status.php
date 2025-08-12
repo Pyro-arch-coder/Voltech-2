@@ -21,7 +21,7 @@ $response = ['success' => false, 'budget' => null];
 
 $projectId = isset($_GET['project_id']) ? intval($_GET['project_id']) : 0;
 if ($projectId > 0) {
-    $stmt = $con->prepare("SELECT * FROM project_budget_approval WHERE project_id=? LIMIT 1");
+    $stmt = $con->prepare("SELECT * FROM project_pdf_approval WHERE project_id=? LIMIT 1");
     $stmt->bind_param("i", $projectId);
     $stmt->execute();
     $result = $stmt->get_result();

@@ -5,8 +5,20 @@ let allMaterials = [];
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensure we're on step 2 when initializing
+    if (typeof window.currentStep === 'undefined') {
+        window.currentStep = 2;
+    }
+    
+
+    
     initializeMaterialsModal();
     setupExportCostEstimation();
+    
+    // Setup event delegation for table quantity controls
+    setupTableQuantityControls();
+    
+
 });
 
 // Initialize the materials modal
@@ -14,9 +26,20 @@ function initializeMaterialsModal() {
     const modal = document.getElementById('addMaterialsModal');
     if (!modal) return;
 
-    modal.addEventListener('show.bs.modal', function() {
-            loadMaterialsForModal();
-
+    modal.addEventListener('show.bs.modal', function(e) {
+        // Ensure we stay on step 2
+        if (window.currentStep !== 2) {
+            window.currentStep = 2;
+            const stepDiv = document.getElementById('step2');
+            if (stepDiv) {
+                document.querySelectorAll('.step-content').forEach(step => {
+                    step.classList.add('d-none');
+                });
+                stepDiv.classList.remove('d-none');
+            }
+        }
+        
+        loadMaterialsForModal();
     });
 
     setupMaterialsModal();
@@ -67,8 +90,9 @@ function renderMaterialsInModal() {
     allMaterials.forEach((material, index) => {
         const row = document.createElement('tr');
         const price = parseFloat(material.material_price) || 0;
+        const labor = parseFloat(material.labor_other) || 0;
         const quantity = 1;
-        const total = price * quantity;
+        const total = (price + labor) * quantity;
         const materialName = material.material_name || 'N/A';
         const brand = material.brand || 'N/A';
         const supplier = material.supplier_name || 'N/A';
@@ -249,18 +273,145 @@ function updateRowTotal(input) {
     if (!row) return;
 
     const price = parseFloat(input.dataset.price) || 0;
+    const labor = parseFloat(input.dataset.labor) || 0;
     let quantity = parseFloat(input.value);
     if (isNaN(quantity) || quantity <= 0) {
         quantity = 1;
         input.value = quantity;
     }
-    const total = price * quantity;
+    const total = (price + labor) * quantity;
     const totalCell = row.querySelector('.material-total');
     if (totalCell) {
         totalCell.textContent = `₱${total.toFixed(2)}`;
     }
     return total;
 }
+
+// Function to open materials modal (keeping for compatibility)
+function openMaterialsModal() {
+    // This function is kept for compatibility but not used
+    // The modal is now opened via Bootstrap's data attributes
+}
+
+
+
+// Function to update grand total
+function updateGrandTotal() {
+    // Get project_id from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('project_id');
+    
+    if (!projectId) return;
+    
+    // Fetch the grand total from the database
+    fetch(`get_project_grand_total.php?project_id=${projectId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const grandTotalElement = document.getElementById('materialsTotal');
+                if (grandTotalElement) {
+                    grandTotalElement.textContent = `₱${parseFloat(data.grand_total).toFixed(2)}`;
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching grand total:', error);
+        });
+}
+
+// Setup event delegation for table quantity controls (same as modal)
+function setupTableQuantityControls() {
+    // Delegate events for quantity controls in the table
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('.quantity-increase, .quantity-decrease');
+        if (!target) return;
+        
+        // Check if it's in the table (not in modal)
+        const table = target.closest('table');
+        if (!table || table.id === 'materialsTable') return; // Skip if it's the modal table
+
+        const input = target.closest('.quantity-controls').querySelector('.quantity-input');
+        if (!input) return;
+
+        if (target.classList.contains('quantity-increase')) {
+            input.stepUp();
+            updateTableRowTotal(input);
+        } else if (target.classList.contains('quantity-decrease')) {
+            const currentValue = parseFloat(input.value);
+            if (currentValue > 1) {
+                input.stepDown();
+                updateTableRowTotal(input);
+            }
+        }
+        e.preventDefault();
+        e.stopPropagation();
+    });
+
+    // Handle input changes in table
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('quantity-input')) {
+            const table = e.target.closest('table');
+            if (table && table.id !== 'materialsTable') { // Only for main table, not modal
+                updateTableRowTotal(e.target);
+            }
+        }
+    });
+}
+
+// Function to update table row total and save to database
+function updateTableRowTotal(input) {
+    if (!input || !input.closest) return;
+    const row = input.closest('tr');
+    if (!row) return;
+
+    const price = parseFloat(input.dataset.price) || 0;
+    const labor = parseFloat(input.dataset.labor) || 0;
+    let quantity = parseFloat(input.value);
+    if (isNaN(quantity) || quantity <= 0) {
+        quantity = 1;
+        input.value = quantity;
+    }
+    const total = (price + labor) * quantity;
+    
+    // Update the total cell in the same row
+    const totalCell = row.querySelector('td:nth-child(8)'); // Total column
+    if (totalCell) {
+        totalCell.innerHTML = `₱${total.toFixed(2)}`;
+    }
+    
+    // Update grand total
+    updateGrandTotal();
+    
+    // Save to database
+    const pemId = input.dataset.pemId;
+    if (pemId) {
+        const formData = new FormData();
+        formData.append('pem_id', pemId);
+        formData.append('quantity', quantity);
+        formData.append('update_quantity', '1');
+        
+        fetch('update_material_quantity.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Refresh the page after successful update
+                window.location.reload();
+            } else {
+                showAlert(data.message || 'Error updating quantity', 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('An error occurred while updating quantity', 'danger');
+        });
+    }
+    
+    return total;
+}
+
+
 
 // Export Cost Estimation PDF
 function setupExportCostEstimation() {

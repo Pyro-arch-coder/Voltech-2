@@ -50,19 +50,19 @@ try {
     if (!move_uploaded_file($file['tmp_name'], $filePath)) throw new Exception('Failed to save file.');
 
     // Save to DB
-    $stmt = $con->prepare("SELECT id FROM project_budget_approval WHERE project_id=? LIMIT 1");
+    $stmt = $con->prepare("SELECT id FROM project_pdf_approval WHERE project_id=? LIMIT 1");
     $stmt->bind_param("i", $projectId);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result && $result->num_rows > 0) {
         // Update existing record
-        $stmt2 = $con->prepare("UPDATE project_budget_approval SET estimation_pdf=?, status='Pending', updated_at=NOW() WHERE project_id=?");
+        $stmt2 = $con->prepare("UPDATE project_pdf_approval SET estimation_pdf=?, status='Pending', updated_at=NOW() WHERE project_id=?");
         $stmt2->bind_param("si", $filePath, $projectId);
         $stmt2->execute();
     } else {
         // Insert new record
-        $stmt2 = $con->prepare("INSERT INTO project_budget_approval (project_id, estimation_pdf, status, created_at, updated_at) VALUES (?, ?, 'Pending', NOW(), NOW())");
+        $stmt2 = $con->prepare("INSERT INTO project_pdf_approval (project_id, estimation_pdf, status, created_at, updated_at) VALUES (?, ?, 'Pending', NOW(), NOW())");
         $stmt2->bind_param("is", $projectId, $filePath);
         $stmt2->execute();
     }

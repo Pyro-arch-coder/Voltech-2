@@ -13,6 +13,201 @@ require_once '../config.php';
     $user_name = trim($user_firstname . ' ' . $user_lastname);
     $current_page = basename($_SERVER['PHP_SELF']);
 
+    // --- Project Form Submission Handler ---
+    // Handle AJAX email check
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] === 'check_email') {
+        header('Content-Type: application/json');
+        $email = mysqli_real_escape_string($con, $_POST['email']);
+        $query = mysqli_query($con, "SELECT id, CONCAT(firstname, ' ', lastname) as name FROM users WHERE email = '$email' AND is_verified = 1 LIMIT 1");
+        
+        if (mysqli_num_rows($query) > 0) {
+            $user = mysqli_fetch_assoc($query);
+            echo json_encode([
+                'success' => false,
+                'user' => [
+                    'id' => $user['id'],
+                    'name' => $user['name']
+                ]
+            ]);
+        } else {
+            echo json_encode(['success' => true]);
+        }
+        exit();
+    }
+    
+   
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['project_name'])) {
+        mysqli_begin_transaction($con);
+    
+        try {
+            $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) 
+                      && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    
+            $client_type = $_POST['client_type'] ?? 'new';
+            $client_email = '';
+            $user_id = null;
+            $first_name = '';
+            $last_name = '';
+    
+            if ($client_type === 'new') {
+                $first_name = mysqli_real_escape_string($con, $_POST['first_name']);
+                $last_name  = mysqli_real_escape_string($con, $_POST['last_name']);
+                $client_email = mysqli_real_escape_string($con, $_POST['email']);
+    
+                $check_email = mysqli_query($con, "SELECT id FROM users WHERE email = '$client_email'");
+                if (mysqli_num_rows($check_email) > 0) {
+                    throw new Exception('A user with this email already exists.');
+                }
+    
+                // Generate password
+                $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
+                $password = substr(str_shuffle($chars), 0, 12);
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+    
+                // Verification code
+                $verification_code = md5(uniqid(rand(), true));
+    
+                $user_query = "INSERT INTO users (firstname, lastname, email, password, verification_code, is_verified, user_level) 
+                               VALUES ('$first_name', '$last_name', '$client_email', '$hashed_password', '$verification_code', 1, 6)";
+                if (!mysqli_query($con, $user_query)) {
+                    throw new Exception('Error creating user account: ' . mysqli_error($con));
+                }
+                $user_id = mysqli_insert_id($con);
+    
+                // Send email
+                $mail = new PHPMailer(true);
+                try {
+                    $mail->isSMTP();
+                    $mail->Host = 'smtp.gmail.com';
+                    $mail->SMTPAuth = true;
+                    $mail->Username = 'VoltechElectricalConstruction0@gmail.com';
+                    $mail->Password = 'sban pumy bmia wwal';
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port = 587;
+    
+                    $mail->setFrom('VoltechElectricalConstruction0@gmail.com', 'Voltech System');
+                    $mail->addAddress($client_email, "$first_name $last_name");
+    
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Your Account Credentials';
+                    $login_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") 
+                                . "://$_SERVER[HTTP_HOST]/login.php";
+                    $mail->Body = "
+                        <h2>Welcome to Voltech Electrical Construction</h2>
+                        <p>Hello $first_name,</p>
+                        <p>Your account has been created successfully. Here are your login details:</p>
+                        <p>
+                            <strong>Email:</strong> $client_email<br>
+                            <strong>Password:</strong> $password
+                        </p>
+                        <p><a href='$login_link' style='background:#27ae60;color:white;padding:10px 20px;
+                        text-decoration:none;border-radius:5px;'>Login to Your Account</a></p>
+                        <p>We recommend changing your password after your first login.</p>
+                        <p>Thanks,<br>Voltech Electrical Construction</p>
+                    ";
+    
+                    $mail->send();
+                    $_SESSION['success_message'] = 'User account created successfully. Login details sent to ' . $client_email;
+                } catch (Exception $e) {
+                    error_log("Mailer Error: {$mail->ErrorInfo}");
+                    $_SESSION['error_message'] = 'Account was created, but email sending failed.';
+                }
+    
+            } else {
+                $client_email = mysqli_real_escape_string($con, $_POST['client_email']);
+                $user_query = mysqli_query($con, "SELECT id, firstname, lastname FROM users WHERE email = '$client_email' AND is_verified = 1 LIMIT 1");
+                if (mysqli_num_rows($user_query) === 0) {
+                    throw new Exception('No verified user found with this email address.');
+                }
+                $user_data = mysqli_fetch_assoc($user_query);
+                $user_id = $user_data['id'];
+                $first_name = $user_data['firstname'];
+                $last_name = $user_data['lastname'];
+    
+                $_SESSION['success_message'] = 'Project has been assigned to the existing client.';
+            }
+    
+            // Project info
+            $project_name = mysqli_real_escape_string($con, $_POST['project_name']);
+            $size = floatval($_POST['size']);
+    
+            $barangay = mysqli_real_escape_string($con, $_POST['barangay'] ?? '');
+            $municipality = mysqli_real_escape_string($con, $_POST['municipality'] ?? '');
+            $province = mysqli_real_escape_string($con, $_POST['province'] ?? '');
+            $region = mysqli_real_escape_string($con, $_POST['region'] ?? '');
+            $location = trim("$region $province $municipality $barangay");
+    
+            $start_date = mysqli_real_escape_string($con, $_POST['start_date'] ?? date('Y-m-d'));
+            $end_date = mysqli_real_escape_string($con, $_POST['end_date'] ?? date('Y-m-d', strtotime('+1 month')));
+            $category = mysqli_real_escape_string($con, $_POST['category'] ?? 'Other');
+    
+            // Check for project conflicts at the same location with overlapping dates
+            $conflict_check = "SELECT project_id, project, start_date, deadline 
+                             FROM projects 
+                             WHERE location = ?
+                             AND (
+                                 (start_date <= ? AND deadline >= ?)  -- New project overlaps with existing project
+                                 OR (start_date BETWEEN ? AND ?)      -- New project starts during existing project
+                                 OR (deadline BETWEEN ? AND ?)        -- New project ends during existing project
+                             )
+                             LIMIT 1";
+            
+            $stmt = mysqli_prepare($con, $conflict_check);
+            mysqli_stmt_bind_param($stmt, 'sssssss', 
+                $location, 
+                $end_date, $start_date,  // For first condition (reversed order for overlap check)
+                $start_date, $end_date,  // For second condition
+                $start_date, $end_date   // For third condition
+            );
+            mysqli_stmt_execute($stmt);
+            $conflict_result = mysqli_stmt_get_result($stmt);
+            
+            if ($conflict_row = mysqli_fetch_assoc($conflict_result)) {
+                $existing_start = date('M d, Y', strtotime($conflict_row['start_date']));
+                $existing_end = date('M d, Y', strtotime($conflict_row['deadline']));
+                throw new Exception("Cannot add project. There is already a project at this location ($location) with overlapping dates: \n" .
+                                "Project: {$conflict_row['project']} (from $existing_start to $existing_end)");
+            }
+            
+            // If no conflicts, insert the new project
+            // Use the logged-in user's ID (from session) as the project owner
+            $logged_in_user_id = $_SESSION['user_id'];
+            $project_query = "INSERT INTO projects (project, location, size, user_id, client_email, start_date, deadline, category, created_at, updated_at) 
+                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            $stmt = mysqli_prepare($con, $project_query);
+            mysqli_stmt_bind_param($stmt, 'ssdissss', $project_name, $location, $size, $logged_in_user_id, $client_email, $start_date, $end_date, $category);
+            
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception('Error creating project: ' . mysqli_error($con));
+            }
+    
+            mysqli_commit($con);
+    
+            if ($isAjax) {
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Project created successfully!',
+                    'redirect' => 'projects.php?success=add'
+                ]);
+            } else {
+                header("Location: projects.php?success=add");
+            }
+            exit();
+    
+        } catch (Exception $e) {
+            mysqli_rollback($con);
+            if ($isAjax) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            } else {
+                $_SESSION['error_message'] = $e->getMessage();
+                header("Location: projects.php?error=1");
+            }
+            exit();
+        }
+    }
+    
+
     // --- Change Password Backend Handler (AJAX) ---
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
         header('Content-Type: application/json');
@@ -304,7 +499,7 @@ require_once '../config.php';
     <div class="modal fade" id="addProjectModal" tabindex="-1" aria-labelledby="addProjectModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
-                <form method="POST" action="add_project.php" id="multiStepForm">
+                <form method="POST" action="" id="multiStepForm">
                     <div class="modal-header">
                         <h5 class="modal-title" id="addProjectModalLabel">Add New Project</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -359,7 +554,13 @@ require_once '../config.php';
                                 </div>
                                 <div class="mb-3">
                                     <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                                    <input type="email" class="form-control" id="email" name="email">
+                                    <input type="email" class="form-control" id="email" name="email" required oninput="checkEmailExists(this.value)">
+                                    <div id="emailFeedback" class="invalid-feedback">
+                                        An account with this email already exists. Please select "Existing Client" instead.
+                                    </div>
+                                    <div id="emailChecking" class="text-muted small mt-1 d-none">
+                                        <i class="fas fa-spinner fa-spin"></i> Checking email availability...
+                                    </div>
                                 </div>
                                 <!-- Password will be auto-generated on the server side -->
                                 <input type="hidden" name="password" value="auto-generated">
@@ -368,8 +569,11 @@ require_once '../config.php';
                             <!-- Existing Client Fields -->
                             <div id="existingClientFields" class="d-none">
                                 <div class="mb-3">
-                                    <label for="clientEmail" class="form-label">Client Email <span class="text-danger">*</span></label>
-                                    <input type="email" class="form-control" id="clientEmail" name="client_email">
+                                    <label for="clientSelect" class="form-label">Select Client <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="clientSelect" name="client_email" required>
+                                        <option value="" selected disabled>Loading clients...</option>
+                                    </select>
+                                    <div class="form-text">Only verified clients are shown in this list.</div>
                                 </div>
                             </div>
                         </div>
@@ -419,6 +623,69 @@ require_once '../config.php';
                                     <label for="barangay" class="form-label">Barangay <span class="text-danger">*</span></label>
                                     <select class="form-control" name="barangay" id="barangay-select" required disabled>
                                         <option value="" selected disabled>Select Municipality First</option>
+                                    </select>
+                                </div>
+
+                                <!-- Date Pickers Container -->
+                                <div class="mb-4">
+                                    <!-- 3-Month Date Picker (House, Building) -->
+                                    <div id="datePicker3Months" class="border rounded p-3 mb-3">
+                                        <h6 class="mb-3">Standard Projects (3 Months)</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="start_date_3m" class="form-label">Start Date <span class="text-danger">*</span></label>
+                                                    <input type="date" class="form-control" id="start_date_3m" name="start_date_3m">
+                                                    <div class="form-text text-muted">Project start date (cannot be in the past)</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="end_date_3m" class="form-label">End Date <span class="text-danger">*</span></label>
+                                                    <input type="date" class="form-control" id="end_date_3m" name="end_date_3m">
+                                                    <div class="form-text text-muted">Must be at least 3 months after start date</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 1-Week Date Picker (Electrical, Renovation) -->
+                                    <div id="datePicker1Week" class="border rounded p-3" style="display: none;">
+                                        <h6 class="mb-3">Quick Projects (1 Week)</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="start_date_1w" class="form-label">Start Date <span class="text-danger">*</span></label>
+                                                    <input type="date" class="form-control" id="start_date_1w" name="start_date_1w">
+                                                    <div class="form-text text-muted">Project start date (cannot be in the past)</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="end_date_1w" class="form-label">End Date <span class="text-danger">*</span></label>
+                                                    <input type="date" class="form-control" id="end_date_1w" name="end_date_1w">
+                                                    <div class="form-text text-muted">Must be at least 1 week after start date</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Hidden fields for form submission -->
+                                <input type="hidden" id="final_start_date" name="start_date">
+                                <input type="hidden" id="final_end_date" name="end_date">
+
+                                <!-- Category -->
+                                <div class="col-md-6 mb-3">
+                                    <label for="category" class="form-label">Category <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="category" name="category" required>
+                                        <option value="" selected disabled>Select Category</option>
+                                        <option value="House">House</option>
+                                        <option value="House Electrical">House Electrical</option>
+                                        <option value="House Renovation">House Renovation</option>
+                                        <option value="Building">Building</option>
+                                        <option value="Building Electrical">Building Electrical</option>
+                                        <option value="Building Renovation">Building Renovation</option>
                                     </select>
                                 </div>
 
@@ -623,11 +890,28 @@ require_once '../config.php';
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Handle client type selection
-            const newClientRadio = document.getElementById('newClient');
-            const existingClientRadio = document.getElementById('existingClient');
-            const newClientFields = document.getElementById('newClientFields');
-            const existingClientFields = document.getElementById('existingClientFields');
+            // Fetch clients with user_level 6
+    function fetchClients() {
+        fetch('get_clients.php')
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('clientSelect');
+                select.innerHTML = '<option value="" selected disabled>Select a client</option>';
+                data.forEach(client => {
+                    const option = document.createElement('option');
+                    option.value = client.email;
+                    option.textContent = `${client.firstname} ${client.lastname} (${client.email})`;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching clients:', error));
+    }
+
+    // Handle client type selection
+    const newClientRadio = document.getElementById('newClient');
+    const existingClientRadio = document.getElementById('existingClient');
+    const newClientFields = document.getElementById('newClientFields');
+    const existingClientFields = document.getElementById('existingClientFields');
             
             function toggleClientFields() {
                 if (newClientRadio.checked) {
@@ -637,15 +921,17 @@ require_once '../config.php';
                     document.getElementById('firstName').required = true;
                     document.getElementById('lastName').required = true;
                     document.getElementById('email').required = true;
-                    document.getElementById('clientEmail').required = false;
+                    document.getElementById('clientSelect').required = false;
                 } else {
                     newClientFields.classList.add('d-none');
                     existingClientFields.classList.remove('d-none');
-                    // Make existing client email required
+                    // Fetch clients when switching to existing client
+                    fetchClients();
+                    // Make existing client select required
                     document.getElementById('firstName').required = false;
                     document.getElementById('lastName').required = false;
                     document.getElementById('email').required = false;
-                    document.getElementById('clientEmail').required = true;
+                    document.getElementById('clientSelect').required = true;
                 }
             }
             
@@ -656,28 +942,46 @@ require_once '../config.php';
             toggleClientFields();
             // Form validation
             function validateStep(step) {
-                const currentStep = document.getElementById(`step${step}`);
-                const inputs = currentStep.querySelectorAll('input[required]');
                 let isValid = true;
+                const currentStepElement = document.getElementById(`step${step}`);
                 
-                inputs.forEach(input => {
-                    if (!input.value.trim()) {
-                        input.classList.add('is-invalid');
+                if (!currentStepElement) {
+                    console.error(`Step ${step} element not found`);
+                    return false;
+                }
+                
+                console.log(`Validating step ${step}`);
+                
+                // Get all required fields in the current step
+                const requiredFields = currentStepElement.querySelectorAll('[required]');
+                console.log(`Found ${requiredFields.length} required fields in step ${step}`);
+                
+                // Reset all invalid states first
+                currentStepElement.querySelectorAll('.is-invalid').forEach(el => {
+                    el.classList.remove('is-invalid');
+                });
+                
+                // Check each required field
+                requiredFields.forEach(field => {
+                    console.log(`Checking field:`, field);
+                    if (!field.value || (field.tagName === 'SELECT' && field.value === '')) {
+                        console.log(`Field is invalid:`, field);
+                        field.classList.add('is-invalid');
                         isValid = false;
-                    } else {
-                        input.classList.remove('is-invalid');
-                    }
-                    
-                    // Email validation
-                    if (input.type === 'email' && input.value.trim()) {
-                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                        if (!emailRegex.test(input.value.trim())) {
-                            input.classList.add('is-invalid');
-                            isValid = false;
-                        }
                     }
                 });
                 
+                // Special validation for client selection
+                if (step === 1 && !newClientRadio.checked) {
+                    const clientSelect = document.getElementById('clientSelect');
+                    if (clientSelect && clientSelect.required && (!clientSelect.value || clientSelect.value === '')) {
+                        console.log('Client selection is required');
+                        clientSelect.classList.add('is-invalid');
+                        isValid = false;
+                    }
+                }
+                
+                console.log(`Step ${step} validation result:`, isValid);
                 return isValid;
             }
             
@@ -699,13 +1003,102 @@ require_once '../config.php';
 
             // Initialize form
             updateForm();
+            
+            // Fetch clients when modal is shown
+            const addProjectModal = document.getElementById('addProjectModal');
+            if (addProjectModal) {
+                addProjectModal.addEventListener('shown.bs.modal', function() {
+                    // If existing client is selected, fetch clients
+                    if (existingClientRadio.checked) {
+                        fetchClients();
+                    }
+                });
+            }
 
+            // Function to check if email exists
+            async function checkEmailExists(email) {
+                if (!email) return false;
+                
+                // Basic email format validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email)) {
+                    return false;
+                }
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('email', email);
+                    
+                    const response = await fetch('add_project.php?action=check_email', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    return data.exists === true;
+                } catch (error) {
+                    console.error('Error checking email:', error);
+                    return false;
+                }
+            }
+            
             // Next button click handler
-            nextBtn.addEventListener('click', function() {
-                // Validate current step before proceeding
+            nextBtn.addEventListener('click', async function() {
+                console.log('Next button clicked');
+                console.log('Current step:', currentStep);
+                
+                // For step 1, check if email exists
+                if (currentStep === 1) {
+                    const emailInput = document.getElementById('email');
+                    const clientType = document.querySelector('input[name="client_type"]:checked');
+                    
+                    // Only check for new clients
+                    if (clientType && clientType.value === 'new' && emailInput) {
+                        const email = emailInput.value.trim();
+                        if (email) {
+                            // Show loading state
+                            const originalBtnText = nextBtn.innerHTML;
+                            nextBtn.disabled = true;
+                            nextBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Checking email...';
+                            
+                            try {
+                                const emailExists = await checkEmailExists(email);
+                                if (emailExists) {
+                                    // Show error message
+                                    const errorMessage = 'This email is already registered. Please select "Existing Client" or use a different email.';
+                                    alert(errorMessage);
+                                    emailInput.focus();
+                                    nextBtn.disabled = false;
+                                    nextBtn.innerHTML = originalBtnText;
+                                    return;
+                                }
+                            } catch (error) {
+                                console.error('Error during email check:', error);
+                                // Continue with normal validation if there's an error checking email
+                            }
+                            
+                            // Restore button state
+                            nextBtn.disabled = false;
+                            nextBtn.innerHTML = originalBtnText;
+                        }
+                    }
+                }
+                
+                // Proceed with normal validation
                 if (validateStep(currentStep)) {
+                    console.log('Validation passed, moving to next step');
                     currentStep++;
                     updateForm();
+                } else {
+                    console.log('Validation failed');
+                    const form = document.getElementById('multiStepForm');
+                    const invalidFields = form.querySelectorAll(':invalid');
+                    console.log('Invalid fields:', invalidFields);
+                    
+                    // Focus on first invalid field
+                    if (invalidFields.length > 0) {
+                        invalidFields[0].focus();
+                    }
                 }
             });
 
@@ -783,33 +1176,6 @@ require_once '../config.php';
                 form.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
 
-            // Validate current step
-            function validateStep(step) {
-                const currentStepElement = document.getElementById(`step${step}`);
-                const inputs = currentStepElement.querySelectorAll('input[required]');
-                let isValid = true;
-                
-                inputs.forEach(input => {
-                    if (!input.value.trim()) {
-                        input.classList.add('is-invalid');
-                        isValid = false;
-                    } else {
-                        input.classList.remove('is-invalid');
-                    }
-                    
-                    // Email validation
-                    if (input.type === 'email' && input.value) {
-                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                        if (!emailRegex.test(input.value)) {
-                            input.classList.add('is-invalid');
-                            isValid = false;
-                        }
-                    }
-                });
-                
-                return isValid;
-            }
-
             // Clear form when modal is closed
             document.getElementById('addProjectModal').addEventListener('hidden.bs.modal', function () {
                 form.reset();
@@ -819,35 +1185,102 @@ require_once '../config.php';
                 document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
             });
 
-            // Form submission
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Validate all steps before submission
-                let allValid = true;
-                for (let i = 1; i <= totalSteps; i++) {
-                    if (!validateStep(i)) {
-                        allValid = false;
-                        break;
-                    }
-                }
-                
-                if (allValid) {
-                    // If client with this email already exists, just get the ID
-                    // Otherwise, create a new client
-                    const email = document.getElementById('email').value;
-                    const clientData = {
-                        first_name: document.getElementById('firstName').value,
-                        last_name: document.getElementById('lastName').value,
-                        email: email,
-                        password: document.getElementById('password').value
-                    };
-                    
-                    // In a real application, you would send this data to the server via AJAX
-                    // For now, we'll just submit the form normally
-                    this.submit();
+            document.addEventListener('DOMContentLoaded', function() {
+                const form = document.getElementById('multiStepForm');
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        
+                        // Show loading state
+                        const submitBtn = document.getElementById('submitBtn');
+                        const originalBtnText = submitBtn.innerHTML;
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Creating Project...';
+                        
+                        // Validate all steps before submission
+                        let allValid = true;
+                        for (let i = 1; i <= totalSteps; i++) {
+                            if (!validateStep(i)) {
+                                allValid = false;
+                                // Go to the first invalid step
+                                currentStep = i;
+                                updateForm();
+                                break;
+                            }
+                        }
+                        
+                        // Additional validation for project dates
+                        if (allValid && !validateProjectDates()) {
+                            allValid = false;
+                        }
+                        
+                        if (allValid) {
+                            // Submit form via AJAX
+                            const formData = new FormData(form);
+                            
+                            fetch('projects.php', {
+                                method: 'POST',
+                                body: formData,
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    // Show success modal
+                                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                                    document.getElementById('successMessage').textContent = data.message;
+                                    successModal.show();
+                                    
+                                    // Redirect after 2 seconds
+                                    setTimeout(() => {
+                                        window.location.href = data.redirect;
+                                    }, 2000);
+                                } else {
+                                    // Show error modal
+                                    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                                    document.getElementById('errorMessage').textContent = data.message;
+                                    errorModal.show();
+                                    
+                                    // If email exists, suggest using existing client
+                                    if (data.user) {
+                                        const existingClientRadio = document.getElementById('existingClient');
+                                        if (existingClientRadio) {
+                                            existingClientRadio.checked = true;
+                                            toggleClientFields();
+                                            
+                                            // Select the existing client
+                                            const clientSelect = document.getElementById('clientSelect');
+                                            if (clientSelect) {
+                                                clientSelect.value = data.user.id;
+                                                clientSelect.dispatchEvent(new Event('change'));
+                                            }
+                                        }
+                                    }
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                                document.getElementById('errorMessage').textContent = 'An error occurred while processing your request. Please try again.';
+                                errorModal.show();
+                            })
+                            .finally(() => {
+                                // Reset button state
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = originalBtnText;
+                            });
+                        } else {
+                            // Reset button state if validation failed
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalBtnText;
+                        }
+                    });
                 }
             });
+
+            // Date fields are now free from validation
         });
     </script>
     <script>
@@ -877,6 +1310,56 @@ require_once '../config.php';
         });
     </script>
     <script>
+        // Email validation function
+        function checkEmailExists(email) {
+            const emailInput = document.getElementById('email');
+            const emailFeedback = document.getElementById('emailFeedback');
+            const emailChecking = document.getElementById('emailChecking');
+            
+            // Basic email format validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                emailInput.classList.remove('is-invalid');
+                emailChecking.classList.add('d-none');
+                return;
+            }
+            
+            // Show checking indicator
+            emailChecking.classList.remove('d-none');
+            
+            // Check email existence using the integrated backend
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('action', 'check_email');
+            
+            fetch('projects.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success === false && data.user) {
+                    // Email exists - show error
+                    emailInput.classList.add('is-invalid');
+                    emailFeedback.textContent = `This email is already registered to ${data.user.name}. Please select "Existing Client" instead.`;
+                    emailFeedback.classList.add('d-block');
+                } else {
+                    // Email is available
+                    emailInput.classList.remove('is-invalid');
+                    emailFeedback.classList.remove('d-block');
+                }
+            })
+            .catch(error => {
+                console.error('Error checking email:', error);
+                // Don't block the user if there's an error checking the email
+                emailInput.classList.remove('is-invalid');
+                emailFeedback.classList.remove('d-block');
+            })
+            .finally(() => {
+                emailChecking.classList.add('d-none');
+            });
+        }
+        
         let phData = null;
         fetch('philippines.json')
             .then(response => response.json())
@@ -947,6 +1430,160 @@ require_once '../config.php';
                 barangaySelect.appendChild(opt);
         }
     });
+    </script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Date picker elements
+            const datePicker3M = document.getElementById('datePicker3Months');
+            const datePicker1W = document.getElementById('datePicker1Week');
+            const categorySelect = document.getElementById('category');
+            
+            // 3-month date pickers
+            const startDate3M = document.getElementById('start_date_3m');
+            const endDate3M = document.getElementById('end_date_3m');
+            
+            // 1-week date pickers
+            const startDate1W = document.getElementById('start_date_1w');
+            const endDate1W = document.getElementById('end_date_1w');
+            
+            // Hidden fields for form submission
+            const finalStartDate = document.getElementById('final_start_date');
+            const finalEndDate = document.getElementById('final_end_date');
+            
+            // Set today's date as minimum for all date inputs
+            const today = new Date().toISOString().split('T')[0];
+            startDate3M.min = today;
+            startDate1W.min = today;
+            
+            // Initialize 3-month date picker with default values
+            const defaultEndDate3M = new Date();
+            defaultEndDate3M.setMonth(defaultEndDate3M.getMonth() + 3);
+            const defaultEndDate3MStr = defaultEndDate3M.toISOString().split('T')[0];
+            endDate3M.min = defaultEndDate3MStr;
+            endDate3M.value = defaultEndDate3MStr;
+            
+            // Initialize 1-week date picker with default values
+            const defaultEndDate1W = new Date();
+            defaultEndDate1W.setDate(defaultEndDate1W.getDate() + 7);
+            const defaultEndDate1WStr = defaultEndDate1W.toISOString().split('T')[0];
+            endDate1W.min = defaultEndDate1WStr;
+            endDate1W.value = defaultEndDate1WStr;
+            
+            // Update hidden fields with initial values
+            finalStartDate.value = today;
+            finalEndDate.value = defaultEndDate3MStr;
+            
+            // Function to calculate minimum end date based on duration
+            function getMinEndDate(startDate, isOneWeek) {
+                const minEndDate = new Date(startDate);
+                if (isOneWeek) {
+                    minEndDate.setDate(minEndDate.getDate() + 7);
+                } else {
+                    minEndDate.setMonth(minEndDate.getMonth() + 3);
+                }
+                return minEndDate.toISOString().split('T')[0];
+            }
+            
+            // Category change handler
+            categorySelect.addEventListener('change', function() {
+                const category = this.value;
+                const isOneWeek = ['House Electrical', 'House Renovation', 'Building Electrical', 'Building Renovation'].includes(category);
+                
+                // Show/hide appropriate date pickers
+                if (isOneWeek) {
+                    datePicker3M.style.display = 'none';
+                    datePicker1W.style.display = 'block';
+                    // Update hidden fields with 1-week values
+                    finalStartDate.value = startDate1W.value || today;
+                    finalEndDate.value = endDate1W.value || defaultEndDate1WStr;
+                } else {
+                    datePicker3M.style.display = 'block';
+                    datePicker1W.style.display = 'none';
+                    // Update hidden fields with 3-month values
+                    finalStartDate.value = startDate3M.value || today;
+                    finalEndDate.value = endDate3M.value || defaultEndDate3MStr;
+                }
+            });
+            
+            // 3-month date picker event listeners
+            startDate3M.addEventListener('change', function() {
+                const selectedDate = new Date(this.value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selectedDate < today) {
+                    this.value = '';
+                    alert('Start date cannot be in the past');
+                    return;
+                }
+                
+                const minEndDate = getMinEndDate(selectedDate, false);
+                endDate3M.min = minEndDate;
+                
+                if (!endDate3M.value || new Date(endDate3M.value) < new Date(minEndDate)) {
+                    endDate3M.value = minEndDate;
+                }
+                
+                // Update hidden fields
+                finalStartDate.value = this.value;
+                finalEndDate.value = endDate3M.value;
+            });
+            
+            endDate3M.addEventListener('change', function() {
+                if (startDate3M.value) {
+                    const minEndDate = getMinEndDate(new Date(startDate3M.value), false);
+                    
+                    if (new Date(this.value) < new Date(minEndDate)) {
+                        alert('End date must be at least 3 months after start date');
+                        this.value = minEndDate;
+                    }
+                    
+                    // Update hidden fields
+                    finalStartDate.value = startDate3M.value;
+                    finalEndDate.value = this.value;
+                }
+            });
+            
+            // 1-week date picker event listeners
+            startDate1W.addEventListener('change', function() {
+                const selectedDate = new Date(this.value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selectedDate < today) {
+                    this.value = '';
+                    alert('Start date cannot be in the past');
+                    return;
+                }
+                
+                const minEndDate = getMinEndDate(selectedDate, true);
+                endDate1W.min = minEndDate;
+                
+                if (!endDate1W.value || new Date(endDate1W.value) < new Date(minEndDate)) {
+                    endDate1W.value = minEndDate;
+                }
+                
+                // Update hidden fields
+                finalStartDate.value = this.value;
+                finalEndDate.value = endDate1W.value;
+            });
+            
+            endDate1W.addEventListener('change', function() {
+                if (startDate1W.value) {
+                    const minEndDate = getMinEndDate(new Date(startDate1W.value), true);
+                    
+                    if (new Date(this.value) < new Date(minEndDate)) {
+                        alert('End date must be at least 1 week after start date');
+                        this.value = minEndDate;
+                    }
+                    
+                    // Update hidden fields
+                    finalStartDate.value = startDate1W.value;
+                    finalEndDate.value = this.value;
+                }
+            });
+        });
     </script>
   </body>
 </html>

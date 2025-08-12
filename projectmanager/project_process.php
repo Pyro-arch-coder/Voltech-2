@@ -224,8 +224,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 2 => 'Cost Estimation',
                                 3 => 'Budget Approval',
                                 4 => 'Contract Signing',
-                                5 => 'Payment & Permits',
-                                6 => 'Resources',
+                                5 => 'Permits',
+                                6 => 'Actual',
                                 7 => 'Schedule',
                                 8 => 'Billing'
                             ];
@@ -253,22 +253,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             <?php include 'step4_contract.php'; ?>
                             <!-- Step 5: Payment & Permits -->
                             <?php include 'step5_permits.php'; ?>
-                            <!-- Step 6: Resource Allocation -->
-                            <div class="step-content d-none" id="step6">
-                                <h4 class="mb-4">Step 6: Resource Allocation</h4>
-                                <div class="d-flex justify-content-between mt-4">
-                                    <button type="button" class="btn btn-secondary prev-step" data-prev="5">Previous</button>
-                                    <button type="button" class="btn btn-primary next-step" data-next="7">Next</button>
-                                </div>
-                            </div>
-                            <!-- Step 7: Project Schedule -->
-                            <div class="step-content d-none" id="step7">
-                                <h4 class="mb-4">Step 7: Project Schedule</h4>
-                                <div class="d-flex justify-content-between mt-4">
-                                    <button type="button" class="btn btn-secondary prev-step" data-prev="6">Previous</button>
-                                    <button type="button" class="btn btn-primary next-step" data-next="8">Next</button>
-                                </div>
-                            </div>
+                            <!-- Step 6: Navigation -->
+                            <?php include 'step6_navigation.php'; ?>
+                            <!-- Step 7: Schedule -->
+                            <?php include 'step7_schedule.php'; ?>
                             <!-- Step 8: Billing and Retention -->
                             <div class="step-content d-none" id="step8">
                                 <h4 class="mb-4">Step 8: Billing and Retention</h4>
@@ -513,6 +501,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // STEP 1: Show step from backend on page load
         let currentStep = <?php echo $current_step; ?>;
+        window.currentStep = currentStep; // Make it globally accessible
         showStep(currentStep);
         updateProgress(currentStep);
 
@@ -527,7 +516,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Missing project ID or next step.');
                     return;
                 }
-                if (!validateStep(currentStep)) return; // Validate before submit
+                
+                // Skip validation for step 6 (schedule) to allow navigation without filling the form
+                if (currentStep !== 7 && !validateStep(currentStep)) {
+                    return;
+                }
 
                 btn.disabled = true;
                 fetch('update_project_step.php', {
@@ -544,6 +537,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         .then(stepData => {
                             if (stepData.success && stepData.step_progress) {
                                 currentStep = parseInt(stepData.step_progress, 10);
+                                window.currentStep = currentStep; // Update global variable
                                 showStep(currentStep);
                                 updateProgress(currentStep);
                             }
@@ -589,6 +583,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         .then(stepData => {
                             if (stepData.success && stepData.step_progress) {
                                 currentStep = parseInt(stepData.step_progress, 10);
+                                window.currentStep = currentStep; // Update global variable
                                 showStep(currentStep);
                                 updateProgress(currentStep);
                             }

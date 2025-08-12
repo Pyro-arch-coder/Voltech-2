@@ -54,8 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_estimation_materi
 
         // Prepare the insert statement
         $insert_query = "INSERT INTO project_estimating_materials 
-                        (project_id, material_id, material_name, unit, material_price, quantity, total, added_at) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, NOW())";
+                        (project_id, material_id, material_name, unit, material_price, quantity, added_at) 
+                        VALUES (?, ?, ?, ?, ?, ?, NOW())";
         $stmt = $con->prepare($insert_query);
 
         foreach ($_POST['materials'] as $material) {
@@ -87,7 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_estimation_materi
             $supplier_name = $material_data['supplier_name'];
             $unit = $material_data['unit'];
             $material_price = floatval($material_data['material_price']);
-            $total = $material_price * $quantity;
             
             // Check if material with same name and supplier already exists in project
             $check_duplicate = $con->prepare("
@@ -110,14 +109,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_estimation_materi
 
             // Bind and execute
             $stmt->bind_param(
-                "iissddi",
+                "iissdi",
                 $project_id,
                 $material_id,
                 $material_name,
                 $unit,
                 $material_price,
-                $quantity,
-                $total
+                $quantity
             );
 
             if (!$stmt->execute()) {

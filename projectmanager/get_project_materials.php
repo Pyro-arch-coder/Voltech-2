@@ -33,6 +33,7 @@ try {
         $total = 0;
         
         while ($row = $result->fetch_assoc()) {
+            $material_total = (floatval($row['material_price']) + floatval($row['labor_other'] ?? 0)) * intval($row['quantity']);
             $material = [
                 'id' => $row['id'],
                 'name' => $row['material_name'],
@@ -41,10 +42,10 @@ try {
                 'labor_other' => floatval($row['labor_other'] ?? 0),
                 'quantity' => intval($row['quantity']),
                 'supplier' => $row['supplier_name'] ?? 'N/A',
-                'total' => floatval($row['total'])
+                'total' => $material_total
             ];
             $materials[] = $material;
-            $total += $material['total'];
+            $total += $material_total;
         }
         
         echo json_encode([

@@ -61,23 +61,23 @@ try {
         file_put_contents('subtask_update.log', "Update successful. Rows affected: $rows_affected\n", FILE_APPEND);
         
         if ($rows_affected > 0) {
-            // Get the division_id for this subtask
-            $divQuery = $con->prepare("SELECT division_id FROM project_subtask WHERE id = ?");
-            $divQuery->bind_param('i', $subtask_id);
-            $divQuery->execute();
-            $divResult = $divQuery->get_result();
+            // Get the task_id for this subtask
+            $taskQuery = $con->prepare("SELECT project_timeline_id FROM project_subtask WHERE id = ?");
+            $taskQuery->bind_param('i', $subtask_id);
+            $taskQuery->execute();
+            $taskResult = $taskQuery->get_result();
             
-            if ($divRow = $divResult->fetch_assoc()) {
-                $division_id = $divRow['division_id'];
+            if ($taskRow = $taskResult->fetch_assoc()) {
+                $task_id = $taskRow['project_timeline_id'];
                 
-                // Get all subtasks and their completion status
+                // Get all subtasks and their completion status for this task
                 $progressQuery = $con->prepare("
                     SELECT id, is_completed 
                     FROM project_subtask 
-                    WHERE division_id = ?
+                    WHERE project_timeline_id = ?
                     ORDER BY id ASC  -- Ensure consistent ordering
                 ");
-                $progressQuery->bind_param('i', $division_id);
+                $progressQuery->bind_param('i', $task_id);
                 $progressQuery->execute();
                 $subtasks = $progressQuery->get_result()->fetch_all(MYSQLI_ASSOC);
                 
@@ -92,14 +92,20 @@ try {
                     // Ensure progress is between 0 and 100
                     $new_progress = max(0, min(100, $new_progress));
                     
-                    file_put_contents('subtask_update.log', "Fixed percentage calculation: $completed_tasks/$total_tasks tasks = $new_progress% ($percentage_per_task% per task)\n", FILE_APPEND);
+                    file_put_contents('subtask_update.log', "Fixed percentage calculation: $completed_tasks/$total_tasks subtasks = $new_progress% ($percentage_per_task% per subtask)\n", FILE_APPEND);
                     
-                    // Update the division's progress
-                    $updateProgress = $con->prepare("UPDATE project_divisions SET progress = ? WHERE id = ?");
-                    $updateProgress->bind_param('ii', $new_progress, $division_id);
+                    // Update the task's progress in project_timeline
+                    $updateProgress = $con->prepare("UPDATE project_timeline SET progress = ? WHERE id = ?");
+                    $updateProgress->bind_param('ii', $new_progress, $task_id);
                     $updateProgress->execute();
                     
-                    file_put_contents('subtask_update.log', "Updated division $division_id progress to $new_progress% ($completed_tasks/$total_tasks tasks completed)\n", FILE_APPEND);
+                    // Update status based on progress
+                    $status = $new_progress == 100 ? 'Completed' : ($new_progress > 0 ? 'In Progress' : 'Not Started');
+                    $updateStatus = $con->prepare("UPDATE project_timeline SET status = ?, updated_at = NOW() WHERE id = ?");
+                    $updateStatus->bind_param('si', $status, $task_id);
+                    $updateStatus->execute();
+                    
+                    file_put_contents('subtask_update.log', "Updated task $task_id progress to $new_progress% and status to '$status' ($completed_tasks/$total_tasks subtasks completed)\n", FILE_APPEND);
                 }
             }
         } else {
@@ -107,13 +113,23 @@ try {
             file_put_contents('subtask_update.log', "No rows updated. Value might be the same.\n", FILE_APPEND);
         }
         
-        echo json_encode([
+        // Prepare response data
+        $response = [
             'success' => true,
             'rows_affected' => $rows_affected,
             'subtask_id' => $subtask_id,
-            'is_completed' => $is_completed,
-            'new_progress' => $new_progress ?? null
-        ]);
+            'is_completed' => $is_completed
+        ];
+        
+        // Only add new_progress if it was calculated
+        if (isset($new_progress)) {
+            $response['new_progress'] = (int)$new_progress; // Ensure it's an integer
+        }
+        
+        // Log the response for debugging
+        file_put_contents('subtask_update.log', "Sending response: " . json_encode($response) . "\n", FILE_APPEND);
+        
+        echo json_encode($response);
     } else {
         throw new Exception('Execute failed: ' . $updateStmt->error);
     }

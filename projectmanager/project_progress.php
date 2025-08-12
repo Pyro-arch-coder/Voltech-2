@@ -4,49 +4,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
-    $con = new mysqli("localhost", "root", "", "voltech2");
-    if ($con->connect_error) {
-        $response = ['success' => false, 'message' => 'Database connection failed.'];
-        header('Content-Type: application/json');
-        echo json_encode($response);
-        exit();
-    }
-    $userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
-    $response = ['success' => false, 'message' => ''];
-    $current = isset($_POST['current_password']) ? $_POST['current_password'] : '';
-    $new = isset($_POST['new_password']) ? $_POST['new_password'] : '';
-    $confirm = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
-    if (!$current || !$new || !$confirm) {
-        $response['message'] = 'All fields are required.';
-    } elseif ($new !== $confirm) {
-        $response['message'] = 'New passwords do not match.';
-    } elseif (strlen($new) < 6) {
-        $response['message'] = 'New password must be at least 6 characters.';
-    } else {
-        $user_row = $con->query("SELECT password FROM users WHERE id = '$userid'");
-        if ($user_row && $user_row->num_rows > 0) {
-            $user_data = $user_row->fetch_assoc();
-            if (password_verify($current, $user_data['password'])) {
-                $hashed = password_hash($new, PASSWORD_DEFAULT);
-                $update = $con->query("UPDATE users SET password = '$hashed' WHERE id = '$userid'");
-                if ($update) {
-                    $response['success'] = true;
-                    $response['message'] = 'Password changed successfully!';
-                } else {
-                    $response['message'] = 'Failed to update password.';
-                }
-            } else {
-                $response['message'] = 'Current password is incorrect.';
-            }
-        } else {
-            $response['message'] = 'User not found.';
-        }
-    }
-    header('Content-Type: application/json');
-    echo json_encode($response);
-    exit();
-}
+
 include_once "../config.php";
 $userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 $user_email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
@@ -59,6 +17,50 @@ if (!$project_id) {
     header("Location: projects.php");
     exit();
 }
+
+// Handle password change
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
+    $con = new mysqli("localhost", "root", "", "voltech2");
+    $response = ['success' => false, 'message' => ''];
+    if ($con->connect_error) {
+        $response['message'] = 'Database connection failed.';
+    } else {
+        $userid = $_SESSION['user_id'];
+        $current = $_POST['current_password'] ?? '';
+        $new = $_POST['new_password'] ?? '';
+        $confirm = $_POST['confirm_password'] ?? '';
+        if (!$current || !$new || !$confirm) {
+            $response['message'] = 'All fields are required.';
+        } elseif ($new !== $confirm) {
+            $response['message'] = 'New passwords do not match.';
+        } elseif (strlen($new) < 6) {
+            $response['message'] = 'New password must be at least 6 characters.';
+        } else {
+            $user_row = $con->query("SELECT password FROM users WHERE id = '$userid'");
+            if ($user_row && $user_row->num_rows > 0) {
+                $user_data = $user_row->fetch_assoc();
+                if (password_verify($current, $user_data['password'])) {
+                    $hashed = password_hash($new, PASSWORD_DEFAULT);
+                    $update = $con->query("UPDATE users SET password = '$hashed' WHERE id = '$userid'");
+                    if ($update) {
+                        $response['success'] = true;
+                        $response['message'] = 'Password changed successfully!';
+                    } else {
+                        $response['message'] = 'Failed to update password.';
+                    }
+                } else {
+                    $response['message'] = 'Current password is incorrect.';
+                }
+            } else {
+                $response['message'] = 'User not found.';
+            }
+        }
+    }
+    header('Content-Type: application/json');
+    echo json_encode($response);
+    exit();
+}
+
 // Fetch project details
 $project_query = $con->query("SELECT * FROM projects WHERE project_id='$project_id' AND user_id='$userid'");
 if ($project_query->num_rows == 0) {
@@ -67,125 +69,71 @@ if ($project_query->num_rows == 0) {
 }
 $project = $project_query->fetch_assoc();
 
-// Fetch divisions for this project
-$divisions = [];
-$divisions_result = mysqli_query($con, "SELECT * FROM project_divisions WHERE project_id = '$project_id' ORDER BY id ASC");
-if ($divisions_result) {
-    while ($row = mysqli_fetch_assoc($divisions_result)) {
-        // Ensure all required fields have default values
-        $divisions[] = [
-            'id' => $row['id'] ?? 0,
-            'division_name' => $row['division_name'] ?? 'Unnamed Task',
-            'start_date' => $row['start_date'] ?? null,
-            'deadline' => $row['deadline'] ?? null,
-            'status' => $row['status'] ?? 'Not Started',
-            'progress' => $row['progress'] ?? 0
-        ];
-    }
-}
-
-// Handle division progress update
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_division'])) {
-    $division_id = intval($_POST['division_id']);
-    $progress = max(0, min(100, intval($_POST['progress'])));
-    $status = $progress == 100 ? 'Completed' : ($progress > 0 ? 'In Progress' : 'Not Started');
-    $updated_at = date('Y-m-d');
-    
-    // Get current status for comparison
-    $current_status_query = mysqli_query($con, "SELECT status FROM project_divisions WHERE id = '$division_id'");
-    $current_status = '';
-    if ($current_status_query && $row = mysqli_fetch_assoc($current_status_query)) {
-        $current_status = $row['status'];
-    }
-    
-    // Only update if status has changed
-    if ($status !== $current_status) {
-        mysqli_query($con, "UPDATE project_divisions SET 
-            progress='$progress', 
-            status='$status',
-            updated_at='$updated_at' 
-            WHERE id='$division_id' AND project_id='$project_id'");
-    } else {
-        mysqli_query($con, "UPDATE project_divisions SET 
-            progress='$progress',
-            updated_at='$updated_at' 
-            WHERE id='$division_id' AND project_id='$project_id'");
-    }
-        
-    header("Location: project_progress.php?id=$project_id&updated=1");
-    exit();
-}
 // Handle add division
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_division'])) {
-    $division_name = trim(mysqli_real_escape_string($con, $_POST['division_name']));
-    if ($division_name !== '') {
-        mysqli_query($con, "INSERT INTO project_divisions (project_id, division_name, progress) VALUES ('$project_id', '$division_name', 0)");
+    $task_name = trim(mysqli_real_escape_string($con, $_POST['division_name']));
+    $start_date = $_POST['start_date'] ?? null;
+    $end_date = $_POST['end_date'] ?? null;
+    $description = $_POST['description'] ?? '';
+    if ($task_name !== '' && $start_date && $end_date) {
+        mysqli_query($con, "INSERT INTO project_timeline (project_id, task_name, start_date, end_date, progress, status, description, created_at, updated_at) VALUES ('$project_id', '$task_name', '$start_date', '$end_date', 0, 'Not Started', '$description', NOW(), NOW())");
     }
     header("Location: project_progress.php?id=$project_id&added=1");
     exit();
 }
 
-// Handle add subtask
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_subtask'])) {
-    $division_id = intval($_POST['division_id']);
-    $subtask_name = trim(mysqli_real_escape_string($con, $_POST['subtask_name']));
-    
-    if ($division_id > 0 && $subtask_name !== '') {
-        // Insert new subtask into project_subtasks table
-        $stmt = $con->prepare("INSERT INTO project_subtask  (division_id, name) VALUES (?, ?)");
-        $stmt->bind_param('is', $division_id, $subtask_name);
-        
-        if ($stmt->execute()) {
-            header("Location: project_progress.php?id=$project_id&subtask_added=1");
-        } else {
-            header("Location: project_progress.php?id=$project_id&error=subtask_failed");
-        }
-        $stmt->close();
+// Handle division progress update and rename
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['update_division'])) {
+        $division_id = intval($_POST['division_id']);
+        $progress = max(0, min(100, intval($_POST['progress'])));
+        $status = $progress == 100 ? 'Completed' : ($progress > 0 ? 'In Progress' : 'Not Started');
+        $updated_at = date('Y-m-d H:i:s');
+        $description = $_POST['description'] ?? '';
+        mysqli_query($con, "UPDATE project_timeline SET progress='$progress', status='$status', updated_at='$updated_at', description='$description' WHERE id='$division_id' AND project_id='$project_id'");
+        header("Location: project_progress.php?id=$project_id&updated=1");
         exit();
     }
-    
-    header("Location: project_progress.php?id=$project_id&error=invalid_input");
-    exit();
-}
-// Handle rename division
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rename_division'])) {
-    $division_id = intval($_POST['division_id']);
-    $new_name = trim(mysqli_real_escape_string($con, $_POST['new_division_name']));
-    if ($new_name !== '') {
-        mysqli_query($con, "UPDATE project_divisions SET division_name='$new_name' WHERE id='$division_id' AND project_id='$project_id'");
+    if (isset($_POST['rename_division'])) {
+        $division_id = intval($_POST['division_id']);
+        $new_name = trim(mysqli_real_escape_string($con, $_POST['new_division_name']));
+        if ($new_name !== '') {
+            mysqli_query($con, "UPDATE project_timeline SET task_name='$new_name' WHERE id='$division_id' AND project_id='$project_id'");
+        }
+        header("Location: project_progress.php?id=$project_id&renamed=1");
+        exit();
     }
-    header("Location: project_progress.php?id=$project_id&renamed=1");
-    exit();
-}
-// Handle delete division
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_division'])) {
-    $division_id = intval($_POST['division_id']);
-    mysqli_query($con, "DELETE FROM project_divisions WHERE id='$division_id' AND project_id='$project_id'");
-    header("Location: project_progress.php?id=$project_id&deleted=1");
-    exit();
-}
-// Fetch project details with dates
-$project_details = [];
-$project_query = $con->query("SELECT start_date, deadline FROM projects WHERE project_id = '$project_id'");
-if ($project_query && $project_query->num_rows > 0) {
-    $project_details = $project_query->fetch_assoc();
+    if (isset($_POST['delete_division'])) {
+        $division_id = intval($_POST['division_id']);
+        mysqli_query($con, "DELETE FROM project_timeline WHERE id='$division_id' AND project_id='$project_id'");
+        header("Location: project_progress.php?id=$project_id&deleted=1");
+        exit();
+    }
+    if (isset($_POST['add_subtask'])) {
+        $division_id = intval($_POST['division_id']);
+        $subtask_name = trim(mysqli_real_escape_string($con, $_POST['subtask_name']));
+        if ($division_id > 0 && $subtask_name !== '') {
+            $stmt = $con->prepare("INSERT INTO project_subtask (project_timeline_id, name, created_at, updated_at) VALUES (?, ?, NOW(), NOW())");
+            $stmt->bind_param('is', $division_id, $subtask_name);
+            $stmt->execute();
+            $stmt->close();
+            header("Location: project_progress.php?id=$project_id&subtask_added=1");
+            exit();
+        }
+        header("Location: project_progress.php?id=$project_id&error=invalid_input");
+        exit();
+    }
 }
 
-// Fetch divisions for this project
+// Fetch divisions/tasks
 $divisions = [];
-$res = mysqli_query($con, "SELECT id, division_name, progress, status, updated_at FROM project_divisions WHERE project_id = '$project_id'");
-while ($row = mysqli_fetch_assoc($res)) {
-    // Add project dates to each division
-    $row['start_date'] = $project_details['start_date'] ?? null;
-    $row['deadline'] = $project_details['deadline'] ?? null;
-    // Always calculate status based on progress
-    $row['status'] = $row['progress'] == 100 ? 'Completed' : ($row['progress'] > 0 ? 'In Progress' : 'Not Started');
-    
-    // Update status in database if it's different
-    if (empty($row['status']) || $row['status'] != $row['status']) {
-        mysqli_query($con, "UPDATE project_divisions SET status = '{$row['status']}' WHERE id = '{$row['id']}'");
+$divisions_result = mysqli_query($con, "SELECT * FROM project_timeline WHERE project_id = '$project_id' ORDER BY id ASC");
+while ($row = mysqli_fetch_assoc($divisions_result)) {
+    $row['subtasks'] = [];
+    $subtask_result = mysqli_query($con, "SELECT * FROM project_subtask WHERE project_timeline_id = '" . $row['id'] . "' ORDER BY created_at ASC");
+    while ($subtask = mysqli_fetch_assoc($subtask_result)) {
+        $row['subtasks'][] = $subtask;
     }
-    $row['subtasks'] = '0'; // Default subtasks count
     $divisions[] = $row;
 }
 
@@ -287,9 +235,6 @@ if ($userid) {
                 <div class="card-header bg-success text-white d-flex align-items-center justify-content-between">
                     <h4 class="mb-0">Progress for: <?php echo htmlspecialchars($project['project']); ?></h4>
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#blueprintModal">
-                            <i class="fas fa-upload me-1"></i> Blueprint
-                        </button>
                         <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addDivisionModal">
                             <i class="fas fa-plus me-1"></i> Add Tasks
                         </button>
@@ -328,9 +273,9 @@ if ($userid) {
                                 ?>
                                 <tr>
                                     <td><?php echo $taskCounter++; ?></td>
-                                    <td><?php echo htmlspecialchars($div['division_name']); ?></td>
-                                    <td><?php echo $div['start_date'] ? date('F d, Y', strtotime($div['start_date'])) : '-'; ?></td>
-                                    <td><?php echo $div['deadline'] ? date('F d, Y', strtotime($div['deadline'])) : '-'; ?></td>
+                                    <td><?php echo htmlspecialchars($div['task_name'] ?? $div['division_name']); ?></td>
+                                    <td><?php echo !empty($div['start_date']) ? date('F d, Y', strtotime($div['start_date'])) : '-'; ?></td>
+                                    <td><?php echo !empty($div['end_date']) ? date('F d, Y', strtotime($div['end_date'])) : '-'; ?></td>
                                     <td>
                                         <span class="badge bg-<?php 
                                             $status = strtolower($div['status']);
@@ -355,35 +300,22 @@ if ($userid) {
                                     </td>
                                     <td>
                                         <?php 
-                                  // Get subtasks for this division from project_subtasks table
-                                          $subtasks = [];
-                                          $subtask_result = mysqli_query($con, "SELECT * FROM project_subtask WHERE division_id = '" . $div['id'] . "' ORDER BY created_at ASC");
-                                          if ($subtask_result) {
-                                              $taskNumber = 1;
-                                              while ($subtask = mysqli_fetch_assoc($subtask_result)) {
-                                                  $subtasks[] = [
-                                                      'id' => $subtask['id'],
-                                                      'name' => $taskNumber . '. ' . $subtask['name'],
-                                                      'is_completed' => (bool)$subtask['is_completed'],
-                                                      'created_at' => $subtask['created_at']
-                                                  ];
-                                                  $taskNumber++;
-                                              }
-                                          }  if (is_array($subtasks) && count($subtasks) > 0) {
+                                          if (is_array($div['subtasks']) && count($div['subtasks']) > 0) {
                                             echo '<div class="list-unstyled mb-0">';
-                                            foreach ($subtasks as $subtask) {
-                                                $checked = $subtask['is_completed'] ? 'checked' : '';
+                                            $taskNumber = 1;
+                                            foreach ($div['subtasks'] as $subtask) {
+                                                $checked = !empty($subtask['is_completed']) ? 'checked' : '';
                                                 echo '<div class="form-check mb-1">
                                                     <input class="form-check-input subtask-checkbox" type="checkbox" data-subtask-id="' . $subtask['id'] . '" ' . $checked . '>
-                                                    <label class="form-check-label">' . htmlspecialchars($subtask['name']) . '</label>
+                                                    <label class="form-check-label">' . $taskNumber . '. ' . htmlspecialchars($subtask['name']) . '</label>
                                                 </div>';
+                                                $taskNumber++;
                                             }
                                             echo '</div>';
                                         } else {
                                             echo '<span class="text-muted">No subtasks</span>';
                                         }
                                         ?>
-
                                     </td>
                                     <td>
                                         <button class="btn btn-warning btn-sm text-dark" data-bs-toggle="modal" data-bs-target="#editDivisionModal<?php echo $div['id']; ?>">
@@ -398,22 +330,26 @@ if ($userid) {
                                 </tr>
                                 <!-- Edit Modal for this division -->
                                 <div class="modal fade" id="editDivisionModal<?php echo $div['id']; ?>" tabindex="-1">
-                                  <div class="modal-dialog">
+                                  <div class="modal-dialog modal-dialog-centered">
                                     <form method="post">
                                       <input type="hidden" name="division_id" value="<?php echo $div['id']; ?>">
                                       <div class="modal-content">
                                         <div class="modal-header">
-                                          <h5 class="modal-title">Edit Division: <?php echo htmlspecialchars($div['division_name']); ?></h5>
+                                          <h5 class="modal-title">Edit Division: <?php echo htmlspecialchars($div['task_name'] ?? $div['division_name']); ?></h5>
                                           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                         </div>
                                         <div class="modal-body">
                                           <div class="mb-3">
                                             <label>Division Name</label>
-                                            <input type="text" name="new_division_name" class="form-control" value="<?php echo htmlspecialchars($div['division_name']); ?>" required>
+                                            <input type="text" name="new_division_name" class="form-control" value="<?php echo htmlspecialchars($div['task_name'] ?? $div['division_name']); ?>" required>
                                           </div>
                                           <div class="mb-3">
                                             <label>Progress (%)</label>
                                             <input type="number" name="progress" class="form-control" min="0" max="100" value="<?php echo intval($div['progress']); ?>" required>
+                                          </div>
+                                          <div class="mb-3">
+                                            <label>Description</label>
+                                            <textarea name="description" class="form-control"><?php echo htmlspecialchars($div['description'] ?? ''); ?></textarea>
                                           </div>
                                         </div>
                                         <div class="modal-footer">
@@ -433,189 +369,72 @@ if ($userid) {
         </div>
     </div>
 </div>
-<!-- Blueprint Modal -->
-<div class="modal fade" id="blueprintModal" tabindex="-1" aria-labelledby="blueprintModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title" id="blueprintModalLabel">Floor Plans</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <!-- Nav tabs -->
-        <ul class="nav nav-tabs mb-4" id="floorPlanTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-tab-pane" type="button" role="tab" aria-controls="upload-tab-pane" aria-selected="true">
-              <i class="fas fa-upload me-1"></i> Upload Floor Plan
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved-tab-pane" type="button" role="tab" aria-controls="saved-tab-pane" aria-selected="false">
-              <i class="fas fa-list me-1"></i> Saved Floor Plans
-            </button>
-          </li>
-        </ul>
-
-        <!-- Tab panes -->
-        <div class="tab-content" id="floorPlanTabsContent">
-          <!-- Upload Tab -->
-          <div class="tab-pane fade show active" id="upload-tab-pane" role="tabpanel" aria-labelledby="upload-tab" tabindex="0">
-            <div class="card">
-              <div class="card-body">
-                <h5 class="card-title mb-4">Upload New Floor Plan</h5>
-                <form id="uploadBlueprintForm" enctype="multipart/form-data">
-                  <div class="mb-3">
-                    <label for="planName" class="form-label">Plan Name</label>
-                    <input type="text" class="form-control" id="planName" name="planName" required>
-                  </div>
-                  <div class="mb-3">
-                    <label for="planLocation" class="form-label">Location</label>
-                    <input type="text" class="form-control" id="planLocation" name="planLocation" value="<?php echo htmlspecialchars($project['location'] ?? ''); ?>" readonly>
-                    <div class="form-text">This field is automatically set to the project's location.</div>
-                  </div>
-                  <div class="mb-4">
-                    <label for="planImage" class="form-label">Floor Plan Image</label>
-                    <input class="form-control" type="file" id="planImage" name="planImage" accept="image/*" required>
-                    <div class="form-text">Upload an image file (JPG, PNG, etc. Max 5MB)</div>
-                  </div>
-                  <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary">
-                      <i class="fas fa-upload me-1"></i> Upload Floor Plan
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-
-          <!-- Saved Floor Plans Tab -->
-          <div class="tab-pane fade" id="saved-tab-pane" role="tabpanel" aria-labelledby="saved-tab" tabindex="0">
-            <div class="card">
-              <div class="card-body">
-                <h5 class="card-title mb-4">Saved Floor Plans</h5>
-                <div class="table-responsive">
-                  <table class="table table-hover">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Location</th>
-                        <th>Uploaded</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody id="floorPlansList">
-                      <?php
-                      $floorPlans = $con->query("SELECT * FROM floor_plans ORDER BY created_at DESC");
-                      if ($floorPlans && $floorPlans->num_rows > 0) {
-                        while($plan = $floorPlans->fetch_assoc()) {
-                          echo "<tr>";
-                          echo "<td>" . htmlspecialchars($plan['name']) . "</td>";
-                          echo "<td>" . htmlspecialchars($plan['location']) . "</td>";
-                          echo "<td>" . date('M d, Y', strtotime($plan['created_at'])) . "</td>";
-                          echo "<td class='text-nowrap'>";
-                          echo "<button class='btn btn-sm btn-outline-primary view-plan me-1' data-id='" . $plan['id'] . "' data-name='" . htmlspecialchars($plan['name'], ENT_QUOTES) . "' data-location='" . htmlspecialchars($plan['location'], ENT_QUOTES) . "' data-image='" . htmlspecialchars($plan['image_path']) . "'>";
-                          echo "<i class='fas fa-eye'></i> View";
-                          echo "</button>";
-                          echo "<button class='btn btn-sm btn-outline-danger delete-plan' data-id='" . $plan['id'] . "'>";
-                          echo "<i class='fas fa-trash'></i> Delete";
-                          echo "</button>";
-                          echo "</td>";
-                          echo "</tr>";
-                        }
-                      } else {
-                        echo "<tr><td colspan='4' class='text-center py-4'>No floor plans found. Go to the Upload tab to add a new floor plan.</td></tr>";
-                      }
-                      ?>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- View Floor Plan Modal -->
-<div class="modal fade" id="viewPlanModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title" id="viewPlanModalLabel">Floor Plan: <span id="planTitle"></span></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body text-center">
-        <div class="mb-3">
-          <p class="text-muted mb-2">Location: <span id="planLocationText"></span></p>
-        </div>
-        <div style="max-height: 70vh; overflow: auto;">
-          <img id="planImageView" src="" alt="Floor Plan" class="img-fluid" style="max-width: 100%; height: auto;">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- Add Division Modal -->
-<div class="modal fade" id="addDivisionModal" tabindex="-1">
-  <div class="modal-dialog">
-    <form method="post">
-      <input type="hidden" name="add_division" value="1">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Add Tasks</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="addDivisionModal" tabindex="-1" aria-labelledby="addDivisionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="addDivisionModalLabel">Add Tasks</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post">
+                    <input type="hidden" name="add_division" value="1">
+                    <div class="mb-3">
+                        <label class="form-label">Task Name</label>
+                        <input type="text" name="division_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" name="start_date" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">End Date</label>
+                        <input type="date" name="end_date" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control"></textarea>
+                    </div>
+                    <div class="modal-footer px-0 pb-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Save</button>
+                    </div>
+                </form>
+            </div>
         </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label>Task Name</label>
-            <input type="text" name="division_name" class="form-control" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-success">Add</button>
-        </div>
-      </div>
-    </form>
-  </div>
+    </div>
 </div>
 <!-- Change Password Modal -->
 <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <?php if (isset($_GET['added'])): ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        Division added successfully!
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
+      <?php 
+// Set success messages
+$success_message = '';
+if (isset($_GET['added'])) {
+    $success_message = 'Task added successfully!';
+} elseif (isset($_GET['updated'])) {
+    $success_message = 'Task updated successfully!';
+} elseif (isset($_GET['renamed'])) {
+    $success_message = 'Task renamed successfully!';
+} elseif (isset($_GET['deleted'])) {
+    $success_message = 'Task deleted successfully!';
+} elseif (isset($_GET['subtask_added'])) {
+    $success_message = 'Subtask added successfully!';
+}
 
-<?php if (isset($_GET['subtask_added'])): ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        Subtask added successfully!
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
-
-<?php 
-if (isset($_GET['error'])): 
+// Set error message
+$error_message = '';
+if (isset($_GET['error'])) {
     $error_message = 'Error adding subtask. Please try again.';
     if ($_GET['error'] === 'subtask_failed') {
         $error_message = 'Failed to save subtask. Please try again.';
     } elseif ($_GET['error'] === 'invalid_input') {
         $error_message = 'Please enter a valid subtask name and select a task.';
     }
+}
 ?>
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <?php echo htmlspecialchars($error_message); ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-<?php endif; ?>
         <div class="modal-header">
           <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -649,141 +468,6 @@ if (isset($_GET['error'])):
 if (typeof jQuery == 'undefined') {
     document.write('<script src="https://code.jquery.com/jquery-3.6.0.min.js"><\/script>');
 }
-
-// Handle floor plan form submission
-$('#uploadBlueprintForm').on('submit', function(e) {
-    e.preventDefault();
-    
-    var $form = $(this);
-    var $submitBtn = $form.find('button[type="submit"]');
-    var originalBtnText = $submitBtn.html();
-    
-    // Show loading state
-    $submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Uploading...');
-    
-    var formData = new FormData(this);
-    
-    $.ajax({
-        url: 'save_floor_plan.php',
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        dataType: 'json',
-        success: function(response) {
-            if (response.success) {
-                // Show success message
-                $form.prepend('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
-                    'Floor plan uploaded successfully! ' +
-                    '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
-                    '</div>');
-                
-                // Reset form
-                $form.trigger('reset');
-                
-                // Switch to the Saved Floor Plans tab after 1.5 seconds
-                setTimeout(function() {
-                    var savedTab = new bootstrap.Tab(document.getElementById('saved-tab'));
-                    savedTab.show();
-                    
-                    // Reload the floor plans list
-                    loadFloorPlans();
-                }, 1500);
-            } else {
-                // Show error message
-                $form.prepend('<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
-                    (response.message || 'An error occurred while uploading the floor plan.') +
-                    '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
-                    '</div>');
-            }
-        },
-        error: function() {
-            $form.prepend('<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
-                'An error occurred while uploading the floor plan. Please try again.' +
-                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
-                '</div>');
-        },
-        complete: function() {
-            // Reset button state
-            $submitBtn.prop('disabled', false).html(originalBtnText);
-            
-            // Auto-close alerts after 5 seconds
-            setTimeout(function() {
-                $('.alert').alert('close');
-            }, 5000);
-        }
-    });
-});
-
-// Function to load floor plans via AJAX
-function loadFloorPlans() {
-    $.get('get_floor_plans.php', function(response) {
-        if (response.success) {
-            var tbody = $('#floorPlansList');
-            tbody.empty();
-            
-            if (response.data && response.data.length > 0) {
-                $.each(response.data, function(index, plan) {
-                    var row = $('<tr>');
-                    row.append($('<td>').text(plan.name));
-                    row.append($('<td>').text(plan.location));
-                    row.append($('<td>').text(new Date(plan.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })));
-                    
-                    var actions = $('<td class="text-nowrap">');
-                    actions.append($('<button>', {
-                        'class': 'btn btn-sm btn-outline-primary view-plan me-1',
-                        'data-id': plan.id,
-                        'data-name': plan.name,
-                        'data-location': plan.location,
-                        'data-image': plan.image_path,
-                        html: '<i class="fas fa-eye"></i> View'
-                    }));
-                    actions.append(' ');
-                    actions.append($('<button>', {
-                        'class': 'btn btn-sm btn-outline-danger delete-plan',
-                        'data-id': plan.id,
-                        html: '<i class="fas fa-trash"></i> Delete'
-                    }));
-                    
-                    row.append(actions);
-                    tbody.append(row);
-                });
-            } else {
-                tbody.append('<tr><td colspan="4" class="text-center py-4">No floor plans found. Go to the Upload tab to add a new floor plan.</td></tr>');
-            }
-        }
-    }, 'json');
-}
-
-// Handle view floor plan button click
-$(document).on('click', '.view-plan', function() {
-    var name = $(this).data('name');
-    var location = $(this).data('location');
-    var imagePath = $(this).data('image');
-    
-    $('#planTitle').text(name);
-    $('#planLocationText').text(location);
-    $('#planImageView').attr('src', '../' + imagePath);
-    
-    var viewPlanModal = new bootstrap.Modal(document.getElementById('viewPlanModal'));
-    viewPlanModal.show();
-});
-
-// Handle delete floor plan button click
-$(document).on('click', '.delete-plan', function() {
-    if (confirm('Are you sure you want to delete this floor plan?')) {
-        var planId = $(this).data('id');
-        
-        $.post('delete_floor_plan.php', { id: planId }, function(response) {
-            if (response.success) {
-                location.reload();
-            } else {
-                alert('Error: ' + response.message);
-            }
-        }, 'json');
-    }
-});
-
 // Change Password AJAX (like pm_profile.php)
 document.addEventListener('DOMContentLoaded', function() {
   var changePasswordForm = document.getElementById('changePasswordForm');
@@ -839,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Add Subtask Modal -->
 <div class="modal fade" id="addSubtaskModal" tabindex="-1" aria-labelledby="addSubtaskModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="addSubtaskModalLabel">Add New Subtask</h5>
@@ -854,7 +538,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <select class="form-select" id="taskSelect" name="division_id" required>
                             <option value="">-- Select Task --</option>
                             <?php foreach ($divisions as $div): ?>
-                                <option value="<?php echo $div['id']; ?>"><?php echo htmlspecialchars($div['division_name']); ?></option>
+                                <option value="<?php echo $div['id']; ?>"><?php echo htmlspecialchars($div['task_name'] ?? $div['division_name']); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -871,6 +555,70 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </div>
+
+<!-- Feedback Modal -->
+<div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center">
+            <div class="modal-body py-4">
+                <span id="feedbackIcon" style="font-size: 3rem;"></span>
+                <h5 class="mt-3" id="feedbackMessage"></h5>
+            </div>
+            <div class="modal-footer justify-content-center border-0">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Show feedback modal if there's a success or error message
+$(document).ready(function() {
+    <?php if (!empty($success_message)): ?>
+        showFeedback('<?php echo addslashes($success_message); ?>', 'success');
+    <?php elseif (!empty($error_message)): ?>
+        showFeedback('<?php echo addslashes($error_message); ?>', 'error');
+    <?php endif; ?>
+});
+
+function showFeedback(message, type) {
+    const feedbackModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+    const feedbackMessage = document.getElementById('feedbackMessage');
+    const feedbackIcon = document.getElementById('feedbackIcon');
+    
+    feedbackMessage.textContent = message;
+    
+    if (type === 'success') {
+        feedbackIcon.className = 'fas fa-check-circle text-success';
+        feedbackMessage.className = 'mt-3 text-success';
+    } else {
+        feedbackIcon.className = 'fas fa-exclamation-circle text-danger';
+        feedbackMessage.className = 'mt-3 text-danger';
+    }
+    
+    // Remove the success/error parameters from URL without reloading the page
+    const url = new URL(window.location);
+    const params = new URLSearchParams(url.search);
+    
+    // List of parameters to remove
+    const paramsToRemove = ['added', 'updated', 'renamed', 'deleted', 'subtask_added', 'error'];
+    let hasChanges = false;
+    
+    paramsToRemove.forEach(param => {
+        if (params.has(param)) {
+            params.delete(param);
+            hasChanges = true;
+        }
+    });
+    
+    if (hasChanges) {
+        const newUrl = params.toString() ? `${url.pathname}?${params.toString()}` : url.pathname;
+        window.history.replaceState({}, '', newUrl);
+    }
+    
+    feedbackModal.show();
+}
+</script>
 
 <script>
 // Handle save subtask
@@ -903,13 +651,18 @@ $('#addSubtaskModal').on('hidden.bs.modal', function () {
 
 <script>
 // Handle subtask checkbox changes
-$(document).on('change', '.subtask-checkbox', function() {
+$(document).on('change', '.subtask-checkbox', function(e) {
+    e.preventDefault();
+    
     const $checkbox = $(this);
     const subtaskId = $checkbox.data('subtask-id');
     const isCompleted = $checkbox.is(':checked') ? 1 : 0;
+    const $row = $checkbox.closest('tr');
+    const $progressBar = $row.find('.progress-bar');
     
     // Show loading state
     $checkbox.prop('disabled', true);
+    $progressBar.text('Updating...');
     
     console.log('Sending request to update subtask:', { subtaskId, isCompleted });
     
@@ -924,14 +677,18 @@ $(document).on('change', '.subtask-checkbox', function() {
         success: function(response) {
             console.log('Server response:', response);
             
+            // Always re-enable the checkbox
+            $checkbox.prop('disabled', false);
+            
             if (response.success) {
-                // Update UI to show success
-                $checkbox.prop('checked', isCompleted === 1);
+                // Update the checkbox state based on server response
+                const newIsCompleted = response.is_completed === 1 || isCompleted === 1;
+                $checkbox.prop('checked', newIsCompleted);
                 
                 // Add visual feedback
                 const $label = $checkbox.next('label');
-                $label.css('text-decoration', isCompleted ? 'line-through' : 'none')
-                      .css('opacity', isCompleted ? '0.7' : '1');
+                $label.css('text-decoration', newIsCompleted ? 'line-through' : 'none')
+                      .css('opacity', newIsCompleted ? '0.7' : '1');
                 
                 // Show success message briefly
                 const $feedback = $('<span class="text-success ms-2"><i class="fas fa-check"></i> Updated</span>');
@@ -940,32 +697,38 @@ $(document).on('change', '.subtask-checkbox', function() {
                 
                 // Update progress bar if we got a new progress value
                 if (response.new_progress !== undefined && response.new_progress !== null) {
-                    const $row = $checkbox.closest('tr');
-                    const $progressBar = $row.find('.progress-bar');
-                    const $progressText = $progressBar.text();
-                    const progressClass = response.new_progress == 100 ? 'success' : 
-                                       (response.new_progress > 50 ? 'primary' : 
-                                       (response.new_progress > 0 ? 'warning' : 'secondary'));
+                    const progressValue = parseInt(response.new_progress) || 0; // Ensure we have a number
+                    const progressClass = progressValue == 100 ? 'success' : 
+                                       (progressValue > 50 ? 'primary' : 
+                                       (progressValue > 0 ? 'warning' : 'secondary'));
+                    
+                    console.log('Updating progress bar:', { progress: progressValue, class: progressClass });
                     
                     // Update progress bar
                     $progressBar
                         .removeClass('bg-success bg-primary bg-warning bg-secondary')
                         .addClass('bg-' + progressClass)
-                        .css('width', response.new_progress + '%')
-                        .attr('aria-valuenow', response.new_progress)
-                        .text(response.new_progress + '%');
+                        .css('width', progressValue + '%')
+                        .attr('aria-valuenow', progressValue)
+                        .text(progressValue + '%');
                         
-                    // If the division is now completed, update its status
-                    if (response.new_progress === 100) {
-                        $row.find('.badge')
+                    // Update status badge
+                    const $badge = $row.find('.badge');
+                    if (progressValue === 100) {
+                        $badge
                             .removeClass('bg-warning bg-primary')
                             .addClass('bg-success')
                             .text('Completed');
-                    } else {
-                        $row.find('.badge')
-                            .removeClass('bg-success')
+                    } else if (progressValue > 0) {
+                        $badge
+                            .removeClass('bg-success bg-secondary')
                             .addClass('bg-primary')
                             .text('In Progress');
+                    } else {
+                        $badge
+                            .removeClass('bg-success bg-primary')
+                            .addClass('bg-secondary')
+                            .text('Not Started');
                     }
                 }
                 
