@@ -1,4 +1,6 @@
 <?php
+// Set the default timezone to Philippine time
+date_default_timezone_set('Asia/Manila');
 session_start();
 require_once '../config.php';
 
@@ -41,15 +43,13 @@ try {
         throw new Exception('Failed to update project status');
     }
     
-    // If this is the first time starting the project, update the start date to today
+    // Update start_date to today when status is set to 'Ongoing'
     if ($status === 'Ongoing') {
-        $check_started = $con->query("SELECT start_date FROM projects WHERE project_id = $project_id")->fetch_assoc();
-        if ($check_started && $check_started['start_date'] > date('Y-m-d')) {
-            $update_date = $con->prepare("UPDATE projects SET start_date = CURDATE() WHERE project_id = ?");
-            $update_date->bind_param('i', $project_id);
-            if (!$update_date->execute()) {
-                throw new Exception('Failed to update project start date');
-            }
+        $today = date('Y-m-d');
+        $update_date = $con->prepare("UPDATE projects SET start_date = ? WHERE project_id = ?");
+        $update_date->bind_param('si', $today, $project_id);
+        if (!$update_date->execute()) {
+            throw new Exception('Failed to update project start date: ' . $con->error);
         }
     }
     

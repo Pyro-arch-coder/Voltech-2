@@ -39,12 +39,33 @@ echo "<script>
 
 if (isset($_GET['project_id'])) {
     $pid = intval($_GET['project_id']);
-    $res = $con->query("SELECT project, step_progress FROM projects WHERE project_id = $pid LIMIT 1");
+    $res = $con->query("SELECT project, step_progress, status FROM projects WHERE project_id = $pid LIMIT 1");
     if ($res && $res->num_rows > 0) {
         $row = $res->fetch_assoc();
         $current_project_name = $row['project'];
         $current_step = intval($row['step_progress'] ?? 1);
+        $project_status = $row['status'];
         if ($current_step < 1 || $current_step > 8) $current_step = 1;
+        
+        // Calculate project progress based on tasks
+        $progress_query = "SELECT 
+            COUNT(*) as total_tasks,
+            SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed_tasks,
+            COALESCE(AVG(progress), 0) as avg_progress
+            FROM project_timeline 
+            WHERE project_id = $pid";
+            
+        $progress_result = $con->query($progress_query);
+        if ($progress_result && $progress_result->num_rows > 0) {
+            $progress_data = $progress_result->fetch_assoc();
+            $total_tasks = $progress_data['total_tasks'];
+            $completed_tasks = $progress_data['completed_tasks'];
+            $progress_percent = $progress_data['avg_progress'];
+        } else {
+            $progress_percent = 0;
+            $total_tasks = 0;
+            $completed_tasks = 0;
+        }
     }
 }
 
@@ -1068,52 +1089,102 @@ if ($project_id > 0) {
                             <div class="step-content d-none" id="step7">
                                 <h4 class="mb-4">Step 7: Actual</h4>
                                 <div class="container-fluid px-4 py-4">
-                                    <div class="row justify-content-center">
-                                        <div class="col-12 col-md-8 col-lg-6">
-                                            <div class="card shadow-sm">
-                                                <div class="card-header bg-success text-white">
-                                                    <h4 class="mb-0">Project Actual</h4>
-                                                </div>
-                                                <div class="card-body text-center py-5">
-                                                    <div class="mb-4">
-                                                        <i class="fas fa-tasks fa-4x text-primary mb-3"></i>
-                                                        <h3>Ready to start actual project work?</h3>
-                                                        <p class="text-muted">Click the button below to go to the actual project page where you can track and manage your project's progress.</p>
-                                                    </div>
-                                                    
-                                                    <div class="d-flex justify-content-center gap-3 mt-4">
-                                                        <button type="button" id="startProjectBtn" class="btn btn-primary">
-                                                            <i class="fas fa-play me-2"></i> Go to Actual Project
-                                                        </button>
-                                                    </div>
-                                                    
-                                                    <!-- Start Project Confirmation Modal -->
-                                                    <div class="modal fade" id="startProjectModal" tabindex="-1" aria-labelledby="startProjectModalLabel" aria-hidden="true">
-                                                        <div class="modal-dialog modal-dialog-centered">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header text-dark" id="modalHeader">
-                                                                    <h5 class="modal-title" id="startProjectModalLabel">Confirm Project Start</h5>
-                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <div id="startDateWarning" class="alert d-none">
-                                                                        <i class="fas fa-calendar-day me-2"></i>
-                                                                        <span id="dateMessage"></span>
+                                        <div class="row justify-content-center">
+                                            <div class="col-12 col-md-8 col-lg-6">
+
+                                                <?php if ($project_status === 'Ongoing'): ?>
+                                                    <!-- Show Project Progress card only if status is Ongoing -->
+                                                    <div class="card shadow-sm">
+                                                        <div class="card-header bg-info text-white">
+                                                            <h4 class="mb-0">Project Progress</h4>
+                                                        </div>
+                                                        <div class="card-body text-center py-5">
+                                                            <div class="mb-4">
+                                                                <i class="fas fa-chart-line fa-4x text-info mb-3"></i>
+                                                                <h3>Track your progress!</h3>
+                                                                <p class="text-muted">Below is the current progress of this project. Click the button to view and manage full project details.</p>
+                                                            </div>
+                                                            <div class="mb-4">
+                                                                <!-- Progress bar -->
+                                                                <div class="progress" style="height: 30px;">
+                                                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-info"
+                                                                        role="progressbar"
+                                                                        style="width: <?= $progress_percent ?? 0 ?>%; font-size:1.2rem;"
+                                                                        aria-valuenow="<?= $progress_percent ?? 0 ?>"
+                                                                        aria-valuemin="0" aria-valuemax="100">
+                                                                        <?= round($progress_percent ?? 0) ?>%
                                                                     </div>
-                                                                    <p>Starting the project will mark it as 'Ongoing' and allow you to track progress.</p>
+                                                                    <div class="text-muted small mt-2">
+                                                                        <?= $completed_tasks ?? 0 ?> of <?= $total_tasks ?? 0 ?> tasks completed
+                                                                    </div>
                                                                 </div>
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                                    <button type="button" id="confirmStartProject" class="btn btn-primary">Yes, Start Project</button>
+                                                            </div>
+                                                            <div class="d-flex justify-content-center gap-3 mt-4">
+                                                                <a href="project_actual.php?id=<?= $project_id ?>" class="btn btn-info text-white">
+                                                                    <i class="fas fa-arrow-right me-2"></i> Go to Project
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <!-- Show "Ready to start actual project work" card for Pending/other status -->
+                                                    <div class="card shadow-sm">
+                                                        <div class="card-header bg-success text-white">
+                                                            <h4 class="mb-0">Project Actual</h4>
+                                                        </div>
+                                                        <div class="card-body text-center py-5">
+                                                            <div class="mb-4">
+                                                                <i class="fas fa-tasks fa-4x text-primary mb-3"></i>
+                                                                <h3>Ready to start actual project work?</h3>
+                                                                <p class="text-muted">Click the button below to go to the actual project page where you can track and manage your project's progress.</p>
+                                                            </div>
+                                                            <div class="d-flex justify-content-center gap-3 mt-4">
+                                                                <button type="button" id="startProjectBtn" class="btn btn-primary">
+                                                                    <i class="fas fa-play me-2"></i> Go to Actual Project
+                                                                </button>
+                                                            </div>
+                                                            <div class="modal fade" id="startProjectModal" tabindex="-1" 
+                                                                aria-labelledby="startProjectModalLabel" aria-hidden="true">
+                                                                <div class="modal-dialog modal-dialog-centered">
+                                                                    <div class="modal-content">
+                                                                        
+                                                                        <div class="modal-header text-dark" id="modalHeader">
+                                                                            <h5 class="modal-title" id="startProjectModalLabel">
+                                                                                Confirm Project Start
+                                                                            </h5>
+                                                                            <button type="button" class="btn-close" 
+                                                                                    data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                        </div>
+                                                                        
+                                                                        <div class="modal-body">
+                                                                            <div id="startDateWarning" class="alert">
+                                                                                <i class="fas fa-calendar-day me-2"></i>
+                                                                                <span id="dateMessage"></span>
+                                                                            </div>
+                                                                            <p class="mb-0">
+                                                                                Starting the project will mark it as 
+                                                                                <span class="fw-bold">'Ongoing'</span> 
+                                                                                and update the start date to today's date.
+                                                                            </p>
+                                                                        </div>
+                                                                        
+                                                                        <div class="modal-footer">
+                                                                            <button type="button" class="btn btn-secondary" 
+                                                                                    data-bs-dismiss="modal">Cancel</button>
+                                                                            <button type="button" id="confirmStartProject" 
+                                                                                    class="btn btn-primary">Yes, Start Project</button>
+                                                                        </div>
+                                                                        
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                <?php endif; ?>
+
                                             </div>
                                         </div>
                                     </div>
-                                </div>
                                 <div class="d-flex justify-content-between mt-4">
                                     <button type="button" class="btn btn-secondary prev-step" data-prev="6">Previous</button>
                                     <button type="button" class="btn btn-primary next-step" data-next="8">Next</button>
@@ -1177,21 +1248,33 @@ if ($project_id > 0) {
         const isStartDatePast = daysDiff < 0;
         
         startProjectBtn.addEventListener('click', function() {
+            // Get current date in Philippines timezone
+            const today = new Date();
+            const phDate = new Date(today.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+            const formattedToday = phDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
             // Configure modal based on date
             if (isStartDatePast) {
                 // For past dates
                 modalHeader.className = 'modal-header bg-success text-white';
                 startDateWarning.className = 'alert alert-success';
-                dateMessage.innerHTML = `The project start date was <strong>${projectStartDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong> (${Math.abs(daysDiff)} days ago). You can still start the project now.`;
+                dateMessage.innerHTML = `The project start date was <strong>${projectStartDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong> (${Math.abs(daysDiff)} days ago). The start date will be updated to today: <strong>${formattedToday}</strong>`;
             } else if (!isStartDateToday) {
                 // For future dates
                 modalHeader.className = 'modal-header bg-warning text-dark';
                 startDateWarning.className = 'alert alert-warning';
-                dateMessage.innerHTML = `The project start date is set to <strong>${projectStartDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong> (in ${daysDiff} days). Are you sure you want to start the project now?`;
+                dateMessage.innerHTML = `The project start date is set to <strong>${projectStartDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong> (in ${daysDiff} days). The start date will be updated to today: <strong>${formattedToday}</strong>`;
+            } else {
+                // For today
+                dateMessage.innerHTML = `The project start date will be set to today: <strong>${formattedToday}</strong>`;
             }
             
             // Show/hide warning based on whether it's today or not
-            startDateWarning.classList.toggle('d-none', isStartDateToday);
+            startDateWarning.classList.toggle('d-none', false); // Always show the message
             
             // Show the modal
             const modal = new bootstrap.Modal(document.getElementById('startProjectModal'));
