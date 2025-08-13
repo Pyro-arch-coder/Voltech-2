@@ -30,7 +30,7 @@ $top_res = mysqli_query($con, $top_sql);
 while ($row = mysqli_fetch_assoc($top_res)) {
     $top_projects[] = $row;
     $top_labels[] = $row['project'];
-    $top_progress[] = round($row['avg_progress'], 1);
+    $top_progress[] = $row['avg_progress'] !== null ? round((float)$row['avg_progress'], 1) : 0;
 }
 
 // --- Estimate Expense Comparison Data ---

@@ -30,34 +30,39 @@ try {
         throw new Exception('No file uploaded or upload error.');
     }
 
-    $file = $_FILES['file_photo'];
-    $maxFileSize = 10 * 1024 * 1024; // 10MB
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mimeType = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
+    // Check if a file was actually uploaded
+    if (isset($_FILES['file_photo']) && $_FILES['file_photo']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['file_photo'];
+        $maxFileSize = 10 * 1024 * 1024; // 10MB
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
 
-    // Accept PDF and common image types
-    $allowedMimeTypes = [
-        'application/pdf',
-        'image/jpeg',
-        'image/png',
-        'image/gif',
-        'image/webp'
-    ];
-    if (!in_array($mimeType, $allowedMimeTypes)) throw new Exception('File type not allowed.');
-    if ($file['size'] > $maxFileSize) throw new Exception('File is too large. Max 10MB.');
+        // Accept PDF and common image types
+        $allowedMimeTypes = [
+            'application/pdf',
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp'
+        ];
+        if (!in_array($mimeType, $allowedMimeTypes)) throw new Exception('File type not allowed.');
+        if ($file['size'] > $maxFileSize) throw new Exception('File is too large. Max 10MB.');
 
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $safeType = preg_replace('/[^a-z0-9]/i', '', $permitType);
+        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $safeType = preg_replace('/[^a-z0-9]/i', '', $permitType);
 
-    $uploadDir = __DIR__ . '/uploads/permits/';
-    if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+        $uploadDir = __DIR__ . '/uploads/permits/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
-    $fileName = 'permit_' . $safeType . '_' . $projectId . '_' . time() . '.' . $extension;
-    $filePath = $uploadDir . basename($fileName);
+        $fileName = 'permit_' . $safeType . '_' . $projectId . '.' . $extension;
+        $filePath = $uploadDir . basename($fileName);
 
-    if (!move_uploaded_file($file['tmp_name'], $filePath)) throw new Exception('Failed to save file.');
-    $dbFilePath = 'uploads/permits/' . basename($fileName);
+        if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+            throw new Exception('Failed to save file.');
+        }
+        $dbFilePath = 'uploads/permits/' . basename($fileName);
+    }
 
     $uploadedBy = $_SESSION['user_id'] ?? null;
     if (!$uploadedBy) throw new Exception('Session missing user_id');

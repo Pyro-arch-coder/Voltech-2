@@ -225,8 +225,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 3 => 'Budget Approval',
                                 4 => 'Contract Signing',
                                 5 => 'Permits',
-                                6 => 'Actual',
-                                7 => 'Schedule',
+                                6 => 'Schedule',
+                                7 => 'Actual',
                                 8 => 'Billing'
                             ];
                             for($i = 1; $i <= 8; $i++): ?>
@@ -254,9 +254,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             <!-- Step 5: Payment & Permits -->
                             <?php include 'step5_permits.php'; ?>
                             <!-- Step 6: Navigation -->
-                            <?php include 'step6_navigation.php'; ?>
+                            <?php include 'step6_schedule.php'; ?>
                             <!-- Step 7: Schedule -->
-                            <?php include 'step7_schedule.php'; ?>
+                            <?php include 'step7_navigation.php'; ?>
                             <!-- Step 8: Billing and Retention -->
                             <div class="step-content d-none" id="step8">
                                 <h4 class="mb-4">Step 8: Billing and Retention</h4>
@@ -518,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Skip validation for step 6 (schedule) to allow navigation without filling the form
-                if (currentStep !== 7 && !validateStep(currentStep)) {
+                if (currentStep !== 6 && !validateStep(currentStep)) {
                     return;
                 }
 
@@ -601,20 +601,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Form submission
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                if (validateStep(currentStep)) {
-                    // Simulate form submission
-                    setTimeout(() => {
-                        showStep(8); // Show completion step
-                        updateProgress(8);
-                    }, 1000);
-                }
-            });
-        }
-
+        
         // Show specific step
         function showStep(stepNumber) {
             document.querySelectorAll('.step-content').forEach(step => {

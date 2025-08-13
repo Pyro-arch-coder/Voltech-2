@@ -493,7 +493,7 @@ if ($userid) {
                   <?php
                   // Update project progress to 7 (Schedule) in the database
                   if (isset($project_id) && $project_id) {
-                      $update_query = "UPDATE projects SET step_progress = 7, progress_indicator = 7 WHERE project_id = ? AND user_id = ?";
+                      $update_query = "UPDATE projects SET step_progress = 6, progress_indicator = 6 WHERE project_id = ? AND user_id = ?";
                       $stmt = $con->prepare($update_query);
                       $stmt->bind_param("ii", $project_id, $userid);
                       $stmt->execute();

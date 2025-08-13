@@ -63,6 +63,9 @@ if ($con && $_SERVER["REQUEST_METHOD"] == "POST") {
                 case 5:
                     header("Location: p_supplier/supplier_dashboard.php");
                     break;
+                case 6:
+                    header("Location: p_client/clients_dashboard.php");
+                    break;
                 default:
                     header("Location: projectmanager/pm_dashboard.php");
                     break;

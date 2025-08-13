@@ -5,6 +5,10 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     exit();
 }
 require_once '../config.php';
+require '../vendor/autoload.php';
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 
     $userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
     $user_email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
@@ -90,8 +94,7 @@ require_once '../config.php';
     
                     $mail->isHTML(true);
                     $mail->Subject = 'Your Account Credentials';
-                    $login_link = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") 
-                                . "://$_SERVER[HTTP_HOST]/login.php";
+                    $login_link = "http://voltechelectricalconstruction.com/login.php";
                     $mail->Body = "
                         <h2>Welcome to Voltech Electrical Construction</h2>
                         <p>Hello $first_name,</p>
@@ -435,7 +438,7 @@ require_once '../config.php';
                                                 <td><?php echo htmlspecialchars($project['location']); ?></td>
                                                 <td class="text-end"><?php echo number_format($project['size'], 2); ?></td>
                                                 <td class="text-nowrap">
-                                                  <a class="btn btn-outline-primary btn-sm" href="project_process.php?project_id=<?php echo $project['project_id']; ?>" onclick="console.log('Navigating to project_process.php with project_id=<?php echo $project['project_id']; ?>')"> 
+                                                  <a class="btn btn-outline-primary btn-sm" href="project_process_v2.php?project_id=<?php echo $project['project_id']; ?>" onclick="console.log('Navigating to project_process.php with project_id=<?php echo $project['project_id']; ?>')"> 
                                                         <i class="fas fa-eye"></i> Details
                                                     </a>
                                                     <button class="btn btn-sm btn-danger text-white font-weight-bold archive-project" data-project-id="<?php echo $project['project_id']; ?>">

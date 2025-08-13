@@ -14,25 +14,6 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['user_level'] != 3) {
 
 include_once "../config.php";
 
-// Check if blueprints table exists
-$tableCheck = $con->query("SHOW TABLES LIKE 'blueprints'");
-if ($tableCheck->num_rows == 0) {
-    // Create blueprints table with project_id
-    $createTable = "CREATE TABLE blueprints (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        project_id INT,
-        name VARCHAR(255) NOT NULL,
-        image_path VARCHAR(500) NOT NULL,
-        status ENUM('Pending', 'Approved', 'Rejected') DEFAULT 'Pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE SET NULL
-    )";
-    
-    if (!$con->query($createTable)) {
-        echo json_encode(['success' => false, 'message' => 'Failed to create blueprints table: ' . $con->error]);
-        exit();
-    }
-}
 
 // Validate form data
 if (empty($_POST['planName']) || !isset($_FILES['planImage']) || empty($_POST['project_id'])) {
@@ -59,8 +40,8 @@ if ($file['size'] > $maxFileSize) {
     exit();
 }
 
-// Handle upload directory
-$uploadDir = '../uploads/floor_plans/';
+// Handle upload directory - store in projectmanager/uploads/floor_plans/
+$uploadDir = 'uploads/floor_plans/';
 if (!file_exists($uploadDir)) {
     if (!mkdir($uploadDir, 0777, true)) {
         echo json_encode(['success' => false, 'message' => 'Failed to create upload directory']);

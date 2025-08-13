@@ -82,3 +82,87 @@
 
 [2025-08-08 13:06:04] Processing add_estimation_material request
 [2025-08-08 13:06:04] Received 1 materials
+[2025-08-12 08:56:03] New request: Array
+(
+    [add_estimation_material] => 1
+    [project_id] => 121
+    [materials] => Array
+        (
+            [0] => Array
+                (
+                    [material_id] => 88
+                    [quantity] => 5
+                )
+
+            [1] => Array
+                (
+                    [material_id] => 89
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-08-12 08:56:03] Processing add_estimation_material request
+[2025-08-12 08:56:03] Received 2 materials
+[2025-08-12 14:06:22] New request: Array
+(
+    [add_estimation_material] => 1
+    [project_id] => 120
+    [materials] => Array
+        (
+            [0] => Array
+                (
+                    [material_id] => 88
+                    [quantity] => 2
+                )
+
+            [1] => Array
+                (
+                    [material_id] => 89
+                    [quantity] => 2
+                )
+
+        )
+
+)
+
+[2025-08-12 14:06:22] Processing add_estimation_material request
+[2025-08-12 14:06:22] Received 2 materials
+[2025-08-12 18:01:35] New request: Array
+(
+    [add_estimation_material] => 1
+    [project_id] => 124
+    [materials] => Array
+        (
+            [0] => Array
+                (
+                    [material_id] => 88
+                    [quantity] => 2
+                )
+
+        )
+
+)
+
+[2025-08-12 18:01:35] Processing add_estimation_material request
+[2025-08-12 18:01:35] Received 1 materials
+[2025-08-13 03:25:43] New request: Array
+(
+    [add_estimation_material] => 1
+    [project_id] => 124
+    [materials] => Array
+        (
+            [0] => Array
+                (
+                    [material_id] => 88
+                    [quantity] => 2
+                )
+
+        )
+
+)
+
+[2025-08-13 03:25:43] Processing add_estimation_material request
+[2025-08-13 03:25:43] Received 1 materials

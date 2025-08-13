@@ -25,7 +25,7 @@ while ($row = mysqli_fetch_assoc($res)) {
 $top_projects = [];
 $top_labels = [];
 $top_progress = [];
-$top_sql = "SELECT p.project_id, p.project, AVG(d.progress) as avg_progress FROM projects p LEFT JOIN project_divisions d ON p.project_id = d.project_id WHERE p.user_id='$userid' GROUP BY p.project_id, p.project ORDER BY avg_progress DESC LIMIT 3";
+$top_sql = "SELECT p.project_id, p.project, AVG(d.progress) as avg_progress FROM projects p LEFT JOIN project_timeline d ON p.project_id = d.project_id WHERE p.user_id='$userid' GROUP BY p.project_id, p.project ORDER BY avg_progress DESC LIMIT 3";
 $top_res = mysqli_query($con, $top_sql);
 while ($row = mysqli_fetch_assoc($top_res)) {
     $top_projects[] = $row;
