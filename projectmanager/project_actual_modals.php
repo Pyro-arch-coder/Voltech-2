@@ -299,16 +299,24 @@ if ($employees_result) {
                     'daily_rate' => $pos['daily_rate']
                   ];
                 }
+                
                 foreach ($employees as $emp): 
                   $pos_id = $emp['position_id'];
                   $position_title = $positions_map[$pos_id]['title'] ?? 'N/A';
                   $daily_rate = isset($positions_map[$pos_id]) ? number_format($positions_map[$pos_id]['daily_rate'],2) : 'N/A';
+                  $is_available = $employee_availability[$emp['employee_id']]['is_available'] ?? true;
+                  $assigned_projects = $employee_availability[$emp['employee_id']]['assigned_projects'] ?? '';
+                  $status_class = $is_available ? 'success' : 'warning';
+                  $status_text = $is_available ? 'Available' : 'Assigned to Project(s)';
                 ?>
                   <tr class="employee-row" 
                       data-position="<?php echo htmlspecialchars($position_title); ?>" 
                       data-company-type="<?php echo htmlspecialchars($emp['company_type']); ?>">
                     <td>
-                      <input type="checkbox" name="selected_employees[]" value="<?php echo $emp['employee_id']; ?>" class="employee-check">
+                      <input type="checkbox" name="selected_employees[]" 
+                             value="<?php echo $emp['employee_id']; ?>" 
+                             class="employee-check"
+                             <?php echo !$is_available ? 'disabled' : ''; ?>>
                     </td>
                     <td><?php echo htmlspecialchars($emp['first_name'] . ' ' . $emp['last_name']); ?></td>
                     <td><?php echo htmlspecialchars($emp['last_name']); ?></td>
@@ -316,7 +324,13 @@ if ($employees_result) {
                     <td><?php echo htmlspecialchars($position_title); ?></td>
                     <td><?php echo htmlspecialchars($emp['contact_number']); ?></td>
                     <td><?php echo $daily_rate; ?></td>
-                    <td><span class="badge bg-success">Available</span></td>
+                    <td>
+                      <span class="badge bg-<?php echo $status_class; ?>" 
+                            data-bs-toggle="<?php echo !$is_available ? 'tooltip' : ''; ?>" 
+                            title="<?php echo !$is_available ? htmlspecialchars($assigned_projects) : ''; ?>">
+                        <?php echo $status_text; ?>
+                      </span>
+                    </td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>

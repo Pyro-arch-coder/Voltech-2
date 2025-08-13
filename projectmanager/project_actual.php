@@ -104,8 +104,74 @@ if (isset($_POST['update_project_status'])) {
                 throw new Exception('Failed to update project status');
             }
             
-            // If project is being marked as Finished, add expense record
+            // If project is being marked as Finished, update employee and equipment statuses and add expense record
             if ($status === 'Finished') {
+                // 1. Update all employees assigned to this project to 'Available' status
+                $update_employees = "UPDATE project_add_employee SET status = 'Available' 
+                                  WHERE project_id = ? AND status = 'Working'";
+                $stmt_emp = $con->prepare($update_employees);
+                if (!$stmt_emp) {
+                    throw new Exception('Failed to prepare employee status update: ' . $con->error);
+                }
+                $stmt_emp->bind_param('i', $project_id);
+                if (!$stmt_emp->execute()) {
+                    $stmt_emp->close();
+                    throw new Exception('Failed to update employee statuses: ' . $stmt_emp->error);
+                }
+                $stmt_emp->close();
+
+                // 2. Get all equipment assigned to this project that are 'In use'
+                $equipment_query = "SELECT equipment_id FROM project_add_equipment 
+                                  WHERE project_id = ? AND status = 'In use'";
+                $stmt_eq = $con->prepare($equipment_query);
+                if (!$stmt_eq) {
+                    throw new Exception('Failed to prepare equipment query: ' . $con->error);
+                }
+                $stmt_eq->bind_param('i', $project_id);
+                if (!$stmt_eq->execute()) {
+                    $stmt_eq->close();
+                    throw new Exception('Failed to execute equipment query: ' . $stmt_eq->error);
+                }
+                $equipment_result = $stmt_eq->get_result();
+                $equipment_ids = [];
+                while ($row = $equipment_result->fetch_assoc()) {
+                    $equipment_ids[] = $row['equipment_id'];
+                }
+                $stmt_eq->close();
+
+                // 3. Update project equipment status to 'Returned'
+                $update_project_equipment = "UPDATE project_add_equipment SET status = 'returned' 
+                                         WHERE project_id = ? AND status = 'In use'";
+                $stmt_pe = $con->prepare($update_project_equipment);
+                if (!$stmt_pe) {
+                    throw new Exception('Failed to prepare project equipment update: ' . $con->error);
+                }
+                $stmt_pe->bind_param('i', $project_id);
+                if (!$stmt_pe->execute()) {
+                    $stmt_pe->close();
+                    throw new Exception('Failed to update project equipment statuses: ' . $stmt_pe->error);
+                }
+                $stmt_pe->close();
+
+                // 4. Update main equipment table status to 'Available' for all returned equipment
+                if (!empty($equipment_ids)) {
+                    $placeholders = implode(',', array_fill(0, count($equipment_ids), '?'));
+                    $update_equipment = "UPDATE equipment SET status = 'Available' 
+                                       WHERE id IN ($placeholders)";
+                    $stmt_e = $con->prepare($update_equipment);
+                    if (!$stmt_e) {
+                        throw new Exception('Failed to prepare equipment status update: ' . $con->error);
+                    }
+                    // Bind parameters dynamically
+                    $types = str_repeat('i', count($equipment_ids));
+                    $stmt_e->bind_param($types, ...$equipment_ids);
+                    if (!$stmt_e->execute()) {
+                        $stmt_e->close();
+                        throw new Exception('Failed to update equipment statuses: ' . $stmt_e->error);
+                    }
+                    $stmt_e->close();
+                }
+
                 // Get project details and calculate total expenses
                 $project_query = mysqli_query($con, "SELECT project FROM projects WHERE project_id='$project_id'");
                 $project_data = mysqli_fetch_assoc($project_query);
@@ -179,6 +245,60 @@ if (isset($_POST['update_project_status'])) {
                 }
                 
                 $expense_stmt->close();
+                
+                // Calculate profit/loss (total_contract_amount - total expenses, can be negative for loss)
+                $profit_loss = $project_data['total_contract_amount'] - ($mat_total + $equip_total);
+                
+                // Insert the calculated profit/loss
+                $profit_query = "
+                    INSERT INTO project_profits (project_id, project_name, profit)
+                    SELECT 
+                        project_id,
+                        project as project_name,
+                        ? as profit
+                    FROM projects 
+                    WHERE project_id = ?
+                ";
+                
+                $profit_stmt = $con->prepare($profit_query);
+                if (!$profit_stmt) {
+                    throw new Exception('Failed to prepare profit calculation: ' . $con->error);
+                }
+                
+                // Bind parameters - profit_loss (double) and project_id (integer)
+                $profit_stmt->bind_param('di', $profit_loss, $project_id);
+                
+                if (!$profit_stmt->execute()) {
+                    $error = $profit_stmt->error;
+                    $profit_stmt->close();
+                    throw new Exception('Failed to save project profit: ' . $error);
+                }
+                $profit_stmt->close();
+                
+                // Send notification to client
+                $projectStmt = $con->prepare("SELECT user_id, project, client_email FROM projects WHERE project_id = ?");
+                $projectStmt->bind_param("i", $project_id);
+                $projectStmt->execute();
+                $projectResult = $projectStmt->get_result();
+                
+                if ($projectRow = $projectResult->fetch_assoc()) {
+                    $user_id = $projectRow['user_id'];
+                    $project_name = $projectRow['project'];
+                    $client_email = $projectRow['client_email'];
+                    
+                    if (!empty($client_email)) {
+                        $notifType = 'project_finished';
+                        $message = "The project '$project_name' has been marked as finished. Thank you for your business!";
+                        
+                        $notifStmt = $con->prepare("INSERT INTO notifications_client (user_id, client_email, notif_type, message) VALUES (?, ?, ?, ?)");
+                        $notifStmt->bind_param("isss", $user_id, $client_email, $notifType, $message);
+                        if (!$notifStmt->execute()) {
+                            error_log("Failed to send client notification: " . $notifStmt->error);
+                        }
+                        $notifStmt->close();
+                    }
+                }
+                $projectStmt->close();
             }
             
             // Commit transaction
@@ -499,7 +619,7 @@ if ($userid) {
                       $stmt->execute();
                   }
                   ?>
-                  <a href="project_process.php?project_id=<?php echo $project_id; ?>" class="btn btn-light btn-sm">
+                  <a href="project_process_v2.php?project_id=<?php echo $project_id; ?>" class="btn btn-light btn-sm">
                     <i class="fa fa-arrow-left"></i> View Sechedule
                   </a>
                   <a href="#" class="btn btn-danger btn-sm" id="exportProjectPdfBtn">
