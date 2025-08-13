@@ -1082,9 +1082,32 @@ if ($project_id > 0) {
                                                     </div>
                                                     
                                                     <div class="d-flex justify-content-center gap-3 mt-4">
-                                                        <a href="project_actual.php?id=<?php echo $project_id; ?>" class="btn btn-primary">
+                                                        <button type="button" id="startProjectBtn" class="btn btn-primary">
                                                             <i class="fas fa-play me-2"></i> Go to Actual Project
-                                                        </a>
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <!-- Start Project Confirmation Modal -->
+                                                    <div class="modal fade" id="startProjectModal" tabindex="-1" aria-labelledby="startProjectModalLabel" aria-hidden="true">
+                                                        <div class="modal-dialog modal-dialog-centered">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header text-dark" id="modalHeader">
+                                                                    <h5 class="modal-title" id="startProjectModalLabel">Confirm Project Start</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <div id="startDateWarning" class="alert d-none">
+                                                                        <i class="fas fa-calendar-day me-2"></i>
+                                                                        <span id="dateMessage"></span>
+                                                                    </div>
+                                                                    <p>Starting the project will mark it as 'Ongoing' and allow you to track progress.</p>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                    <button type="button" id="confirmStartProject" class="btn btn-primary">Yes, Start Project</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1130,6 +1153,78 @@ if ($project_id > 0) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Then load our custom scripts -->
     <script src="js/contract_uploads.js" type="module"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const startProjectBtn = document.getElementById('startProjectBtn');
+        const confirmStartBtn = document.getElementById('confirmStartProject');
+        const startDateWarning = document.getElementById('startDateWarning');
+        const dateMessage = document.getElementById('dateMessage');
+        const modalHeader = document.getElementById('modalHeader');
+        const projectStartDate = new Date('<?php echo $project['start_date']; ?>');
+        const today = new Date();
+        
+        // Reset time part for accurate date comparison
+        today.setHours(0, 0, 0, 0);
+        projectStartDate.setHours(0, 0, 0, 0);
+        
+        // Calculate date difference in days
+        const timeDiff = projectStartDate - today;
+        const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+        
+        // Check date conditions
+        const isStartDateToday = daysDiff === 0;
+        const isStartDatePast = daysDiff < 0;
+        
+        startProjectBtn.addEventListener('click', function() {
+            // Configure modal based on date
+            if (isStartDatePast) {
+                // For past dates
+                modalHeader.className = 'modal-header bg-success text-white';
+                startDateWarning.className = 'alert alert-success';
+                dateMessage.innerHTML = `The project start date was <strong>${projectStartDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong> (${Math.abs(daysDiff)} days ago). You can still start the project now.`;
+            } else if (!isStartDateToday) {
+                // For future dates
+                modalHeader.className = 'modal-header bg-warning text-dark';
+                startDateWarning.className = 'alert alert-warning';
+                dateMessage.innerHTML = `The project start date is set to <strong>${projectStartDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</strong> (in ${daysDiff} days). Are you sure you want to start the project now?`;
+            }
+            
+            // Show/hide warning based on whether it's today or not
+            startDateWarning.classList.toggle('d-none', isStartDateToday);
+            
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('startProjectModal'));
+            modal.show();
+        });
+        
+        confirmStartBtn.addEventListener('click', function() {
+            // Update project status to 'Ongoing'
+            const projectId = <?php echo $project_id; ?>;
+            
+            fetch('update_project_status.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'project_id=' + projectId + '&status=Ongoing'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to project_actual.php on success
+                    window.location.href = 'project_actual.php?id=' + projectId;
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to start project'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while starting the project');
+            });
+        });
+    });
+    </script>
     <script src="js/permits_uploads.js" type="module"></script>
     <script src="js/project_blueprint.js"></script>
     <script src="js/project_budget.js"></script>
