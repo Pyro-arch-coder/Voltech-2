@@ -306,10 +306,13 @@ function saveScheduleItem(projectId) {
             }
             
             // Show success message
-            showAlert('Schedule item saved successfully!', 'success');
+            showAlert('Schedule item saved successfully! Refreshing page...', 'success');
             
-            // Reload the schedule items
+            // Reload the schedule items and refresh page after 1.5 seconds
             loadScheduleItems(projectId);
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
         } else {
             throw new Error(data?.message || 'Failed to save schedule item');
         }
