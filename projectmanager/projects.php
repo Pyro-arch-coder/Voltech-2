@@ -273,10 +273,54 @@ use PHPMailer\PHPMailer\Exception;
         unset($_SESSION['form_data']);
     }
     
-    // Fetch total number of projects for pagination
+    // Get user ID from session
     $user_id = $_SESSION['user_id'];
+    
+    // Get search and filter parameters
+    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
+    $status_filter = isset($_GET['status']) ? trim($_GET['status']) : '';
+    $size_filter = isset($_GET['size_filter']) ? trim($_GET['size_filter']) : '';
+    
+    // Build the base query
+    $where_conditions = ["user_id = $user_id", "(archived IS NULL OR archived = 0)"];
+    $params = [];
+    
+    // Add search condition
+    if (!empty($search)) {
+        $search_term = mysqli_real_escape_string($con, $search);
+        $where_conditions[] = "(project LIKE '%$search_term%' OR location LIKE '%$search_term%')";
+    }
+    
+    // Add status filter
+    if (!empty($status_filter)) {
+        $status = mysqli_real_escape_string($con, $status_filter);
+        $where_conditions[] = "status = '$status'";
+    }
+    
+    // Add size filter
+    if (!empty($size_filter)) {
+        switch ($size_filter) {
+            case '0-50':
+                $where_conditions[] = "size BETWEEN 0 AND 50";
+                break;
+            case '51-100':
+                $where_conditions[] = "size BETWEEN 51 AND 100";
+                break;
+            case '101-200':
+                $where_conditions[] = "size BETWEEN 101 AND 200";
+                break;
+            case '201':
+                $where_conditions[] = "size > 200";
+                break;
+        }
+    }
+    
+    $where_clause = implode(' AND ', $where_conditions);
+    
+    // Get total count with filters
     $total_projects = 0;
-    $count_result = mysqli_query($con, "SELECT COUNT(*) as total FROM projects WHERE user_id = $user_id AND (archived IS NULL OR archived = 0)");
+    $count_query = "SELECT COUNT(*) as total FROM projects WHERE $where_clause";
+    $count_result = mysqli_query($con, $count_query);
     if ($count_result) {
         $count_row = mysqli_fetch_assoc($count_result);
         $total_projects = $count_row['total'];
@@ -285,9 +329,15 @@ use PHPMailer\PHPMailer\Exception;
     // Calculate total pages
     $total_pages = ceil($total_projects / $results_per_page);
     
-    // Fetch projects for the current page
+    // Debug output
+    error_log("Total projects: " . $total_projects);
+    error_log("Results per page: " . $results_per_page);
+    error_log("Total pages: " . $total_pages);
+    
+    // Fetch projects for the current page with filters
     $projects = [];
-    $result = mysqli_query($con, "SELECT * FROM projects WHERE user_id = $user_id AND (archived IS NULL OR archived = 0) ORDER BY created_at DESC LIMIT $start_from, $results_per_page");
+    $query = "SELECT * FROM projects WHERE $where_clause ORDER BY created_at DESC LIMIT $start_from, $results_per_page";
+    $result = mysqli_query($con, $query);
     if ($result) {
         while ($row = mysqli_fetch_assoc($result)) {
             $projects[] = $row;
@@ -352,6 +402,9 @@ use PHPMailer\PHPMailer\Exception;
                 <a href="positions.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'positions.php' ? 'active' : ''; ?>">
                     <i class="fas fa-briefcase"></i>Position
                 </a>
+                <a href="gantt.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'gantt.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-briefcase"></i>My Schedule
+                </a>
             </div>
         </div>
         <!-- /#sidebar-wrapper -->
@@ -392,21 +445,69 @@ use PHPMailer\PHPMailer\Exception;
             <div class="container-fluid px-4 py-4">
                 <div class="card mb-5 shadow rounded-3">
                     <div class="card-body">
-                        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-2">
+                        <div class="mb-3 d-flex flex-wrap gap-2 justify-content-between align-items-center">
                             <h4 class="mb-0">Projects</h4>
                             <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-success btn-add-project" data-bs-toggle="modal" data-bs-target="#addProjectModal">
-                                    <i class="fas fa-plus me-2"></i>Add Project
+                                <a href="forecasting.php" class="btn btn-outline-primary">
+                                    <i class="fas fa-chart-line me-1"></i>Forecasting
+                                </a>
+                                <a href="archived_projects.php" class="btn btn-outline-secondary">
+                                    <i class="fas fa-archive me-1"></i>Archived
+                                </a>
+                                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProjectModal">
+                                    <i class="fas fa-plus me-1"></i> Add Project
                                 </button>
                             </div>
                         </div>
                         <hr>
-                        <form class="mb-3" method="get" action="" id="searchForm" style="max-width:400px;">
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-                                
+                        <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                            <form class="d-flex flex-grow-1" method="get" action="" id="searchForm" style="min-width:260px; max-width:400px;">
+                                <div class="input-group w-100">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="fas fa-search text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control border-start-0" name="search" placeholder="Search projects..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>" autocomplete="off">
+                                </div>
+                            </form>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="statusFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <?php 
+                                    if (isset($_GET['status']) && !empty($_GET['status'])) {
+                                        echo 'Status: ' . htmlspecialchars($_GET['status']);
+                                    } else {
+                                        echo 'All Status';
+                                    }
+                                    ?>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="statusFilter">
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['status' => ''])); ?>">All Status</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['status' => 'Pending'])); ?>">Pending</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['status' => 'Ongoing'])); ?>">Ongoing</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['status' => 'Finished'])); ?>">Finished</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['status' => 'Cancelled'])); ?>">Cancelled</a></li>
+                                </ul>
                             </div>
-                        </form>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sizeFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <?php 
+                                    if (isset($_GET['size_filter']) && !empty($_GET['size_filter'])) {
+                                        echo 'Size: ' . htmlspecialchars($_GET['size_filter']);
+                                    } else {
+                                        echo 'All Sizes';
+                                    }
+                                    ?>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="sizeFilter">
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['size_filter' => ''])); ?>">All Sizes</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['size_filter' => '0-50'])); ?>">0 - 50 sqm</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['size_filter' => '51-100'])); ?>">51 - 100 sqm</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['size_filter' => '101-200'])); ?>">101 - 200 sqm</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['size_filter' => '201'])); ?>">201+ sqm</a></li>
+                                </ul>
+                            </div>
+                            <div class="d-flex gap-2">
+                            </div>
+                        </div>
                         
                         <?php 
                         // Calculate starting number based on current page and items per page
@@ -452,32 +553,45 @@ use PHPMailer\PHPMailer\Exception;
                             </table>
                         </div>
 
+                        <!-- Debug Info -->
+                        <div class="alert alert-info d-none">
+                            Total Projects: <?php echo $total_projects; ?><br>
+                            Results Per Page: <?php echo $results_per_page; ?><br>
+                            Total Pages: <?php echo $total_pages; ?><br>
+                            Current Page: <?php echo $page; ?>
+                        </div>
+                        
                         <!-- Pagination -->
-                        <?php if ($total_pages > 1): ?>
+                        <?php 
+                        error_log("Pagination Debug - Total Projects: " . $total_projects);
+                        error_log("Pagination Debug - Total Pages: " . $total_pages);
+                        // Always show pagination for testing
+                        // if ($total_pages > 1): 
+                        ?>
                         <nav aria-label="Page navigation" class="mt-4">
                             <ul class="pagination justify-content-center custom-pagination-green">
-                                <?php if ($page > 1): ?>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page=<?php echo ($page - 1); ?><?php echo isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>">Previous</a>
-                                    </li>
-                                <?php endif; ?>
-                                
+                                <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                                    <a class="page-link" href="?page=<?php echo $page - 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status) ? '&status=' . urlencode($status) : ''; ?>" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                        <span class="sr-only">Previous</span>
+                                    </a>
+                                </li>
                                 <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                                    <li class="page-item <?php echo $page == $i ? 'active' : ''; ?>">
-                                        <a class="page-link" href="?page=<?php echo $i; ?><?php echo isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>">
+                                    <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
+                                        <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status) ? '&status=' . urlencode($status) : ''; ?>">
                                             <?php echo $i; ?>
                                         </a>
                                     </li>
                                 <?php endfor; ?>
-                                
-                                <?php if ($page < $total_pages): ?>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page=<?php echo ($page + 1); ?><?php echo isset($_GET['search']) ? '&search=' . urlencode($_GET['search']) : ''; ?>">Next</a>
-                                    </li>
-                                <?php endif; ?>
+                                <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+                                    <a class="page-link" href="?page=<?php echo $page + 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status) ? '&status=' . urlencode($status) : ''; ?>" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                        <span class="sr-only">Next</span>
+                                    </a>
+                                </li>
                             </ul>
                         </nav>
-                        <?php endif; ?>
+                        <?php // endif; ?>
                     </div>
                 </div>
             </div>
@@ -1065,11 +1179,18 @@ use PHPMailer\PHPMailer\Exception;
                             nextBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Checking email...';
                             
                             try {
-                                const emailExists = await checkEmailExists(email);
-                                if (emailExists) {
-                                    // Show error message
-                                    const errorMessage = 'This email is already registered. Please select "Existing Client" or use a different email.';
-                                    alert(errorMessage);
+                                const response = await fetch('projects.php', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded',
+                                    },
+                                    body: 'action=check_email&email=' + encodeURIComponent(email)
+                                });
+                                const data = await response.json();
+                                
+                                if (data.success === false && data.user) {
+                                    // Show error message with the user's name
+                                    alert(`This email is already registered to ${data.user.name}. Please select "Existing Client" or use a different email.`);
                                     emailInput.focus();
                                     nextBtn.disabled = false;
                                     nextBtn.innerHTML = originalBtnText;

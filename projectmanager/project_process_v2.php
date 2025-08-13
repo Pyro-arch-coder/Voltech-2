@@ -244,6 +244,9 @@ if ($project_id > 0) {
                 <a href="positions.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'positions.php' ? 'active' : ''; ?>">
                     <i class="fas fa-briefcase"></i>Position
                 </a>
+                <a href="gantt.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'gantt.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-calendar"></i>My Schedule
+                </a>
             </div>
         </div>
         <!-- /#sidebar-wrapper -->
@@ -1092,8 +1095,11 @@ if ($project_id > 0) {
                                         <div class="row justify-content-center">
                                             <div class="col-12 col-md-8 col-lg-6">
 
-                                                <?php if ($project_status === 'Ongoing'): ?>
-                                                    <!-- Show Project Progress card only if status is Ongoing -->
+                                                    <?php if (
+                                                        $project_status === 'Ongoing' ||
+                                                        $project_status === 'Finished' ||
+                                                        $project_status === 'Cancelled'
+                                                    ): ?>
                                                     <div class="card shadow-sm">
                                                         <div class="card-header bg-info text-white">
                                                             <h4 class="mb-0">Project Progress</h4>

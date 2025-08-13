@@ -300,6 +300,9 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
                 <a href="positions.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'positions.php' ? 'active' : ''; ?>">
                     <i class="fas fa-briefcase"></i>Position
                 </a>
+                <a href="gantt.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'gantt.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-calendar"></i>My Schedule
+                </a>
             </div>
         </div>
         <!-- /#sidebar-wrapper -->

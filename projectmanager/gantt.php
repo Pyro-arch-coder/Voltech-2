@@ -129,6 +129,9 @@ $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
                 <a href="positions.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'positions.php' ? 'active' : ''; ?>">
                     <i class="fas fa-briefcase"></i>Position
                 </a>
+                <a href="gantt.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'gantt.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-calendar"></i>My Schedule
+                </a>
             </div>
         </div>
         <!-- /#sidebar-wrapper -->
@@ -176,7 +179,6 @@ $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
                             </div>
                             <hr class="w-100 my-2">
                             <div class="w-100 d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                <a href="projects.php" class="btn btn-danger"><i class="fas fa-arrow-left me-1"></i> Back</a>
                                 <div class="ms-auto d-flex gap-2">
                                     <button class="btn btn-danger" id="exportPdfBtn"><i class="fas fa-file-pdf me-1"></i> Export as PDF</button>
                                     <button class="btn btn-primary" id="exportImgBtn"><i class="fas fa-image me-1"></i> Export as Image</button>
