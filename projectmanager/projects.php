@@ -370,6 +370,19 @@ use PHPMailer\PHPMailer\Exception;
     <title>Projects Management</title>
 </head>
 
+<style>
+@keyframes barMove {
+  0% { background-position: 0% 0; }
+  100% { background-position: 100% 0; }
+}
+#forecastedValue {
+    transition: box-shadow 0.3s;
+}
+#forecastedValue:hover {
+    box-shadow: 0 0 20px 0 rgba(13,110,253,.15);
+}
+</style>
+
 <body>
     <div class="d-flex" id="wrapper">
         <!-- Sidebar -->
@@ -424,9 +437,41 @@ use PHPMailer\PHPMailer\Exception;
                 </button>
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                        <?php include 'pm_notification.php'; ?>
-                        <li class="nav-item dropdown">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                    <?php 
+                    include 'pm_notification.php'; 
+                    
+                    // Function to count unread messages
+                    function countUnreadMessages($con, $tables, $userId) {
+                        $total = 0;
+                        foreach ($tables as $table) {
+                            $query = "SELECT COUNT(*) as count FROM $table WHERE receiver_id = ? AND is_read = 0";
+                            if ($stmt = $con->prepare($query)) {
+                                $stmt->bind_param("i", $userId);
+                                $stmt->execute();
+                                $result = $stmt->get_result();
+                                $row = $result->fetch_assoc();
+                                $total += $row['count'];
+                            }
+                        }
+                        return $total;
+                    }
+                    
+                    // Get total unread messages
+                    $tables = ['pm_client_messages', 'pm_procurement_messages', 'admin_pm_messages'];
+                    $unreadCount = countUnreadMessages($con, $tables, $_SESSION['user_id']);
+                    ?>
+                    <li class="nav-item ms-2">
+                        <a class="nav-link position-relative" href="pm_messenger.php" title="Messages">
+                            <i class="fas fa-comment-dots fs-5"></i>
+                            <?php if ($unreadCount > 0): ?>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6em;">
+                                    <?php echo $unreadCount > 9 ? '9+' : $unreadCount; ?>
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle second-text fw-bold" href="#" id="navbarDropdown"
                                 role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <?php echo htmlspecialchars($user_name); ?>
@@ -448,10 +493,10 @@ use PHPMailer\PHPMailer\Exception;
                         <div class="mb-3 d-flex flex-wrap gap-2 justify-content-between align-items-center">
                             <h4 class="mb-0">Projects</h4>
                             <div class="d-flex gap-2">
-                                <a href="forecasting.php" class="btn btn-outline-primary">
+                                <a href="../forecasting/analogous_forecasting.php" class="btn btn-outline-primary">
                                     <i class="fas fa-chart-line me-1"></i>Forecasting
                                 </a>
-                                <a href="archived_projects.php" class="btn btn-outline-secondary">
+                                <a href="project_archived.php" class="btn btn-outline-secondary">
                                     <i class="fas fa-archive me-1"></i>Archived
                                 </a>
                                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProjectModal">
@@ -696,7 +741,7 @@ use PHPMailer\PHPMailer\Exception;
                         </div>
                         
                        <!-- Step 2: Project Details -->
-                        <div class="step d-none" id="step2">
+                       <div class="step d-none" id="step2">
                             <h5 class="mb-4">Project Details</h5>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -806,6 +851,22 @@ use PHPMailer\PHPMailer\Exception;
                                     </select>
                                 </div>
 
+                                <!-- Forecasted Value - Malupit Design -->
+                                <div class="col-md-6 mb-3 d-flex align-items-end">
+                                    <span 
+                                        class="input-group-text bg-white border-3 border-primary rounded-3 shadow-sm py-3 px-4 d-flex flex-column align-items-center w-100"
+                                        id="forecastedValue" 
+                                        style="min-width: 200px; display: none; position: relative; overflow: hidden;"
+                                    >
+                                        <span class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-chart-line me-2 text-primary fs-4"></i> 
+                                            <span class="fw-semibold text-secondary" style="letter-spacing:1px;">Forecasted Value</span>
+                                        </span>
+                                        <span id="forecastedAmount" class="fw-bold text-primary display-6" style="font-size:2rem;">0.00</span>
+                                        <!-- Animated indicator bar -->
+                                        <span class="mt-2 w-100" style="height: 6px; background: linear-gradient(90deg, #0d6efd 50%, #cfe2ff 100%); border-radius: 3px; animation: barMove 2s infinite alternate;"></span>
+                                    </span>
+                                </div>
                                 <!-- Hidden location input -->
                                 <input type="hidden" id="location" name="location" required>
                             </div>
@@ -895,6 +956,7 @@ use PHPMailer\PHPMailer\Exception;
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/project_forecast.js"></script>
     <script>
     // Show feedback modal
     function showFeedback(type, message) {

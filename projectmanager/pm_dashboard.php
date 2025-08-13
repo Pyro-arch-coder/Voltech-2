@@ -228,17 +228,26 @@ function short_number_format(
     $num,
     $precision = 1
 ) {
+    $is_negative = $num < 0;
+    $num = abs($num);
+    $suffix = '';
+    
     if ($num >= 1000000000000) {
-        return number_format($num / 1000000000000, $precision) . 't';
+        $num = $num / 1000000000000;
+        $suffix = 't';
     } elseif ($num >= 1000000000) {
-        return number_format($num / 1000000000, $precision) . 'b';
+        $num = $num / 1000000000;
+        $suffix = 'b';
     } elseif ($num >= 1000000) {
-        return number_format($num / 1000000, $precision) . 'm';
+        $num = $num / 1000000;
+        $suffix = 'm';
     } elseif ($num >= 1000) {
-        return number_format($num / 1000, $precision) . 'k';
-    } else {
-        return number_format($num, 2);
+        $num = $num / 1000;
+        $suffix = 'k';
     }
+    
+    $formatted = number_format($num, $suffix ? $precision : 2) . $suffix;
+    return $is_negative ? '-' . $formatted : $formatted;
 }
 
 $user = null;
@@ -325,9 +334,41 @@ if ($userid) {
                 </button>
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <?php include 'pm_notification.php'; ?>
-                        <li class="nav-item dropdown">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                    <?php 
+                    include 'pm_notification.php'; 
+                    
+                    // Function to count unread messages
+                    function countUnreadMessages($con, $tables, $userId) {
+                        $total = 0;
+                        foreach ($tables as $table) {
+                            $query = "SELECT COUNT(*) as count FROM $table WHERE receiver_id = ? AND is_read = 0";
+                            if ($stmt = $con->prepare($query)) {
+                                $stmt->bind_param("i", $userId);
+                                $stmt->execute();
+                                $result = $stmt->get_result();
+                                $row = $result->fetch_assoc();
+                                $total += $row['count'];
+                            }
+                        }
+                        return $total;
+                    }
+                    
+                    // Get total unread messages
+                    $tables = ['pm_client_messages', 'pm_procurement_messages', 'admin_pm_messages'];
+                    $unreadCount = countUnreadMessages($con, $tables, $_SESSION['user_id']);
+                    ?>
+                    <li class="nav-item ms-2">
+                        <a class="nav-link position-relative" href="pm_messenger.php" title="Messages">
+                            <i class="fas fa-comment-dots fs-5"></i>
+                            <?php if ($unreadCount > 0): ?>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6em;">
+                                    <?php echo $unreadCount > 9 ? '9+' : $unreadCount; ?>
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle second-text fw-bold" href="#" id="navbarDropdown"
                                 role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <?php echo htmlspecialchars($user_name); ?>
@@ -394,18 +435,18 @@ if ($userid) {
                     </div>
                     <div class="col-md-3">
                         <div class="p-3 bg-white shadow d-flex justify-content-around align-items-center rounded card-link"
-                             onclick="showCardConfirmModal('Do you want to view all equipment?', 'equipment.php')">
+                             onclick="showCardConfirmModal('View all project profits', 'project_profits.php')">
                             <div>
                                 <h3 class="fs-2">
                                 <?php
-                                      $equip_query = mysqli_query($con, "SELECT COUNT(*) as count FROM equipment");
-                                      $equip_result = mysqli_fetch_assoc($equip_query);
-                                      echo number_format($equip_result['count'] ?? 0);
+                                      $profit_query = mysqli_query($con, "SELECT SUM(profit) as total FROM project_profits");
+                                      $profit_result = mysqli_fetch_assoc($profit_query);
+                                      echo '₱' . short_number_format($profit_result['total'] ?? 0);
                                       ?>
                                 </h3>
-                                <p class="fs-5">Total Equipment</p>
+                                <p class="fs-5">Total Profit</p>
                             </div>
-                            <i class="fas fa-hand-holding-usd fs-1 primary-text"></i>
+                            <i class="fas fa-chart-line fs-1 text-success"></i>
                         </div>
                     </div>
                     <div class="col-md-3">

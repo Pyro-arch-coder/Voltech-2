@@ -182,174 +182,47 @@ if ($userid) {
                 </div>
             </nav>
 
-            <div class="container-fluid px-4 py-4">
-                <!-- Welcome Card -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="card bg-primary text-white shadow-sm">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h4 class="mb-1">Welcome back, <?php echo htmlspecialchars($user_firstname); ?>!</h4>
-                                        <p class="mb-0">Here's what's happening with your projects today.</p>
-                                    </div>
-                                    <i class="fas fa-user-circle fa-3x opacity-50"></i>
-                                </div>
-                            </div>
-                        </div>
+            <div class="container py-4" style="max-width: 800px;">
+                <div class="card shadow-sm" style="height: 600px; display: flex; flex-direction: column;">
+                    
+                    <!-- Chat Header -->
+                    <div class="card-header bg-primary text-white d-flex align-items-center">
+                        <img src="https://via.placeholder.com/40" class="rounded-circle me-2" alt="User">
+                        <h6 class="mb-0">John Doe</h6>
                     </div>
-                </div>
 
-                <!-- Stats Overview -->
-                <div class="row mb-4">
-                    <?php
-                    // Get client's project stats
-                    $project_stats = [
-                        'total' => 0,
-                        'in_progress' => 0,
-                        'completed' => 0,
-                        'pending' => 0
-                    ];
-                    
-                    $project_query = $con->query("SELECT status, COUNT(*) as count FROM projects WHERE user_id = '$userid' GROUP BY status");
-                    if ($project_query) {
-                        while ($row = $project_query->fetch_assoc()) {
-                            $project_stats['total'] += $row['count'];
-                            if ($row['status'] === 'In Progress') {
-                                $project_stats['in_progress'] = $row['count'];
-                            } elseif ($row['status'] === 'Completed') {
-                                $project_stats['completed'] = $row['count'];
-                            } elseif ($row['status'] === 'Pending') {
-                                $project_stats['pending'] = $row['count'];
-                            }
-                        }
-                    }
-                    ?>
-                    
-                    <div class="col-md-3 mb-4">
-                        <div class="card border-start border-5 border-primary h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted mb-2">Total Projects</h6>
-                                        <h3 class="mb-0"><?php echo $project_stats['total']; ?></h3>
-                                    </div>
-                                    <div class="bg-primary bg-opacity-10 p-3 rounded">
-                                        <i class="fas fa-project-diagram text-primary"></i>
-                                    </div>
-                                </div>
+                    <!-- Chat Messages -->
+                    <div class="card-body overflow-auto" style="flex: 1; background-color: #f5f6f8;">
+                        <!-- Incoming -->
+                        <div class="d-flex mb-3">
+                            <img src="https://via.placeholder.com/40" class="rounded-circle me-2" alt="User">
+                            <div class="p-3 bg-white rounded shadow-sm" style="max-width: 70%;">
+                                Hi! How’s the project going?
+                            </div>
+                        </div>
+                        <!-- Outgoing -->
+                        <div class="d-flex mb-3 justify-content-end">
+                            <div class="p-3 bg-primary text-white rounded shadow-sm" style="max-width: 70%;">
+                                Going well! We’re about 60% done.
+                            </div>
+                        </div>
+                        <!-- Incoming -->
+                        <div class="d-flex mb-3">
+                            <img src="https://via.placeholder.com/40" class="rounded-circle me-2" alt="User">
+                            <div class="p-3 bg-white rounded shadow-sm" style="max-width: 70%;">
+                                Great! Let me know if you need more materials.
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="col-md-3 mb-4">
-                        <div class="card border-start border-5 border-warning h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted mb-2">In Progress</h6>
-                                        <h3 class="mb-0"><?php echo $project_stats['in_progress']; ?></h3>
-                                    </div>
-                                    <div class="bg-warning bg-opacity-10 p-3 rounded">
-                                        <i class="fas fa-spinner text-warning"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-3 mb-4">
-                        <div class="card border-start border-5 border-success h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted mb-2">Completed</h6>
-                                        <h3 class="mb-0"><?php echo $project_stats['completed']; ?></h3>
-                                    </div>
-                                    <div class="bg-success bg-opacity-10 p-3 rounded">
-                                        <i class="fas fa-check-circle text-success"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-3 mb-4">
-                        <div class="card border-start border-5 border-info h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="text-muted mb-2">Pending</h6>
-                                        <h3 class="mb-0"><?php echo $project_stats['pending']; ?></h3>
-                                    </div>
-                                    <div class="bg-info bg-opacity-10 p-3 rounded">
-                                        <i class="fas fa-clock text-info"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Recent Projects -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card shadow-sm">
-                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">My Recent Projects</h5>
-                                <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
-                            </div>
-                            <div class="card-body">
-                                <?php
-                                $recent_projects = [];
-                                $projects_query = $con->query("SELECT * FROM projects WHERE user_id = '$userid' ORDER BY created_at DESC LIMIT 5");
-                                
-                                if ($projects_query && $projects_query->num_rows > 0) {
-                                    echo '<div class="table-responsive">
-                                            <table class="table table-hover">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Project Name</th>
-                                                        <th>Status</th>
-                                                        <th>Start Date</th>
-                                                        <th>Progress</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>';
-                                    
-                                    while ($project = $projects_query->fetch_assoc()) {
-                                        $status_class = '';
-                                        if ($project['status'] === 'Completed') $status_class = 'success';
-                                        elseif ($project['status'] === 'In Progress') $status_class = 'primary';
-                                        elseif ($project['status'] === 'Pending') $status_class = 'warning';
-                                        else $status_class = 'secondary';
-                                        
-                                        echo '<tr>
-                                                <td>' . htmlspecialchars($project['project_name']) . '</td>
-                                                <td><span class="badge bg-' . $status_class . '">' . htmlspecialchars($project['status']) . '</span></td>
-                                                <td>' . date('M d, Y', strtotime($project['start_date'])) . '</td>
-                                                <td>
-                                                    <div class="progress" style="height: 8px;">
-                                                        <div class="progress-bar bg-' . $status_class . '" role="progressbar" style="width: ' . $project['progress'] . '%" aria-valuenow="' . $project['progress'] . '" aria-valuemin="0" aria-valuemax="100"></div>
-                                                    </div>
-                                                    <small class="text-muted">' . $project['progress'] . '% Complete</small>
-                                                </td>
-                                            </tr>';
-                                    }
-                                    
-                                    echo '      </tbody>
-                                            </table>
-                                        </div>';
-                                } else {
-                                    echo '<div class="text-center py-4">
-                                            <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
-                                            <p class="text-muted">No projects found. Get started by creating a new project.</p>
-                                            <a href="#" class="btn btn-primary">Create Project</a>
-                                        </div>';
-                                }
-                                ?>
-                            </div>
-                        </div>
+                    <!-- Chat Input -->
+                    <div class="card-footer bg-white">
+                        <form class="d-flex">
+                            <input type="text" class="form-control me-2" placeholder="Type a message...">
+                            <button class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

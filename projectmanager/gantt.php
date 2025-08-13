@@ -92,9 +92,10 @@ $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
     <link rel="stylesheet" href="style.css" />
     <title>Project Manager Gantt Chart</title>
     <style>
-.card-link { cursor: pointer; text-decoration: none; color: inherit; }
-.card-link:hover { box-shadow: 0 0 0 2px #009d6333; }
-</style>
+        .table-hover > tbody > tr:hover > * {
+            background-color: #f5f6f8 !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -151,9 +152,41 @@ $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
                 </button>
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <?php include 'pm_notification.php'; ?>
-                        <li class="nav-item dropdown">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                    <?php 
+                    include 'pm_notification.php'; 
+                    
+                    // Function to count unread messages
+                    function countUnreadMessages($con, $tables, $userId) {
+                        $total = 0;
+                        foreach ($tables as $table) {
+                            $query = "SELECT COUNT(*) as count FROM $table WHERE receiver_id = ? AND is_read = 0";
+                            if ($stmt = $con->prepare($query)) {
+                                $stmt->bind_param("i", $userId);
+                                $stmt->execute();
+                                $result = $stmt->get_result();
+                                $row = $result->fetch_assoc();
+                                $total += $row['count'];
+                            }
+                        }
+                        return $total;
+                    }
+                    
+                    // Get total unread messages
+                    $tables = ['pm_client_messages', 'pm_procurement_messages', 'admin_pm_messages'];
+                    $unreadCount = countUnreadMessages($con, $tables, $_SESSION['user_id']);
+                    ?>
+                    <li class="nav-item ms-2">
+                        <a class="nav-link position-relative" href="pm_messenger.php" title="Messages">
+                            <i class="fas fa-comment-dots fs-5"></i>
+                            <?php if ($unreadCount > 0): ?>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6em;">
+                                    <?php echo $unreadCount > 9 ? '9+' : $unreadCount; ?>
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle second-text fw-bold" href="#" id="navbarDropdown"
                                 role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <?php echo htmlspecialchars($user_name); ?>
@@ -170,31 +203,35 @@ $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
                 </div>
             </nav>
 
-            <div class="container-fluid px-2 px-md-4 py-3">
-                <div class="card mb-4 shadow rounded-3">
-                    <div class="card-body">
-                        <div class="d-flex flex-column align-items-center mb-2">
-                            <div class="w-100 d-flex justify-content-center align-items-center mb-2">
-                                <h4 class="mb-0 text-center flex-grow-1">Gantt Chart (by Month, <?php echo $currentYear; ?>)</h4>
+            <div class="container-fluid  px-2 px-md-4 py-3">
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex flex-column align-items-center mb-3">
+                            <div class="w-100 d-flex justify-content-center align-items-center mb-3">
+                                <h4 class="mb-0 text-center">Gantt Chart (by Month, <?php echo $currentYear; ?>)</h4>
                             </div>
                             <hr class="w-100 my-2">
-                            <div class="w-100 d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                                <div class="ms-auto d-flex gap-2">
-                                    <button class="btn btn-danger" id="exportPdfBtn"><i class="fas fa-file-pdf me-1"></i> Export as PDF</button>
-                                    <button class="btn btn-primary" id="exportImgBtn"><i class="fas fa-image me-1"></i> Export as Image</button>
+                            <div class="w-100 d-flex justify-content-end mb-3">
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-outline-danger" id="exportPdfBtn">
+                                        <i class="fas fa-file-pdf me-1"></i> Export as PDF
+                                    </button>
+                                    <button class="btn btn-outline-primary" id="exportImgBtn">
+                                        <i class="fas fa-image me-1"></i> Export as Image
+                                    </button>
                                 </div>
                             </div>
                         </div>
                         <?php if (count($projects) === 0): ?>
-                            <div class="alert alert-info">No projects found for your account.</div>
+                            <div class="alert alert-info mb-0">No projects found for your account.</div>
                         <?php else: ?>
                         <div class="table-responsive">
-                            <table class="table table-bordered align-middle text-center" id="ganttTable" style="min-width:900px;">
+                            <table class="table table-bordered align-middle text-center table-hover" id="ganttTable">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width:220px;">Project</th>
+                                        <th class="w-25">Project</th>
                                         <?php foreach ($months as $m): ?>
-                                            <th style="width:56px;"><?php echo $m; ?></th>
+                                            <th class="text-nowrap"><?php echo $m; ?></th>
                                         <?php endforeach; ?>
                                     </tr>
                                 </thead>
@@ -211,18 +248,18 @@ $months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
                                             $barStart = ($startYear < $currentYear) ? 0 : $startIdx;
                                             $barEnd = ($endYear > $currentYear) ? 11 : $endIdx;
                                             // Left empty cells
-                                            for ($i = 0; $i < $barStart; $i++) echo '<td></td>';
+                                            for ($i = 0; $i < $barStart; $i++) echo '<td class="p-0"></td>';
                                             // Bar cell
                                             $colspan = $barEnd - $barStart + 1;
-                                            echo '<td colspan="' . $colspan . '" style="padding:0;vertical-align:middle;">';
-                                            echo '<div style="height:32px;background:#009d63;border-radius:4px;width:100%;position:relative;display:flex;align-items:center;justify-content:center;">';
+                                            echo '<td colspan="' . $colspan . '" class="p-0 align-middle">';
+                                            echo '<div class="h-100 w-100 bg-success rounded d-flex align-items-center justify-content-center">';
                                             $start_fmt = date('m-d-Y', strtotime($p['start_date']));
                                             $end_fmt = date('m-d-Y', strtotime($p['deadline']));
-                                            echo '<span style="color:#fff;font-size:0.6em;font-weight:bold;text-shadow:0 1px 2px #0008;">' . $start_fmt . ' to ' . $end_fmt . '</span>';
+                                            echo '<span class="text-white small fw-bold">' . $start_fmt . ' to ' . $end_fmt . '</span>';
                                             echo '</div>';
                                             echo '</td>';
                                             // Right empty cells
-                                            for ($i = $barEnd + 1; $i < 12; $i++) echo '<td></td>';
+                                            for ($i = $barEnd + 1; $i < 12; $i++) echo '<td class="p-0"></td>';
                                         ?>
                                     </tr>
                                     <?php endforeach; ?>

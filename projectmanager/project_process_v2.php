@@ -1,6 +1,54 @@
 <?php
 session_start();
+if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user_level'] != 3) {
+    header("Location: ../login.php");
+    exit();
+}
+
 require_once '../config.php';
+
+$userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
+$user_email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
+$user_firstname = isset($_SESSION['firstname']) ? $_SESSION['firstname'] : '';
+$user_lastname = isset($_SESSION['lastname']) ? $_SESSION['lastname'] : '';
+$user_name = trim($user_firstname . ' ' . $user_lastname);
+$current_page = basename($_SERVER['PHP_SELF']);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
+    header('Content-Type: application/json');
+    $response = ['success' => false, 'message' => ''];
+    $current = isset($_POST['current_password']) ? $_POST['current_password'] : '';
+    $new = isset($_POST['new_password']) ? $_POST['new_password'] : '';
+    $confirm = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
+    if (!$current || !$new || !$confirm) {
+        $response['message'] = 'All fields are required.';
+    } elseif ($new !== $confirm) {
+        $response['message'] = 'New passwords do not match.';
+    } elseif (strlen($new) < 6) {
+        $response['message'] = 'New password must be at least 6 characters.';
+    } else {
+        $user_row = $con->query("SELECT password FROM users WHERE id = '$userid'");
+        if ($user_row && $user_row->num_rows > 0) {
+            $user_data = $user_row->fetch_assoc();
+            if (password_verify($current, $user_data['password'])) {
+                $hashed = password_hash($new, PASSWORD_DEFAULT);
+                $update = $con->query("UPDATE users SET password = '$hashed' WHERE id = '$userid'");
+                if ($update) {
+                    $response['success'] = true;
+                    $response['message'] = 'Password changed successfully!';
+                } else {
+                    $response['message'] = 'Failed to update password.';
+                }
+            } else {
+                $response['message'] = 'Current password is incorrect.';
+            }
+        } else {
+            $response['message'] = 'User not found.';
+        }
+    }
+    echo json_encode($response);
+    exit();
+}
 
 // Fetch project details if project_id is in GET
 $project_id = isset($_GET['project_id']) ? intval($_GET['project_id']) : 0;
@@ -67,55 +115,6 @@ if (isset($_GET['project_id'])) {
             $completed_tasks = 0;
         }
     }
-}
-
-if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user_level'] != 3) {
-    header("Location: ../login.php");
-    exit();
-}
-
-$userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
-$user_email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
-$user_firstname = isset($_SESSION['firstname']) ? $_SESSION['firstname'] : '';
-$user_lastname = isset($_SESSION['lastname']) ? $_SESSION['lastname'] : '';
-$user_name = trim($user_firstname . ' ' . $user_lastname);
-$current_page = basename($_SERVER['PHP_SELF']);
-
-// --- Change Password Backend Handler (AJAX) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
-    header('Content-Type: application/json');
-    $response = ['success' => false, 'message' => ''];
-    $current = isset($_POST['current_password']) ? $_POST['current_password'] : '';
-    $new = isset($_POST['new_password']) ? $_POST['new_password'] : '';
-    $confirm = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
-    if (!$current || !$new || !$confirm) {
-        $response['message'] = 'All fields are required.';
-    } elseif ($new !== $confirm) {
-        $response['message'] = 'New passwords do not match.';
-    } elseif (strlen($new) < 6) {
-        $response['message'] = 'New password must be at least 6 characters.';
-    } else {
-        $user_row = $con->query("SELECT password FROM users WHERE id = '$userid'");
-        if ($user_row && $user_row->num_rows > 0) {
-            $user_data = $user_row->fetch_assoc();
-            if (password_verify($current, $user_data['password'])) {
-                $hashed = password_hash($new, PASSWORD_DEFAULT);
-                $update = $con->query("UPDATE users SET password = '$hashed' WHERE id = '$userid'");
-                if ($update) {
-                    $response['success'] = true;
-                    $response['message'] = 'Password changed successfully!';
-                } else {
-                    $response['message'] = 'Failed to update password.';
-                }
-            } else {
-                $response['message'] = 'Current password is incorrect.';
-            }
-        } else {
-            $response['message'] = 'User not found.';
-        }
-    }
-    echo json_encode($response);
-    exit();
 }
 
 // User profile image fetch block (restored)
@@ -264,9 +263,41 @@ if ($project_id > 0) {
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                        <?php include 'pm_notification.php'; ?>
-                        <li class="nav-item dropdown">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                    <?php 
+                    include 'pm_notification.php'; 
+                    
+                    // Function to count unread messages
+                    function countUnreadMessages($con, $tables, $userId) {
+                        $total = 0;
+                        foreach ($tables as $table) {
+                            $query = "SELECT COUNT(*) as count FROM $table WHERE receiver_id = ? AND is_read = 0";
+                            if ($stmt = $con->prepare($query)) {
+                                $stmt->bind_param("i", $userId);
+                                $stmt->execute();
+                                $result = $stmt->get_result();
+                                $row = $result->fetch_assoc();
+                                $total += $row['count'];
+                            }
+                        }
+                        return $total;
+                    }
+                    
+                    // Get total unread messages
+                    $tables = ['pm_client_messages', 'pm_procurement_messages', 'admin_pm_messages'];
+                    $unreadCount = countUnreadMessages($con, $tables, $_SESSION['user_id']);
+                    ?>
+                    <li class="nav-item ms-2">
+                        <a class="nav-link position-relative" href="pm_messenger.php" title="Messages">
+                            <i class="fas fa-comment-dots fs-5"></i>
+                            <?php if ($unreadCount > 0): ?>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6em;">
+                                    <?php echo $unreadCount > 9 ? '9+' : $unreadCount; ?>
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle second-text fw-bold" href="#" id="navbarDropdown"
                                 role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <?php echo htmlspecialchars($user_name); ?>
@@ -1225,6 +1256,37 @@ if ($project_id > 0) {
         </div>
     </div>
 
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changePasswordModalLabel">Change Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                <div class="mb-3">
+                    <label for="current_password" class="form-label">Current Password</label>
+                    <input type="password" class="form-control" id="current_password" name="current_password" required>
+                </div>
+                <div class="mb-3">
+                    <label for="new_password" class="form-label">New Password</label>
+                    <input type="password" class="form-control" id="new_password" name="new_password" required>
+                </div>
+                <div class="mb-3">
+                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                </div>
+                <div id="changePasswordFeedback" class="mb-2"></div>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-success">Change Password</button>
+                </div>
+                </form>
+            </div>
+            </div>
+        </div>
+    </div>
+
    <?php include 'project_processv2_modal.php'; ?>
     <!-- Load Bootstrap first -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
@@ -1580,6 +1642,44 @@ if ($project_id > 0) {
             }, 3000);
         }
     });
+
+    </script>
+
+    
+<script>
+        // Change Password AJAX (like pm_profile.php)
+    document.addEventListener('DOMContentLoaded', function() {
+        var changePasswordForm = document.getElementById('changePasswordForm');
+        var feedbackDiv = document.getElementById('changePasswordFeedback');
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            feedbackDiv.innerHTML = '';
+            var formData = new FormData(changePasswordForm);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '', true);
+            xhr.onload = function() {
+                try {
+                var res = JSON.parse(xhr.responseText);
+                if (res.success) {
+                    feedbackDiv.innerHTML = '<div class="alert alert-success">' + res.message + '</div>';
+                    changePasswordForm.reset();
+                    setTimeout(function() {
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('changePasswordModal'));
+                    if (modal) modal.hide();
+                    }, 1200);
+                } else {
+                    feedbackDiv.innerHTML = '<div class="alert alert-danger">' + res.message + '</div>';
+                }
+                } catch (err) {
+                feedbackDiv.innerHTML = '<div class="alert alert-danger">Unexpected error. Please try again.</div>';
+                }
+            };
+            formData.append('change_password', '1');
+            xhr.send(formData);
+            });
+        }
+        });
     </script>
   </body>
 </html>

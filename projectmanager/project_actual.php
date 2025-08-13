@@ -232,13 +232,13 @@ if (isset($_POST['update_project_status'])) {
                 // Insert expense record
                 $expense_date = date('Y-m-d');
                 $expense_category = 'Project';
-                $description = 'Finished Project';
+                $description = 'Finished Project: ' . $project_data['project'];
                 $project_name = $project_data['project'];
                 
-                $expense_query = "INSERT INTO expenses (user_id, expense, expensedate, project_name, expensecategory, description) 
-                                VALUES (?, ?, ?, ?, ?, ?)";
+                $expense_query = "INSERT INTO expenses (user_id, expense, expensedate, project_name, expensecategory, description, project_id) 
+                                VALUES (?, ?, ?, ?, ?, ?, ?)";
                 $expense_stmt = $con->prepare($expense_query);
-                $expense_stmt->bind_param('idssss', $userid, $total_expenses, $expense_date, $project_name, $expense_category, $description);
+                $expense_stmt->bind_param('idssssi', $userid, $total_expenses, $expense_date, $project_name, $expense_category, $description, $project_id);
                 
                 if (!$expense_stmt->execute()) {
                     throw new Exception('Failed to create expense record');
@@ -588,9 +588,41 @@ if ($userid) {
                 </button>
 
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <?php include 'pm_notification.php'; ?>
-                        <li class="nav-item dropdown">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                    <?php 
+                    include 'pm_notification.php'; 
+                    
+                    // Function to count unread messages
+                    function countUnreadMessages($con, $tables, $userId) {
+                        $total = 0;
+                        foreach ($tables as $table) {
+                            $query = "SELECT COUNT(*) as count FROM $table WHERE receiver_id = ? AND is_read = 0";
+                            if ($stmt = $con->prepare($query)) {
+                                $stmt->bind_param("i", $userId);
+                                $stmt->execute();
+                                $result = $stmt->get_result();
+                                $row = $result->fetch_assoc();
+                                $total += $row['count'];
+                            }
+                        }
+                        return $total;
+                    }
+                    
+                    // Get total unread messages
+                    $tables = ['pm_client_messages', 'pm_procurement_messages', 'admin_pm_messages'];
+                    $unreadCount = countUnreadMessages($con, $tables, $_SESSION['user_id']);
+                    ?>
+                    <li class="nav-item ms-2">
+                        <a class="nav-link position-relative" href="pm_messenger.php" title="Messages">
+                            <i class="fas fa-comment-dots fs-5"></i>
+                            <?php if ($unreadCount > 0): ?>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6em;">
+                                    <?php echo $unreadCount > 9 ? '9+' : $unreadCount; ?>
+                                </span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle second-text fw-bold" href="#" id="navbarDropdown"
                                 role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <?php echo htmlspecialchars($user_name); ?>
