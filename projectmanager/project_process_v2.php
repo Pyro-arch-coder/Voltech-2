@@ -112,6 +112,27 @@ if ($userid) {
     }
 }
 
+$blueprint_count = 0;
+if ($project_id > 0) {
+    $stmt = $con->prepare("SELECT COUNT(*) FROM blueprints WHERE project_id = ?");
+    $stmt->bind_param('i', $project_id);
+    $stmt->execute();
+    $stmt->bind_result($blueprint_count);
+    $stmt->fetch();
+    $stmt->close();
+}
+
+$budget_doc_exists = false;
+if ($project_id > 0) {
+    $stmt = $con->prepare("SELECT COUNT(*) FROM project_pdf_approval WHERE project_id = ?");
+    $stmt->bind_param('i', $project_id);
+    $stmt->execute();
+    $stmt->bind_result($doc_count);
+    $stmt->fetch();
+    $stmt->close();
+    $budget_doc_exists = $doc_count > 0;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -299,7 +320,9 @@ if ($userid) {
                                                 <input type="hidden" name="project_id" id="project_id" value="<?php echo htmlspecialchars($project_id); ?>">
                                                 
                                                 <div class="d-flex justify-content-between align-items-center mt-4">
-                                                    <div id="uploadStatus" class="text-muted small"></div>
+                                                    <div class="text-muted small">
+                                                        <strong><?= $blueprint_count ?></strong> blueprint<?= $blueprint_count == 1 ? '' : 's' ?> uploaded
+                                                    </div>
                                                     <div>
                                                         <button type="button" class="btn btn-primary me-2" id="uploadBtn">
                                                             <i class="fas fa-upload me-2"></i>Upload Files
@@ -502,8 +525,11 @@ if ($userid) {
                                                             <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#budgetFilesModal">
                                                                 <i class="fas fa-eye me-2"></i>View Budget Files
                                                             </button>
-                                                            <button type="button" class="btn btn-primary ms-2" id="uploadBudgetBtn">
-                                                                <i class="fas fa-cloud-upload-alt me-2"></i>Upload Files
+                                                            <button type="button"
+                                                                class="btn <?= $budget_doc_exists ? 'btn-primary' : 'btn-primary' ?> ms-2"
+                                                                id="uploadBudgetBtn">
+                                                                <i class="fas fa-cloud-upload-alt me-2"></i>
+                                                                <?= $budget_doc_exists ? 'Re-upload File' : 'Upload Files' ?>
                                                             </button>
                                                         </div>
                                                     </div>

@@ -284,9 +284,22 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
             
             if (result.success) {
-                // Refresh the blueprint list
-                fetchAndDisplayBlueprints();
-                showAlert('Blueprint deleted successfully', 'success');
+                // Show success modal
+                const successModal = new bootstrap.Modal(document.getElementById('deleteBlueprintSuccessModal'));
+                successModal.show();
+                
+                // Refresh the page when modal is closed
+                const modalElement = document.getElementById('deleteBlueprintSuccessModal');
+                const refreshAfterDelete = document.getElementById('refreshAfterDelete');
+                
+                const refreshHandler = function() {
+                    // Remove the event listener to prevent multiple refreshes
+                    refreshAfterDelete.removeEventListener('click', refreshHandler);
+                    // Refresh the page
+                    window.location.reload();
+                };
+                
+                refreshAfterDelete.addEventListener('click', refreshHandler);
             } else {
                 throw new Error(result.message || 'Failed to delete blueprint');
             }
@@ -380,10 +393,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Wait for all uploads to complete
                 await Promise.all(uploadPromises);
                 
-                // Show appropriate message
+                // Show success modal and refresh after closing
                 if (uploadedFiles.length > 0) {
-                    const successMsg = `Successfully uploaded ${uploadedFiles.length} file(s):\n${uploadedFiles.join('\n')}`;
-                    showAlert(successMsg, 'success');
+                    const successModal = new bootstrap.Modal(document.getElementById('blueprintUploadSuccessModal'));
+                    const uploadedFilesList = document.getElementById('uploadedFilesList');
+                    
+                    // Update the modal with the list of uploaded files
+                    uploadedFilesList.innerHTML = uploadedFiles.map(file => 
+                        `<div><i class="fas fa-file-pdf text-danger me-2"></i>${file}</div>`
+                    ).join('');
+                    
+                    // Show the modal
+                    successModal.show();
+                    
+                    // Refresh the page when modal is closed
+                    const modalElement = document.getElementById('blueprintUploadSuccessModal');
+                    modalElement.addEventListener('hidden.bs.modal', function () {
+                        window.location.reload();
+                    });
                 }
                 
                 if (errors.length > 0) {

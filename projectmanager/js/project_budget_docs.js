@@ -178,15 +178,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
 
-                // All files uploaded successfully
-                showAlert('Files uploaded successfully!', 'success');
+                // Show success modal
+                const successModal = new bootstrap.Modal(document.getElementById('budgetUploadSuccessModal'));
+                const uploadedFilesList = document.getElementById('budgetUploadedFilesList');
+                const modalElement = document.getElementById('budgetUploadSuccessModal');
+                
+                // Remove any existing event listeners to prevent duplicates
+                const newModalElement = modalElement.cloneNode(true);
+                modalElement.parentNode.replaceChild(newModalElement, modalElement);
+                
+                // Update the modal with the list of uploaded files
+                const fileNames = Array.from(files).map(file => file.name);
+                document.getElementById('budgetUploadedFilesList').innerHTML = fileNames.map(file => 
+                    `<div><i class="fas fa-file-pdf text-danger me-2"></i>${file}</div>`
+                ).join('');
                 
                 // Clear the file list
                 files = [];
                 updateFileList();
                 
-                // Refresh the budget documents list
-                fetchBudgetDocuments();
+                // Add event listener for when modal is closed
+                newModalElement.addEventListener('hidden.bs.modal', function onModalHidden() {
+                    // Remove this event listener
+                    newModalElement.removeEventListener('hidden.bs.modal', onModalHidden);
+                    // Refresh the documents list
+                    fetchBudgetDocuments();
+                });
+                
+                // Show the modal
+                new bootstrap.Modal(newModalElement).show();
                 
             } catch (error) {
                 console.error('Upload error:', error);
@@ -377,11 +397,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Delete budget document
     async function deleteBudgetDocument(docId) {
-        if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
-            return;
-        }
-
+    
         try {
+            console.log('Attempting to delete document ID:', docId);
+            console.log('Project ID:', getProjectId());
+            
             const response = await fetch('delete_budget_document.php', {
                 method: 'POST',
                 headers: {
@@ -390,14 +410,67 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: `id=${docId}&project_id=${getProjectId()}`
             });
 
-            const data = await response.json();
-            
-            if (data.success) {
-                showAlert('Document deleted successfully', 'success');
-                // Refresh the documents list
-                fetchBudgetDocuments();
-            } else {
-                throw new Error(data.message || 'Failed to delete document');
+            // First get the response as text
+            let responseText;
+            try {
+                responseText = await response.text();
+                console.log('Raw response text:', responseText);
+                
+                // Try to parse as JSON
+                const data = JSON.parse(responseText);
+                console.log('Parsed response data:', data);
+                
+                if (!response.ok) {
+                    throw new Error(data.message || `Server returned status ${response.status}`);
+                }
+                
+                // If we get here, we have a successful JSON response
+                if (data && data.success) {
+                    // Show success alert
+                    showAlert('Document deleted successfully', 'success');
+                    
+                    // Close the modal if it's open
+                    const viewFilesModal = bootstrap.Modal.getInstance(document.getElementById('budgetFilesModal'));
+                    if (viewFilesModal) {
+                        viewFilesModal.hide();
+                    }
+                    
+                    // Refresh the documents list
+                    fetchBudgetDocuments();
+                    
+                    // Also update the upload button text if needed
+                    const uploadBtn = document.getElementById('uploadBudgetBtn');
+                    if (uploadBtn && !document.querySelector('#budgetFilesModal .card')) {
+                        uploadBtn.innerHTML = '<i class="fas fa-upload me-1"></i> Upload Files';
+                    }
+                    
+                    return;
+                } else {
+                    throw new Error(data ? (data.message || 'Failed to delete document') : 'Invalid server response');
+                }
+                
+            } catch (e) {
+                console.error('Error parsing response:', e);
+                
+                // If we have a response but it's not JSON, try to extract a meaningful error
+                if (responseText) {
+                    // Check if it's an HTML error page
+                    const errorMatch = responseText.match(/<title>(.*?)<\/title>/i) || 
+                                     responseText.match(/<h1.*?>(.*?)<\/h1>/i) ||
+                                     responseText.match(/<b>(.*?)<\/b>/i);
+                    
+                    if (errorMatch && errorMatch[1]) {
+                        throw new Error(`Server error: ${errorMatch[1].trim()}`);
+                    }
+                    
+                    // If it's not HTML but still not JSON, show a portion of the response
+                    if (responseText.length > 200) {
+                        responseText = responseText.substring(0, 200) + '...';
+                    }
+                    throw new Error(`Unexpected server response: ${responseText}`);
+                } else {
+                    throw new Error('No response from server');
+                }
             }
         } catch (error) {
             console.error('Error deleting document:', error);

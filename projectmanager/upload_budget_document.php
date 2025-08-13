@@ -1,5 +1,5 @@
 <?php
-// Enable error reporting for debugging
+// Enable error reporting for debugging (disable in production)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
@@ -43,20 +43,59 @@ if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 $fileName = 'budget_' . $projectId . '_' . time() . '.pdf';
 $filePath = $uploadDir . $fileName;
 
-if (!move_uploaded_file($file['tmp_name'], $filePath)) sendJsonResponse(false, 'Failed to move uploaded file');
-
-// Insert record
-$stmt = $con->prepare("INSERT INTO project_pdf_approval (project_id, estimation_pdf, status, created_at, updated_at) VALUES (?, ?, 'Not Show', NOW(), NOW())");
+// Check if record exists for this project_id
+$stmt = $con->prepare("SELECT id, estimation_pdf FROM project_pdf_approval WHERE project_id = ? LIMIT 1");
 if (!$stmt) sendJsonResponse(false, 'Database prepare failed: ' . $con->error);
-$stmt->bind_param("is", $projectId, $filePath);
-if (!$stmt->execute()) {
-    @unlink($filePath);
-    sendJsonResponse(false, 'Database insert failed: ' . $stmt->error);
+$stmt->bind_param("i", $projectId);
+$stmt->execute();
+$stmt->store_result();
+
+$existingId = null;
+$existingFile = null;
+if ($stmt->num_rows > 0) {
+    $stmt->bind_result($existingId, $existingFile);
+    $stmt->fetch();
 }
 $stmt->close();
 
-sendJsonResponse(true, 'File uploaded and record inserted.', [
-    'document_id' => $con->insert_id,
+// Move the uploaded file
+if (!move_uploaded_file($file['tmp_name'], $filePath)) sendJsonResponse(false, 'Failed to move uploaded file');
+
+// If exists, delete old file and update record
+if ($existingId) {
+    if ($existingFile && file_exists($existingFile)) {
+        @unlink($existingFile);
+    }
+    $stmt = $con->prepare("UPDATE project_pdf_approval SET estimation_pdf = ?, status = 'Not Show', updated_at = NOW() WHERE id = ?");
+    if (!$stmt) {
+        @unlink($filePath);
+        sendJsonResponse(false, 'Database prepare failed: ' . $con->error);
+    }
+    $stmt->bind_param("si", $filePath, $existingId);
+    if (!$stmt->execute()) {
+        @unlink($filePath);
+        sendJsonResponse(false, 'Database update failed: ' . $stmt->error);
+    }
+    $stmt->close();
+    $document_id = $existingId;
+} else {
+    // Insert new record
+    $stmt = $con->prepare("INSERT INTO project_pdf_approval (project_id, estimation_pdf, status, created_at, updated_at) VALUES (?, ?, 'Not Show', NOW(), NOW())");
+    if (!$stmt) {
+        @unlink($filePath);
+        sendJsonResponse(false, 'Database prepare failed: ' . $con->error);
+    }
+    $stmt->bind_param("is", $projectId, $filePath);
+    if (!$stmt->execute()) {
+        @unlink($filePath);
+        sendJsonResponse(false, 'Database insert failed: ' . $stmt->error);
+    }
+    $document_id = $con->insert_id;
+    $stmt->close();
+}
+
+sendJsonResponse(true, 'File uploaded and record saved.', [
+    'document_id' => $document_id,
     'file_path' => $filePath,
     'file_name' => $file['name'],
     'file_size' => $file['size']
