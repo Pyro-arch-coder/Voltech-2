@@ -12,199 +12,103 @@ $user_lastname = isset($_SESSION['lastname']) ? $_SESSION['lastname'] : '';
 $user_name = trim($user_firstname . ' ' . $user_lastname);
 $current_page = basename($_SERVER['PHP_SELF']);
 
-// --- Yearly Expenses Data for Chart (separate lines for order_expenses and expenses) ---
-$year = date('Y');
-$order_monthly_expenses = array_fill(1, 12, 0);
-$sql1 = "SELECT MONTH(expensedate) as month, SUM(expense) as total FROM order_expenses WHERE YEAR(expensedate)='$year' GROUP BY MONTH(expensedate)";
-$res1 = mysqli_query($con, $sql1);
-while ($row = mysqli_fetch_assoc($res1)) {
-    $order_monthly_expenses[(int)$row['month']] = (float)$row['total'];
-}
-$expenses_monthly_expenses = array_fill(1, 12, 0);
-$sql2 = "SELECT MONTH(expensedate) as month, SUM(expense) as total FROM expenses WHERE YEAR(expensedate)='$year' GROUP BY MONTH(expensedate)";
-$res2 = mysqli_query($con, $sql2);
-while ($row = mysqli_fetch_assoc($res2)) {
-    $expenses_monthly_expenses[(int)$row['month']] = (float)$row['total'];
+
+// Get count of approved materials from suppliers_orders_approved
+$approved_materials_count = 0;
+$approved_materials_query = mysqli_query($con, "SELECT COUNT(*) as total FROM suppliers_orders_approved WHERE user_id = '$userid' AND type = 'material'");
+if ($approved_materials_query) {
+    $approved_materials_result = mysqli_fetch_assoc($approved_materials_query);
+    $approved_materials_count = intval($approved_materials_result['total'] ?? 0);
 }
 
-// --- Top 3 Projects by Progress ---
-$top_projects = [];
-$top_labels = [];
-$top_progress = [];
-$top_sql = "SELECT p.project_id, p.project, AVG(pt.progress) as avg_progress 
-            FROM projects p 
-            LEFT JOIN project_timeline pt ON p.project_id = pt.project_id 
-            WHERE p.user_id='$userid' 
-            GROUP BY p.project_id, p.project 
-            ORDER BY avg_progress DESC 
-            LIMIT 3";
-$top_res = mysqli_query($con, $top_sql);
-if ($top_res) {
-    while ($row = mysqli_fetch_assoc($top_res)) {
-        $top_projects[] = $row;
-        $top_labels[] = $row['project'];
-        $top_progress[] = round($row['avg_progress'], 1);
-    }
-} else {
-    // Log error if query fails
-    error_log("Error in supplier_dashboard.php: " . mysqli_error($con));
+// For Total Reorder count (from suppliers_orders_approved)
+$reorder_count = 0;
+$reorder_count_query = mysqli_query($con, "SELECT COUNT(*) as count FROM suppliers_orders_approved WHERE user_id = '$userid' AND type = 'reorder'");
+if ($reorder_count_query) {
+    $reorder_count_result = mysqli_fetch_assoc($reorder_count_query);
+    $reorder_count = intval($reorder_count_result['count'] ?? 0);
 }
 
-// --- Equipment Expenses Comparison Data for Chart (Reorder and Backorder only)
-$equip_reorder_total = 0;
-$equip_backorder_total = 0;
-$reorder_exp_query = mysqli_query($con, "SELECT SUM(expense) as total FROM order_expenses WHERE description LIKE '%Reorder%'");
-if ($reorder_exp_query) {
-    $reorder_exp_result = mysqli_fetch_assoc($reorder_exp_query);
-    $equip_reorder_total = floatval($reorder_exp_result['total'] ?? 0);
-}
-$backorder_exp_query = mysqli_query($con, "SELECT SUM(expense) as total FROM order_expenses WHERE description LIKE '%Backorder%' OR (description NOT LIKE '%Reorder%')");
-if ($backorder_exp_query) {
-    $backorder_exp_result = mysqli_fetch_assoc($backorder_exp_query);
-    $equip_backorder_total = floatval($backorder_exp_result['total'] ?? 0);
+// For Total Backorder count (from suppliers_orders_approved)
+$backorder_count = 0;
+$backorder_count_query = mysqli_query($con, "SELECT COUNT(*) as count FROM suppliers_orders_approved WHERE user_id = '$userid' AND type = 'backorder'");
+if ($backorder_count_query) {
+    $backorder_count_result = mysqli_fetch_assoc($backorder_count_query);
+    $backorder_count = intval($backorder_count_result['count'] ?? 0);
 }
 
-// --- Actual Expense Data for Line Chart ---
-$actual_labels = [];
-$actual_totals = [];
-$proj_sql2 = "SELECT project_id, project FROM projects WHERE user_id='$userid' ORDER BY project_id DESC";
-$proj_res2 = mysqli_query($con, $proj_sql2);
-while ($proj = mysqli_fetch_assoc($proj_res2)) {
-    $pid = $proj['project_id'];
-    $actual_labels[] = $proj['project'];
-    // Sum all expenses for this project (from project_add_employee, project_add_materials, project_add_equipment)
-    $emp_total = 0;
-    $emp_query = mysqli_query($con, "SELECT total FROM project_add_employee WHERE project_id='$pid'");
-    while ($erow = mysqli_fetch_assoc($emp_query)) {
-        $emp_total += floatval($erow['total']);
-    }
-    $mat_total = 0;
-    $mat_query = mysqli_query($con, "SELECT total FROM project_add_materials WHERE project_id='$pid'");
-    while ($mrow = mysqli_fetch_assoc($mat_query)) {
-        $mat_total += floatval($mrow['total']);
-    }
-    $equip_total = 0;
-    $equip_query = mysqli_query($con, "SELECT total FROM project_add_equipment WHERE project_id='$pid'");
-    while ($eqrow = mysqli_fetch_assoc($equip_query)) {
-        $equip_total += floatval($eqrow['total']);
-    }
-    $actual_total = $mat_total + $equip_total;
-    $actual_totals[] = round($actual_total, 2);
+// Get total approved orders for the logged-in user
+$total_approved_orders = 0;
+$approved_orders_query = mysqli_query($con, "SELECT COUNT(*) as total FROM suppliers_orders_approved WHERE user_id = '$userid'");
+if ($approved_orders_query) {
+    $approved_orders_result = mysqli_fetch_assoc($approved_orders_query);
+    $total_approved_orders = intval($approved_orders_result['total'] ?? 0);
 }
 
-
-// --- Project Category Distribution Data for Pie Chart ---
-$category_labels = [];
-$category_counts = [];
-$cat_query = mysqli_query($con, "SELECT category, COUNT(*) as count FROM projects WHERE user_id='$userid' GROUP BY category");
-while ($row = mysqli_fetch_assoc($cat_query)) {
-    $category_labels[] = $row['category'];
-    $category_counts[] = (int)$row['count'];
+// Get data for bar graph (monthly orders for the current year)
+$monthly_orders = array_fill(0, 12, 0);
+$monthly_query = mysqli_query($con, "SELECT 
+    MONTH(approve_date) as month, 
+    COUNT(*) as count 
+    FROM suppliers_orders_approved 
+    WHERE user_id = '$userid' 
+    AND YEAR(approve_date) = YEAR(CURDATE())
+    GROUP BY MONTH(approve_date)");
+while ($row = mysqli_fetch_assoc($monthly_query)) {
+    $monthly_orders[$row['month'] - 1] = (int)$row['count'];
 }
 
-// --- Category Estimation Data for Line Chart ---
-$cat_est_labels = [];
-$cat_est_totals = [];
-$cat_est_query = mysqli_query($con, "SELECT category, SUM(
-    (SELECT IFNULL(SUM(total),0) FROM project_add_employee WHERE project_id=p.project_id) +
-         (SELECT IFNULL(SUM(pam.material_price * pam.quantity + m.labor_other * pam.quantity + pam.additional_cost), 0) 
-         FROM project_add_materials pam 
-         JOIN materials m ON pam.material_id = m.id 
-         WHERE pam.project_id = p.project_id) +
-    (SELECT IFNULL(SUM(total),0) FROM project_add_equipment WHERE project_id=p.project_id)
-) as total FROM projects p WHERE user_id='$userid' GROUP BY category");
-while ($row = mysqli_fetch_assoc($cat_est_query)) {
-    $cat_est_labels[] = $row['category'];
-    $cat_est_totals[] = round($row['total'], 2);
-}
+// Get data for line graph (order types over time)
+$order_types = [];
+$order_type_query = mysqli_query($con, "SELECT 
+    DATE_FORMAT(approve_date, '%Y-%m') as month,
+    type,
+    COUNT(*) as count
+    FROM suppliers_orders_approved 
+    WHERE user_id = '$userid'
+    AND approve_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+    GROUP BY DATE_FORMAT(approve_date, '%Y-%m'), type
+    ORDER BY month, type");
 
-// --- Prepare project data for each category using the same logic as Estimate Expense Project Comparison ---
-$categories = ['House', 'Renovation', 'Building'];
-$projects_by_category = [
-    'House' => [],
-    'Renovation' => [],
-    'Building' => []
+$line_labels = [];
+$line_datasets = [
+    'material' => [],
+    'reorder' => [],
+    'backorder' => []
 ];
-$totals_by_category = [
-    'House' => 0,
-    'Renovation' => 0,
-    'Building' => 0
-];
-$proj_sql = "SELECT project_id, project, category FROM projects WHERE user_id='$userid' ORDER BY project_id DESC";
-$proj_res = mysqli_query($con, $proj_sql);
-while ($proj = mysqli_fetch_assoc($proj_res)) {
-    $pid = $proj['project_id'];
-    $cat = ucfirst(strtolower(trim($proj['category'])));
-    if (!in_array($cat, $categories)) continue;
-    // Calculate estimated expense as in Estimate Expense Project Comparison
-    $emp_total = 0;
-    $emp_query = mysqli_query($con, "SELECT total FROM project_add_employee WHERE project_id='$pid'");
-    while ($erow = mysqli_fetch_assoc($emp_query)) {
-        $emp_total += floatval($erow['total']);
+$months = [];
+
+while ($row = mysqli_fetch_assoc($order_type_query)) {
+    if (!in_array($row['month'], $months)) {
+        $months[] = $row['month'];
     }
-    $mat_total = 0;
-    $mat_query = mysqli_query($con, "SELECT total FROM project_add_materials WHERE project_id='$pid'");
-    while ($mrow = mysqli_fetch_assoc($mat_query)) {
-        $mat_total += floatval($mrow['total']);
+    $line_datasets[$row['type']][$row['month']] = (int)$row['count'];
+}
+
+// Fill in missing months with 0
+foreach ($line_datasets as $type => $data) {
+    foreach ($months as $month) {
+        if (!isset($data[$month])) {
+            $line_datasets[$type][$month] = 0;
+        }
     }
-    $equip_total = 0;
-    $equip_query = mysqli_query($con, "SELECT total FROM project_add_equipment WHERE project_id='$pid'");
-    while ($eqrow = mysqli_fetch_assoc($equip_query)) {
-        $equip_total += floatval($eqrow['total']);
-    }
-    $grand_total =$mat_total + $equip_total;
-    $projects_by_category[$cat][] = [
-        'name' => $proj['project'],
-        'total' => round($grand_total, 2)
-    ];
-    $totals_by_category[$cat] += $grand_total;
+    ksort($line_datasets[$type]);
 }
 
-// --- Materials by Category & Warehouse Data ---
-$materials_labels = [];
-$materials_totals = [];
+// Prepare table data (recent orders)
+$recent_orders = [];
+$recent_orders_query = mysqli_query($con, "SELECT 
+    id,
+    type,
+    approve_date
+    FROM suppliers_orders_approved 
+    WHERE user_id = '$userid'
+    ORDER BY approve_date DESC
+    LIMIT 10");
 
-// Get materials by category
-$cat_query = mysqli_query($con, "SELECT category, COUNT(*) as count FROM materials GROUP BY category");
-while ($row = mysqli_fetch_assoc($cat_query)) {
-    $materials_labels[] = $row['category'];
-    $materials_totals[] = (int)$row['count'];
+while ($row = mysqli_fetch_assoc($recent_orders_query)) {
+    $recent_orders[] = $row;
 }
-
-// Get materials by warehouse
-$warehouse_query = mysqli_query($con, "SELECT location, COUNT(*) as count FROM materials WHERE location IS NOT NULL AND location != '' GROUP BY location");
-while ($row = mysqli_fetch_assoc($warehouse_query)) {
-    $materials_labels[] = $row['location'] . ' (Warehouse)';
-    $materials_totals[] = (int)$row['count'];
-}
-
-// Calculate Reorder total
-$reorder_exp_query = mysqli_query($con, "SELECT SUM(expense) as total FROM order_expenses WHERE description LIKE '%Reorder%'");
-$reorder_exp_result = mysqli_fetch_assoc($reorder_exp_query);
-$reorder_total = floatval($reorder_exp_result['total'] ?? 0);
-
-// Calculate Backorder total
-$backorder_exp_query = mysqli_query($con, "SELECT SUM(expense) as total FROM order_expenses WHERE description LIKE '%Backorder%' OR (description NOT LIKE '%Reorder%')");
-$backorder_exp_result = mysqli_fetch_assoc($backorder_exp_query);
-$backorder_total = floatval($backorder_exp_result['total'] ?? 0);
-
-// Ensure $materials_total_amount is always defined
-$materials_total_amount = 0;
-$materials_total_query = mysqli_query($con, "SELECT SUM(total_amount) as total FROM materials");
-if ($materials_total_query) {
-    $materials_total_result = mysqli_fetch_assoc($materials_total_query);
-    $materials_total_amount = floatval($materials_total_result['total'] ?? 0);
-}
-
-// For Total Reorder count
-$reorder_count_query = mysqli_query($con, "SELECT COUNT(*) as count FROM back_orders WHERE reason = 'Reorder'");
-$reorder_count_result = mysqli_fetch_assoc($reorder_count_query);
-$reorder_count = intval($reorder_count_result['count'] ?? 0);
-
-// For Total Backorder count
-$backorder_count_query = mysqli_query($con, "SELECT COUNT(*) as count FROM back_orders WHERE reason != 'Reorder'");
-$backorder_count_result = mysqli_fetch_assoc($backorder_count_query);
-$backorder_count = intval($backorder_count_result['count'] ?? 0);
 
 // Handle AJAX password change (like pm_profile.php)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
@@ -243,23 +147,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     exit();
 }
 
-// Helper function for short number formatting
-function short_number_format(
-    $num,
-    $precision = 1
-) {
-    if ($num >= 1000000000000) {
-        return number_format($num / 1000000000000, $precision) . 't';
-    } elseif ($num >= 1000000000) {
-        return number_format($num / 1000000000, $precision) . 'b';
-    } elseif ($num >= 1000000) {
-        return number_format($num / 1000000, $precision) . 'm';
-    } elseif ($num >= 1000) {
-        return number_format($num / 1000, $precision) . 'k';
-    } else {
-        return number_format($num, 2);
-    }
-}
 
 $user = null;
 $userprofile = '../uploads/default_profile.png';
@@ -315,6 +202,9 @@ if ($userid) {
                 <a href="supplier_approval.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'supplier_approval.php' ? 'active' : ''; ?>">
                     <i class="fas fa-clipboard-check"></i>Order Management
                 </a>
+                <a href="supplier_order_history.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'supplier_order_history.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-history"></i>Order History
+                </a>
             </div>
         </div>
         <!-- /#sidebar-wrapper -->
@@ -354,7 +244,7 @@ if ($userid) {
             </nav>
 
             <div class="container-fluid px-4">
-                <!-- Centered Clock, Date, and Icon with Background -->
+                <div class="card shadow d-flex px-4">
                 <div class="row g-3 my-2">
                   <div class="col-12 mb-3 d-flex flex-column flex-md-row align-items-center justify-content-between">
                     <!-- Left: Date Range + Export (no background) -->
@@ -384,27 +274,17 @@ if ($userid) {
                     </div>
                   </div>
                 </div>
+                </div>
                 <div class="row g-3 my-2">
                     <div class="col-md-3">
                         <div class="p-3 bg-white shadow d-flex justify-content-around align-items-center rounded card-link">
                             <div>
                                 <h3 class="fs-2">
-                                <?php
-                                      $exp_query = mysqli_query($con, "SELECT SUM(expense) as total FROM order_expenses");
-                                      $exp_result = mysqli_fetch_assoc($exp_query);
-                                      $order_expenses_total = floatval($exp_result['total'] ?? 0);
-
-                                      $exp2_query = mysqli_query($con, "SELECT SUM(expense) as total FROM expenses");
-                                      $exp2_result = mysqli_fetch_assoc($exp2_query);
-                                      $expenses_total = floatval($exp2_result['total'] ?? 0);
-
-                                      $all_expenses_total = $order_expenses_total + $expenses_total;
-                                      echo '₱ ' . short_number_format($all_expenses_total);
-                                      ?>
+                                    <?php echo $approved_materials_count; ?>
                                 </h3>
-                                <p class="fs-5">Total Expenses</p>
+                                <p class="fs-5">Approved Materials</p>
                             </div>
-                            <i class="fas fa-wallet fs-1 primary-text"></i>
+                            <i class="fas fa-cubes fs-1 primary-text"></i>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -430,100 +310,91 @@ if ($userid) {
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="p-3 bg-white shadow d-flex justify-content-around align-items-center rounded card-link"">
+                        <div class="p-3 bg-white shadow d-flex justify-content-around align-items-center rounded card-link" onclick="location.href='supplier_order_history.php'" style="cursor: pointer;">
                             <div>
                                 <h3 class="fs-2">
-                                <?php echo '₱ ' . short_number_format($materials_total_amount); ?>
+                                <?php echo $total_approved_orders; ?>
                                 </h3>
-                                <p class="fs-5">Total Materials</p>
+                                <p class="fs-5">Approved Orders</p>
                             </div>
-                            <i class="fas fa-cubes fs-1 primary-text"></i>
+                            <i class="fas fa-clipboard-check fs-1 primary-text"></i>
                         </div>
                     </div>
                 </div>
 
-                <!-- Charts Section -->
-                <div class="row my-4">
-                    <div class="col-md-6 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Yearly Expenses</h5>
-                                <canvas id="expensesChart" height="300" style="height: 300px;"></canvas>
+                <!-- Charts and Table Section -->
+                <div class="row mt-4">
+                    <!-- Bar Graph Card -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card shadow h-100">
+                            <div class="card-header bg-white">
+                                <h5 class="card-title mb-0">Monthly Orders (<?php echo date('Y'); ?>)</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="monthlyOrdersChart" height="300"></canvas>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Order, Reorder, Backorder</h5>
-                                <canvas id="estimateExpenseChart" height="300" style="height: 300px;"></canvas>
+
+                    <!-- Line Graph Card -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card shadow h-100">
+                            <div class="card-header bg-white">
+                                <h5 class="card-title mb-0">Order Types (Last 6 Months)</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="orderTypesChart" height="300"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="row my-4">
-                    <div class="col-md-4 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Materials by Category & Warehouse</h5>
-                                <canvas id="allProjectsEstimateBarChart" height="300" style="height: 300px;"></canvas>
+
+                <!-- Recent Orders Table -->
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <div class="card shadow">
+                            <div class="card-header bg-white">
+                                <h5 class="card-title mb-0">Recent Approved Orders</h5>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Newly Added Materials</h5>
+                            <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-sm">
+                                    <table class="table table-hover">
                                         <thead>
                                             <tr>
-                                                <th>Material</th>
-                                                <th>Category</th>
-                                                <th>Date Added</th>
+                                                <th>No.</th>
+                                                <th>Order ID</th>
+                                                <th>Type</th>
+                                                <th>Approval Date</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <?php
-                                            $new_materials_query = mysqli_query($con, "SELECT material_name, category, purchase_date FROM materials ORDER BY purchase_date DESC LIMIT 5");
-                                            while ($row = mysqli_fetch_assoc($new_materials_query)) {
-                                                echo "<tr>";
-                                                echo "<td>" . htmlspecialchars($row['material_name']) . "</td>";
-                                                echo "<td>" . htmlspecialchars($row['category']) . "</td>";
-                                                echo "<td>" . date('M d, Y', strtotime($row['purchase_date'])) . "</td>";
-                                                echo "</tr>";
-                                            }
-                                            ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4 mb-4 d-flex">
-                        <div class="card shadow flex-fill">
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title">Newly Added Equipment</h5>
-                                <div class="table-responsive">
-                                    <table class="table table-sm">
-                                        <thead>
+                                            <?php $counter = 1; ?>
+                                            <?php foreach ($recent_orders as $order): ?>
                                             <tr>
-                                                <th>Equipment</th>
-                                                <th>Category</th>
-                                                <th>Date Added</th>
+                                                <td><?php echo $counter++; ?></td>
+                                                <td>#<?php echo htmlspecialchars($order['id']); ?></td>
+                                                <td>
+                                                    <span class="badge 
+                                                        <?php 
+                                                            $badgeClass = 'bg-secondary';
+                                                            if ($order['type'] === 'material') $badgeClass = 'bg-primary';
+                                                            elseif ($order['type'] === 'reorder') $badgeClass = 'bg-warning text-dark';
+                                                            elseif ($order['type'] === 'backorder') $badgeClass = 'bg-info text-dark';
+                                                            echo $badgeClass;
+                                                        ?>">
+                                                        <?php echo ucfirst(htmlspecialchars($order['type'])); ?>
+                                                    </span>
+                                                </td>
+                                           
+                                                <td><?php echo date('M d, Y', strtotime($order['approve_date'])); ?></td>
+                                                
                                             </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php
-                                            $new_equipment_query = mysqli_query($con, "SELECT equipment_name, category, created_at FROM equipment ORDER BY id DESC LIMIT 5");
-                                            while ($row = mysqli_fetch_assoc($new_equipment_query)) {
-                                                echo "<tr>";
-                                                echo "<td>" . htmlspecialchars($row['equipment_name']) . "</td>";
-                                                echo "<td>" . htmlspecialchars($row['category']) . "</td>";
-                                                echo "<td>" . date('M d, Y', strtotime($row['created_at'])) . "</td>";
-                                                echo "</tr>";
-                                            }
-                                            ?>
+                                            <?php endforeach; ?>
+                                            <?php if (empty($recent_orders)): ?>
+                                            <tr>
+                                                <td colspan="5" class="text-center">No recent orders found</td>
+                                            </tr>
+                                            <?php endif; ?>
                                         </tbody>
                                     </table>
                                 </div>
@@ -579,105 +450,87 @@ if ($userid) {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-      const expensesCtx = document.getElementById('expensesChart').getContext('2d');
-      const expensesChart = new Chart(expensesCtx, {
-          type: 'line',
-          data: {
-              labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-              datasets: [
-                  {
-                      label: 'Expenses (Procurement)',
-                      data: <?php echo json_encode(array_values($order_monthly_expenses)); ?>,
-                      backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                      borderColor: 'rgba(54, 162, 235, 1)',
-                      borderWidth: 2,
-                      fill: true,
-                      tension: 0.4
-                  },
-                  {
-                      label: 'Expenses (Project Manager)',
-                      data: <?php echo json_encode(array_values($expenses_monthly_expenses)); ?>,
-                      backgroundColor: 'rgba(255, 193, 7, 0.2)',
-                      borderColor: 'rgba(255, 193, 7, 1)',
-                      borderWidth: 2,
-                      fill: true,
-                      tension: 0.4
-                  }
-              ]
-          },
-          options: {
-              responsive: true,
-              plugins: { legend: { display: true } }
-          }
-      });
-    });
-
-    // Add Estimate Expense Comparison Chart
-    const estimateExpenseCtx = document.getElementById('estimateExpenseChart').getContext('2d');
-    const estimateExpenseChart = new Chart(estimateExpenseCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Reorder', 'Backorder', 'Order'],
-            datasets: [
-                {
-                    label: 'Order Expenses (₱)',
-                    data: [
-                        <?php echo $equip_reorder_total; ?>,
-                        <?php echo $equip_backorder_total; ?>,
-                        <?php echo $materials_total_amount; ?>
-                    ],
-                    backgroundColor: [
-                        'rgba(255, 193, 7, 0.7)', // Reorder (yellow)
-                        'rgba(220, 53, 69, 0.7)', // Backorder (red)
-                        'rgba(0, 123, 255, 0.7)'  // Order (blue)
-                    ]
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: true } },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: { display: true, text: 'Equipment/Order Expenses (₱)' }
-                },
-                x: {
-                    title: { display: true, text: 'Type' }
+        // Monthly Orders Bar Chart
+        const monthlyCtx = document.getElementById('monthlyOrdersChart').getContext('2d');
+        new Chart(monthlyCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Orders',
+                    data: <?php echo json_encode($monthly_orders); ?>,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
                 }
             }
-        }
-    });
-    // Add All Projects Estimate Bar Chart
-    const allProjectsEstimateBarCtx = document.getElementById('allProjectsEstimateBarChart').getContext('2d');
-    const allProjectsEstimateBarChart = new Chart(allProjectsEstimateBarCtx, {
-        type: 'bar',
-        data: {
-            labels: <?php echo json_encode($materials_labels); ?>,
-            datasets: [
-                {
-                    label: 'Total Materials (Count)',
-                    data: <?php echo json_encode($materials_totals); ?>,
-                    backgroundColor: 'rgba(0, 123, 255, 0.7)'
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: { display: true, text: 'Total Materials (Count)' }
+        });
+
+        // Order Types Line Chart
+        const orderTypesCtx = document.getElementById('orderTypesChart').getContext('2d');
+        new Chart(orderTypesCtx, {
+            type: 'line',
+            data: {
+                labels: <?php echo json_encode($months); ?>,
+                datasets: [
+                    {
+                        label: 'Materials',
+                        data: <?php echo json_encode(array_values($line_datasets['material'])); ?>,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Reorders',
+                        data: <?php echo json_encode(array_values($line_datasets['reorder'])); ?>,
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        backgroundColor: 'rgba(255, 206, 86, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Backorders',
+                        data: <?php echo json_encode(array_values($line_datasets['backorder'])); ?>,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
                 },
-                x: {
-                    title: { display: true, text: '' }
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
                 }
             }
-        }
+        });
     });
-
     </script>
+
     <script>
         var el = document.getElementById("wrapper");
         var toggleButton = document.getElementById("menu-toggle");

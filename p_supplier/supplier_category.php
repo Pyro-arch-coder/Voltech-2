@@ -285,6 +285,9 @@ if (isset($_SESSION['error'])) {
                 <a href="supplier_approval.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'supplier_approval.php' ? 'active' : ''; ?>">
                     <i class="fas fa-clipboard-check"></i>Order Management
                 </a>
+                <a href="supplier_order_history.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'supplier_order_history.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-history"></i>Order History
+                </a>
             </div>
         </div>
         <!-- /#sidebar-wrapper -->

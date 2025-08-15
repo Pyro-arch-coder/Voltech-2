@@ -1228,7 +1228,15 @@ if ($project_id > 0) {
                                 </div>
                             </div>
                             <div class="step-content d-none" id="step8">
-                            <div class="d-flex justify-content-between mt-4">
+                            <h4 class="mb-4 fw-bold text-success">Step 8: Proof of Approval</h4>
+
+                                    <div class="alert alert-info d-flex align-items-center mb-4">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <span>Please upload the budget documents and specify the budget amount below. The next button will be enabled only after the budget is approved.</span>
+                                    </div>
+
+                                   
+
                                     <button type="button" class="btn btn-secondary prev-step" data-prev="7">Previous</button>
                                 </div>
                             </div>

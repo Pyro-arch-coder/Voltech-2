@@ -82,19 +82,19 @@ if (isset($_SESSION['error'])) {
         }
     }
 
-    // Get the logged-in user's supplier ID and name
+    // Get the logged-in user's supplier ID and name using email
     $supplier_id = 0;
     $supplier_name = '';
-    $supplier_query = "SELECT s.id, s.supplier_name 
-                      FROM users u 
-                      JOIN suppliers s ON u.id = s.id 
-                      WHERE u.id = ?";
+    $supplier_query = "SELECT id, supplier_name 
+                      FROM suppliers 
+                      WHERE email = ?";
     $stmt = $con->prepare($supplier_query);
-    $stmt->bind_param('i', $userid);
+    $stmt->bind_param('s', $user_email);
     $stmt->execute();
     $supplier_result = $stmt->get_result();
+    
     if ($supplier_row = $supplier_result->fetch_assoc()) {
-        $supplier_id = $supplier_row['supplier_id'];
+        $supplier_id = $supplier_row['id'];
         $supplier_name = $supplier_row['supplier_name'];
     }
     $stmt->close();
@@ -104,51 +104,94 @@ if (isset($_SESSION['error'])) {
     $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
     $start_from = ($page - 1) * $results_per_page;
     
+    // Check if there are any back_orders with this supplier's email
+    $check_backorders = $con->prepare("
+        SELECT COUNT(*) as total
+        FROM back_orders bo
+        JOIN suppliers s ON bo.supplier_name = s.supplier_name
+        WHERE s.email = ?
+        AND bo.status = 'Pending'
+        AND bo.reason != 'Reorder'
+    ");
+    $check_backorders->bind_param('s', $user_email);
+    $check_backorders->execute();
+    $backorder_check = $check_backorders->get_result()->fetch_assoc();
+    $check_backorders->close();
+    
     // Fetch pending backorders (exclude 'Reorder' reason) for the logged-in supplier
     $backorder_query = "SELECT bo.*, m.material_name, m.category as category_name, u.firstname, u.lastname, u.email as requester_email 
                        FROM back_orders bo 
-                       JOIN materials m ON bo.material_id = m.id 
+                       LEFT JOIN materials m ON bo.material_id = m.id 
                        JOIN users u ON bo.requested_by = u.id
-                       JOIN suppliers s ON m.id = s.id 
                        WHERE bo.status = 'Pending' 
                        AND bo.reason != 'Reorder'
-                       AND s.id = ?
+                       AND bo.supplier_name = ?
                        ORDER BY bo.created_at DESC";
     $backorder_stmt = $con->prepare($backorder_query);
-    $backorder_stmt->bind_param('i', $supplier_id);
+    $backorder_stmt->bind_param('s', $supplier_name);
     $backorder_stmt->execute();
     $backorder_result = $backorder_stmt->get_result();
     $total_backorders = $backorder_result ? $backorder_result->num_rows : 0;
     
+    // Check if there are any reorders for this supplier
+    $check_reorders = $con->prepare("
+        SELECT COUNT(*) as total
+        FROM back_orders bo
+        WHERE bo.supplier_name = ?
+        AND bo.status = 'Pending'
+        AND bo.reason = 'Reorder'
+    ");
+    $check_reorders->bind_param('s', $supplier_name);
+    $check_reorders->execute();
+    $reorder_check = $check_reorders->get_result()->fetch_assoc();
+    $check_reorders->close();
+    
     // Fetch pending reorders (only 'Reorder' reason) for the logged-in supplier
     $reorder_query = "SELECT bo.*, m.material_name, m.category as category_name, u.firstname, u.lastname, u.email as requester_email 
                      FROM back_orders bo 
-                     JOIN materials m ON bo.material_id = m.id 
+                     LEFT JOIN materials m ON bo.material_id = m.id 
                      JOIN users u ON bo.requested_by = u.id
-                     JOIN suppliers s ON m.id = s.id 
                      WHERE bo.status = 'Pending' 
                      AND bo.reason = 'Reorder'
-                     AND s.id = ?
+                     AND bo.supplier_name = ?
                      ORDER BY bo.created_at DESC";
     $reorder_stmt = $con->prepare($reorder_query);
-    $reorder_stmt->bind_param('i', $supplier_id);
+    $reorder_stmt->bind_param('s', $supplier_name);
     $reorder_stmt->execute();
     $reorder_result = $reorder_stmt->get_result();
     $total_reorders = $reorder_result ? $reorder_result->num_rows : 0;
     
-    // Fetch materials for the logged-in supplier
-    $materials_query = "SELECT m.*, m.category as category_name, u.firstname, u.lastname 
-                       FROM materials m 
-                       LEFT JOIN users u ON m.user_id = u.id
-                       JOIN suppliers s ON m.id = s.id
-                       WHERE m.delivery_status = 'Pending' 
-                       AND s.id = ?
-                       ORDER BY m.purchase_date DESC";
-    $materials_stmt = $con->prepare($materials_query);
-    $materials_stmt->bind_param('i', $supplier_id);
-    $materials_stmt->execute();
-    $materials_result = $materials_stmt->get_result();
-    $total_materials = $materials_result ? $materials_result->num_rows : 0;
+    // Get supplier info by email
+    $supplier_check_query = "SELECT * FROM suppliers WHERE email = ?";
+    $supplier_check_stmt = $con->prepare($supplier_check_query);
+    $supplier_check_stmt->bind_param('s', $user_email);
+    $supplier_check_stmt->execute();
+    $supplier_check_result = $supplier_check_stmt->get_result();
+    
+    if ($supplier_check_result->num_rows > 0) {
+        $supplier = $supplier_check_result->fetch_assoc();
+        $supplier_name = $supplier['supplier_name'];
+        $supplier_id = $supplier['id'];
+    }
+    $supplier_check_stmt->close();
+    
+    // Fetch pending materials for the matched supplier
+    if (!empty($supplier_name)) {
+        $materials_query = "SELECT m.*, m.category as category_name, u.firstname, u.lastname 
+                          FROM materials m 
+                          LEFT JOIN users u ON m.user_id = u.id
+                          WHERE m.delivery_status = 'Pending' 
+                          AND m.supplier_name = ?
+                          ORDER BY m.purchase_date DESC";
+        $materials_stmt = $con->prepare($materials_query);
+        $materials_stmt->bind_param('s', $supplier_name);
+        $materials_stmt->execute();
+        $materials_result = $materials_stmt->get_result();
+        $total_materials = $materials_result ? $materials_result->num_rows : 0;
+    } else {
+        $materials_result = false;
+        $total_materials = 0;
+    }
 
     // Handle category operations
       // --- Add New Category Handler ---
@@ -239,7 +282,10 @@ if (isset($_SESSION['error'])) {
                     <i class="fas fa-list"></i>Category
                 </a>
                 <a href="supplier_approval.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'supplier_approval.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-clipboard-check"></i>Approval
+                    <i class="fas fa-clipboard-check"></i>Order Management
+                </a>
+                <a href="supplier_order_history.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'supplier_order_history.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-history"></i>Order History
                 </a>
             </div>
         </div>
@@ -250,7 +296,7 @@ if (isset($_SESSION['error'])) {
             <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
                 <div class="d-flex align-items-center">
                     <i class="fas fa-align-left primary-text fs-4 me-3" id="menu-toggle"></i>
-                    <h2 class="fs-2 m-0">Category Management</h2>
+                    <h2 class="fs-2 m-0">Supplier Approval</h2>
                 </div>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -302,7 +348,7 @@ if (isset($_SESSION['error'])) {
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link py-3" id="materials-tab" data-bs-toggle="tab" data-bs-target="#materials" type="button" role="tab" aria-controls="materials" aria-selected="false">
                                     <i class="fas fa-boxes me-2"></i>Materials
-                                    <span class="badge bg-info ms-2">8</span>
+                                    <span class="badge bg-info ms-2"><?php echo $total_materials; ?></span>
                                 </button>
                             </li>
                         </ul>
@@ -404,6 +450,7 @@ if (isset($_SESSION['error'])) {
                                                 <th>Category</th>
                                                 <th>Quantity</th>
                                                 <th>Reason</th>
+                                                <th>Supplier Name</th>
                                                 <th>Requested By</th>
                                                 <th>Request Date</th>
                                                 <th>Status</th>
@@ -423,6 +470,7 @@ if (isset($_SESSION['error'])) {
                                                 <td class="text-end"><?php echo number_format($reorder['quantity']); ?></td>
                                                 <td><?php echo htmlspecialchars($reorder['reason']); ?></td>
                                                 <td><?php echo htmlspecialchars($requester_name ?: 'Unknown'); ?></td>
+                                                <td><?php echo htmlspecialchars($reorder['supplier_name'] ?? 'N/A'); ?></td>
                                                 <td class="text-center"><?php echo date('M d, Y', strtotime($reorder['created_at'])); ?></td>
                                                 <td class="text-center">
                                                     <span class="badge bg-warning"><?php echo $reorder['status']; ?></span>
@@ -837,35 +885,34 @@ if (isset($_SESSION['error'])) {
             const formData = new FormData();
             formData.append('backorder_id', orderId);
             formData.append('status', status);
-            
+
             fetch('update_backorder_status.php', {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
+            .then(response => response.text())
+            .then(text => {
+                // Try to parse as JSON
+                let data = null;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    alert('Server returned an unexpected response:\n\n' + text);
+                    return;
+                }
+
                 if (data.success) {
-                    // Show success modal
-                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
-                    const successMessage = document.getElementById('successModalMessage');
-                    successMessage.textContent = `${type} has been ${status.toLowerCase()} successfully.`;
-                    successModal.show();
-                    
-                    // Reload the page after a short delay to show the success message
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
+                    // Show success modal and reload after a delay
+                    showFeedbackModal(true, data.message);
+                    setTimeout(() => window.location.reload(), 1200);
                 } else {
-                    // Show error alert if needed
-                    alert(data.message || `Failed to ${status.toLowerCase()} ${type.toLowerCase()}.`);
+                    showFeedbackModal(false, data.message || "An unknown error occurred.");
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert(`An error occurred while updating the ${type.toLowerCase()}.`);
+                alert("AJAX error: " + error);
             });
         }
-        
         // Event delegation for backorder actions
         document.addEventListener('click', function(e) {
             // Backorder - View Details
@@ -881,6 +928,7 @@ if (isset($_SESSION['error'])) {
                 const orderId = button.getAttribute('data-id');
                 if (confirm('Are you sure you want to approve this backorder?')) {
                     updateOrderStatus(orderId, 'Approved', 'Backorder');
+                    showFeedbackModal(true, 'Backorder approved successfully.');
                 }
             }
             
@@ -897,6 +945,7 @@ if (isset($_SESSION['error'])) {
                 const orderId = button.getAttribute('data-id');
                 if (confirm('Are you sure you want to approve this reorder?')) {
                     updateOrderStatus(orderId, 'Approved', 'Reorder');
+                    showFeedbackModal(true, 'Reorder approved successfully.');
                 }
             }
         

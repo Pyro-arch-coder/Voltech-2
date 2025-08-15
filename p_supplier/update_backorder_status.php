@@ -1,161 +1,155 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+header('Content-Type: application/json');
 session_start();
 require_once '../config.php';
 
-// Check if user is logged in and has supplier access
-if (!isset($_SESSION['logged_in']) || $_SESSION['user_level'] != 5) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Unauthorized access']);
-    exit();
+function json_error($msg) {
+    echo json_encode(['success'=>false, 'message'=>$msg]);
+    exit;
 }
 
-// Check if required parameters are provided
+if (!isset($_SESSION['logged_in']) || $_SESSION['user_level'] != 5) {
+    json_error('Unauthorized access');
+}
 if (!isset($_POST['backorder_id']) || !isset($_POST['status'])) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Missing required parameters']);
-    exit();
+    json_error('Missing required parameters');
 }
 
 $backorderId = $con->real_escape_string($_POST['backorder_id']);
 $status = $con->real_escape_string($_POST['status']);
 $userId = $_SESSION['user_id'];
+$user_email = $_SESSION['email'] ?? '';
 
-// Validate status
 if (!in_array($status, ['Approved', 'Rejected', 'Pending'])) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Invalid status']);
-    exit();
+    json_error('Invalid status');
 }
 
+// Get supplier_id from suppliers table using user's email
+$supplier_id = null;
+$supplier_name = '';
+$supplier_q = $con->prepare("SELECT id, supplier_name FROM suppliers WHERE email = ?");
+$supplier_q->bind_param('s', $user_email);
+$supplier_q->execute();
+$supplier_res = $supplier_q->get_result();
+if ($supplier_row = $supplier_res->fetch_assoc()) {
+    $supplier_id = $supplier_row['id'];
+    $supplier_name = $supplier_row['supplier_name'];
+} else {
+    json_error('Supplier not found for user');
+}
+$supplier_q->close();
+
 try {
-    // Start transaction
     $con->begin_transaction();
-    
+
     // Update the backorder status
     $updateQuery = "UPDATE back_orders SET status = ? WHERE id = ?";
     $stmt = $con->prepare($updateQuery);
     $stmt->bind_param('si', $status, $backorderId);
-    
     if (!$stmt->execute()) {
         throw new Exception("Failed to update backorder status");
     }
-    
-    // If approved, update the material's delivery status, insert into approved orders, and send notification
+
     if ($status === 'Approved') {
-        // Get the backorder details including the reason and requester
-        $backorderQuery = "SELECT bo.material_id, bo.reason, bo.requested_by, bo.quantity, m.material_name 
-                          FROM back_orders bo 
-                          JOIN materials m ON bo.material_id = m.id 
-                          WHERE bo.id = ?";
+        // Get the backorder details
+        $backorderQuery = "SELECT 
+                                bo.material_id, 
+                                bo.reason, 
+                                bo.requested_by, 
+                                bo.quantity
+                            FROM back_orders bo 
+                            WHERE bo.id = ?";
         $stmt = $con->prepare($backorderQuery);
         $stmt->bind_param('i', $backorderId);
         $stmt->execute();
         $backorder = $stmt->get_result()->fetch_assoc();
-        
-        // Insert into suppliers_orders_approved
+        if (!$backorder) throw new Exception("Backorder not found!");
+
+        // Get material details from materials table using material_id
+        $materialQuery = "SELECT material_name, brand, specification FROM materials WHERE id = ?";
+        $stmt = $con->prepare($materialQuery);
+        $stmt->bind_param('i', $backorder['material_id']);
+        $stmt->execute();
+        $material = $stmt->get_result()->fetch_assoc();
+        if (!$material) throw new Exception("Material not found!");
+
+        // Insert into suppliers_orders_approved using the logged-in user's ID
         $insertQuery = "INSERT INTO suppliers_orders_approved (user_id, material_name, quantity, type) 
                        VALUES (?, ?, ?, ?)";
         $stmt = $con->prepare($insertQuery);
         $orderType = ($backorder['reason'] === 'Reorder') ? 'reorder' : 'backorder';
-        $stmt->bind_param('isis', $backorder['requested_by'], $backorder['material_name'], 
-                         $backorder['quantity'], $orderType);
-        
+        // Assign array values to variables for bind_param
+        $mat_name = $material['material_name'];
+        $logged_in_user_id = $_SESSION['user_id'];
+        $stmt->bind_param('isis', $logged_in_user_id, $mat_name, $backorder['quantity'], $orderType);
         if (!$stmt->execute()) {
-            throw new Exception("Failed to insert into approved orders");
+            throw new Exception("Failed to insert into approved orders: " . $con->error);
         }
-        $stmt->bind_param('i', $backorderId);
+
+        // Assign material values to variables for bind_param
+        $mat_brand = $material['brand'];
+        $mat_spec = $material['specification'];
+        // Now use ONLY the values from materials for the supplier lookup!
+        $supplierMaterialQuery = "SELECT id, quantity FROM suppliers_materials 
+                                 WHERE supplier_id = ? AND material_name = ? AND brand = ? AND specification = ? LIMIT 1";
+        $stmt = $con->prepare($supplierMaterialQuery);
+        $stmt->bind_param('isss', $supplier_id, $mat_name, $mat_brand, $mat_spec);
         $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if ($backorder = $result->fetch_assoc()) {
-            // Determine the delivery status based on the reason
-            $isReorder = ($backorder['reason'] === 'Reorder');
-            $deliveryStatus = $isReorder ? 'Reorder Delivery' : 'Backorder Delivery';
-            $notifType = $isReorder ? 'reorder_approved' : 'backorder_approved';
-            
-            // First, get the current supplier's quantity for this material
-            $supplierMaterialQuery = "SELECT quantity FROM suppliers_materials 
-                                    WHERE material_id = ? AND supplier_id = (SELECT supplier_id FROM users WHERE id = ?)";
-            $stmt = $con->prepare($supplierMaterialQuery);
-            $stmt->bind_param('ii', $backorder['material_id'], $userId);
-            $stmt->execute();
-            $supplierMaterial = $stmt->get_result()->fetch_assoc();
-            
-            if (!$supplierMaterial || $supplierMaterial['quantity'] < $backorder['quantity']) {
-                throw new Exception("Insufficient quantity available");
-            }
-            
-            // Update material status to 'On Delivery' and reduce supplier's quantity
-            $updateStmt = $con->prepare("
-                UPDATE materials 
-                SET delivery_status = 'On Delivery'
-                WHERE id = ?
-            
-                
-                UPDATE suppliers_materials
-                SET quantity = quantity - ?
-                WHERE material_id = ? AND supplier_id = (SELECT supplier_id FROM users WHERE id = ?)
-            
-                
-                UPDATE materials
-                SET quantity = quantity + ?
-                WHERE id = ?
-            ");
-            
-            if (!$updateStmt) {
-                throw new Exception("Failed to prepare update statement: " . $con->error);
-            }
-            
-            $updateStmt->bind_param('iiiii', 
-                $backorder['material_id'],
-                $backorder['quantity'],
-                $backorder['material_id'],
-                $userId,
-                $backorder['quantity'],
-                $backorder['material_id']
-            );
-            
-            if (!$updateStmt->execute()) {
-                throw new Exception("Failed to update material status and quantity: " . $updateStmt->error);
-            }
-            
-            // Create notification for the requester
-            $message = "Your " . ($isReorder ? 'reorder' : 'backorder') . " for " . 
-                      htmlspecialchars($backorder['material_name']) . " has been approved and is now in delivery.";
-            
-            $notifQuery = "INSERT INTO notifications_procurement 
-                          (user_id, notif_type, message, is_read, created_at) 
-                          VALUES (?, ?, ?, 0, NOW())";
-            $stmt = $con->prepare($notifQuery);
-            $stmt->bind_param('iss', $backorder['requested_by'], $notifType, $message);
-            
-            if (!$stmt->execute()) {
-                // Don't fail the whole operation if notification fails
-                error_log("Failed to create notification: " . $con->error);
-            }
+        $supplierMaterial = $stmt->get_result()->fetch_assoc();
+
+        if (!$supplierMaterial || $supplierMaterial['quantity'] < $backorder['quantity']) {
+            throw new Exception("Insufficient quantity available (supplier_id: $supplier_id, material_name: {$mat_name})");
         }
+
+        // Update material delivery status
+        $updateStmt = $con->prepare("
+            UPDATE materials 
+            SET delivery_status = 'On Delivery'
+            WHERE material_name = ? AND brand = ? AND specification = ?
+        ");
+        $updateStmt->bind_param('sss', $mat_name, $mat_brand, $mat_spec);
+        if (!$updateStmt->execute()) {
+            throw new Exception("Failed to update material delivery status: " . $updateStmt->error);
+        }
+        $updateStmt->close();
+
+        // Only reduce supplier's quantity (no increment on materials)
+        $updateStmt = $con->prepare("
+            UPDATE suppliers_materials
+            SET quantity = quantity - ?
+            WHERE id = ?
+        ");
+        $updateStmt->bind_param('ii', $backorder['quantity'], $supplierMaterial['id']);
+        if (!$updateStmt->execute()) {
+            throw new Exception("Failed to update supplier's material quantity: " . $updateStmt->error);
+        }
+        $updateStmt->close();
+
+        // Create notification for the requester
+        $message = "Your " . ($orderType) . " for " . 
+                  htmlspecialchars($mat_name) . " has been approved and is now in delivery.";
+        $notifQuery = "INSERT INTO notifications_procurement 
+                      (user_id, notif_type, message, is_read, created_at) 
+                      VALUES (?, ?, ?, 0, NOW())";
+        $notif_type = $orderType . '_approved';
+        $stmt = $con->prepare($notifQuery);
+        $stmt->bind_param('iss', $backorder['requested_by'], $notif_type, $message);
+        $stmt->execute();
     }
-    
-    // Commit transaction
+
     $con->commit();
-    
-    header('Content-Type: application/json');
     echo json_encode([
         'success' => true, 
         'message' => 'Backorder status updated successfully',
         'status' => $status
     ]);
-    
 } catch (Exception $e) {
-    // Rollback transaction on error
     $con->rollback();
-    
-    header('Content-Type: application/json');
-    echo json_encode([
-        'success' => false, 
-        'message' => 'Error: ' . $e->getMessage()
-    ]);
+    json_error('Error: ' . $e->getMessage());
 }
-
 $con->close();
 ?>

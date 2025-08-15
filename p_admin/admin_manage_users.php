@@ -193,7 +193,7 @@ $total_pages = ceil($total_users / $limit);
                             </thead>
                             <tbody>
                                 <?php
-                                $query = "SELECT * FROM users WHERE user_level IN (3,4) $filter_sql ORDER BY firstname, lastname LIMIT $limit OFFSET $offset";
+                                $query = "SELECT * FROM users WHERE user_level IN (3,4,5,6) $filter_sql ORDER BY firstname, lastname LIMIT $limit OFFSET $offset";
                                 $result = mysqli_query($con, $query);
                                 $no = 1 + $offset;
                                 while ($user = mysqli_fetch_assoc($result)) {
@@ -205,6 +205,12 @@ $total_pages = ceil($total_users / $limit);
                                         case 4:
                                             $userLevel = '<span class="badge bg-warning text-dark">Procurement Officer</span>';
                                             break;
+                                         case 5:
+                                            $userLevel = '<span class="badge bg-danger text-white">Supplier</span>';
+                                            break;
+                                        case 6:
+                                                $userLevel = '<span class="badge bg-primary text-white">Client</span>';
+                                                break;     
                                         default:
                                             $userLevel = '<span class="badge bg-secondary">Unknown</span>';
                                     }

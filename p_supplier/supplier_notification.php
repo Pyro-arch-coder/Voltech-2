@@ -2,16 +2,43 @@
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
-$supplier_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 require_once '../config.php';
 $unread_count = 0;
 $notifications = [];
-if ($supplier_id) {
-    $res = $con->query("SELECT id, notif_type, message, is_read, created_at FROM notifications_supplier ORDER BY created_at DESC LIMIT 10");
-    if ($res) {
-        while ($row = $res->fetch_assoc()) {
-            $notifications[] = $row;
-            if ($row['is_read'] == 0) $unread_count++;
+
+// Get the logged-in user's email from session
+$user_email = isset($_SESSION['email']) ? trim($_SESSION['email']) : '';
+
+if (!empty($user_email)) {
+    // First, get the supplier ID using the logged-in user's email
+    $supplier_id = 0;
+    $supplier_query = "SELECT id FROM suppliers WHERE email = ? LIMIT 1";
+    $stmt = $con->prepare($supplier_query);
+    $stmt->bind_param('s', $user_email);
+    if ($stmt->execute()) {
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $supplier_id = intval($row['id']);
+        }
+    }
+    $stmt->close();
+    
+    // If we have a valid supplier ID, get their notifications
+    if ($supplier_id > 0) {
+        $query = "SELECT id, notif_type, message, is_read, created_at 
+                 FROM notifications_supplier 
+                 WHERE user_id = ? 
+                 ORDER BY created_at DESC 
+                 LIMIT 10";
+        $stmt = $con->prepare($query);
+        $stmt->bind_param('i', $supplier_id);
+        if ($stmt->execute()) {
+            $res = $stmt->get_result();
+            while ($row = $res->fetch_assoc()) {
+                $notifications[] = $row;
+                if ($row['is_read'] == 0) $unread_count++;
+            }
+            $stmt->close();
         }
     }
 }

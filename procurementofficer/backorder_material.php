@@ -55,11 +55,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
     $con->begin_transaction();
 
     try {
-        // Insert into back_orders table (status field removed)
-        $backorder_insert = "INSERT INTO back_orders (material_id, quantity, reason, requested_by, created_at) 
-                            VALUES (?, ?, ?, ?, NOW())";
+        // Insert into back_orders table with supplier_name
+        $backorder_insert = "INSERT INTO back_orders (material_id, quantity, reason, requested_by, supplier_name, created_at) 
+                           SELECT ?, ?, ?, ?, supplier_name, NOW() 
+                           FROM materials 
+                           WHERE id = ?";
         $stmt = $con->prepare($backorder_insert);
-        $stmt->bind_param("iisi", $material_id, $backorder_quantity, $final_reason, $user_id);
+        $stmt->bind_param("iisii", $material_id, $backorder_quantity, $final_reason, $user_id, $material_id);
         $stmt->execute();
 
         // Deduct from material quantity and set delivery_status to 'Pending Backorder' without adding quantities
@@ -68,14 +70,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
         $update_stmt->bind_param("ii", $backorder_quantity, $material_id);
         $update_stmt->execute();
 
-        // Insert supplier notification
-        $supplier_id = isset($material['supplier_id']) ? intval($material['supplier_id']) : 0;
+        // Get supplier ID from suppliers table using supplier_name from materials
+        $supplier_id = 0;
+        $supplier_query = "SELECT id FROM suppliers WHERE supplier_name = ?";
+        $supplier_stmt = $con->prepare($supplier_query);
+        $supplier_stmt->bind_param("s", $material['supplier_name']);
+        if ($supplier_stmt->execute()) {
+            $supplier_result = $supplier_stmt->get_result();
+            if ($supplier_row = $supplier_result->fetch_assoc()) {
+                $supplier_id = intval($supplier_row['id']);
+            }
+        }
+        $supplier_stmt->close();
+
         $notif_type = 'Material Backorder';
         $message = "Backorder placed for material '{$material['material_name']}' (Quantity: $backorder_quantity).";
         $is_read = 0;
 
         $insert_notif = $con->prepare("INSERT INTO notifications_supplier (user_id, notif_type, message, is_read, created_at) VALUES (?, ?, ?, ?, NOW())");
-        $insert_notif->bind_param("isss", $supplier_id, $notif_type, $message, $is_read);
+        $insert_notif->bind_param("issi", $supplier_id, $notif_type, $message, $is_read);
         $insert_notif->execute();
         $insert_notif->close();
 

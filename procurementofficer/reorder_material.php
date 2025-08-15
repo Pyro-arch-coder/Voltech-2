@@ -29,8 +29,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id']) && iss
         }
         
         // Insert into back_orders table with Pending status and the specified quantity
-        $insert = $con->prepare("INSERT INTO back_orders (material_id, quantity, reason, requested_by, created_at) VALUES (?, ?, 'Reorder', ?, NOW())");
-        $insert->bind_param("iii", $material_id, $reorder_quantity, $user_id);
+        $insert = $con->prepare("INSERT INTO back_orders (material_id, quantity, reason, requested_by, supplier_name, created_at) 
+                               SELECT ?, ?, 'Reorder', ?, supplier_name, NOW() 
+                               FROM materials 
+                               WHERE id = ?");
+        $insert->bind_param("iiii", $material_id, $reorder_quantity, $user_id, $material_id);
         if ($insert->execute()) {
             $backorder_id = $con->insert_id;
             $insert->close();
@@ -41,14 +44,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id']) && iss
             $update_material->execute();
             $update_material->close();
             
-            // Insert supplier notification with quantity
-            $supplier_id = isset($material['supplier_id']) ? intval($material['supplier_id']) : 0;
+            // Get supplier ID from suppliers table using supplier_name from materials
+            $supplier_id = 0;
+            $supplier_query = "SELECT id FROM suppliers WHERE supplier_name = ?";
+            $supplier_stmt = $con->prepare($supplier_query);
+            $supplier_stmt->bind_param("s", $material['supplier_name']);
+            if ($supplier_stmt->execute()) {
+                $supplier_result = $supplier_stmt->get_result();
+                if ($supplier_row = $supplier_result->fetch_assoc()) {
+                    $supplier_id = intval($supplier_row['id']);
+                }
+            }
+            $supplier_stmt->close();
+
             $notif_type = 'Material Reorder';
             $message = "A reorder for {$reorder_quantity} {$material['unit']} of '{$material['material_name']}' was placed and is pending supplier action. Total after reorder: {$total_after_reorder} {$material['unit']}";
             $is_read = 0;
 
             $insert_notif = $con->prepare("INSERT INTO notifications_supplier (user_id, notif_type, message, is_read, created_at) VALUES (?, ?, ?, ?, NOW())");
-            $insert_notif->bind_param("isss", $supplier_id, $notif_type, $message, $is_read);
+            $insert_notif->bind_param("issi", $supplier_id, $notif_type, $message, $is_read);
             $insert_notif->execute();
             $insert_notif->close();
             
