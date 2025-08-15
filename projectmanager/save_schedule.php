@@ -71,8 +71,40 @@ try {
         throw new Exception('Failed to save: ' . $stmt->error);
     }
 
+    // --- ADD NOTIFICATION LOGIC HERE ---
+    // Get client_email for this project
+    $client_email = '';
+    $user_id = null;
+    $stmt_proj = $con->prepare("SELECT client_email, user_id FROM projects WHERE project_id = ?");
+    $stmt_proj->bind_param("i", $project_id);
+    $stmt_proj->execute();
+    $stmt_proj->bind_result($client_email, $user_id);
+    $stmt_proj->fetch();
+    $stmt_proj->close();
+
+    if ($client_email && $user_id) {
+        $notif_type = 'timeline_update';
+        $message = "A new schedule item ('{$task_name}') has been added to your project.";
+        $is_read = 0;
+
+        $stmt_notif = $con->prepare(
+            "INSERT INTO notifications_client (user_id, client_email, notif_type, message, is_read, created_at) VALUES (?, ?, ?, ?, ?, NOW())"
+        );
+        $stmt_notif->bind_param(
+            "isssi",
+            $user_id,
+            $client_email,
+            $notif_type,
+            $message,
+            $is_read
+        );
+        $stmt_notif->execute();
+        $stmt_notif->close();
+    }
+    // --- END NOTIFICATION LOGIC ---
+
     sendResponse(true, 'Schedule item saved', ['id' => $stmt->insert_id]);
-    
+
 } catch (Exception $e) {
     error_log('Schedule Save Error: ' . $e->getMessage());
     sendResponse(false, 'Error saving schedule: ' . $e->getMessage(), [

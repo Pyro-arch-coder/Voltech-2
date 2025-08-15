@@ -22,20 +22,21 @@ try {
     $updateStmt = $con->prepare("UPDATE pm_client_messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ? AND is_read = 0");
     $updateStmt->bind_param("ii", $receiver_id, $current_user_id);
     $updateStmt->execute();
-    
+    $updateStmt->close();
+
     // Fetch messages between current user and receiver
     $query = "SELECT m.*, u.firstname, u.lastname, u.profile_path 
               FROM pm_client_messages m 
               JOIN users u ON m.sender_id = u.id 
               WHERE (m.sender_id = ? AND m.receiver_id = ?) 
-              OR (m.sender_id = ? AND m.receiver_id = ?) 
-              ORDER BY m.date_sent DESC";
-    
+                 OR (m.sender_id = ? AND m.receiver_id = ?) 
+              ORDER BY m.date_sent ASC";
+
     $stmt = $con->prepare($query);
     $stmt->bind_param("iiii", $current_user_id, $receiver_id, $receiver_id, $current_user_id);
     $stmt->execute();
     $result = $stmt->get_result();
-    
+
     $messages = [];
     while ($row = $result->fetch_assoc()) {
         $messages[] = [
@@ -43,14 +44,17 @@ try {
             'sender_id' => $row['sender_id'],
             'receiver_id' => $row['receiver_id'],
             'message' => htmlspecialchars($row['message']),
-            'is_read' => $row['is_read'],
             'date_sent' => $row['date_sent'],
+            'is_read' => (bool)$row['is_read'],
             'sender_name' => $row['firstname'] . ' ' . $row['lastname'],
-            'sender_avatar' => !empty($row['profile_path']) ? '../' . $row['profile_path'] : '../uploads/default_profile.png',
-            'is_me' => $row['sender_id'] == $current_user_id
+            'sender_avatar' => !empty($row['profile_path']) ? 
+                '../uploads/' . $row['profile_path'] : 
+                '../uploads/default_profile.png',
+            'is_me' => ($row['sender_id'] == $current_user_id)
         ];
     }
-    
+    $stmt->close();
+
     // Return messages as JSON
     header('Content-Type: application/json');
     echo json_encode([

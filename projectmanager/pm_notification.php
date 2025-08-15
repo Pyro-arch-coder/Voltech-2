@@ -8,7 +8,7 @@ include_once "../config.php";
 $unread_count = 0;
 $notifications = [];
 if ($user_id) {
-    $res = $con->query("SELECT id, notif_type, message, is_read, created_at FROM notifications_projectmanager WHERE user_id = $user_id ORDER BY created_at DESC LIMIT 10");
+    $res = $con->query("SELECT id, notif_type, message, is_read, created_at FROM notifications_projectmanager WHERE user_id = $user_id ORDER BY created_at DESC LIMIT 7");
     if ($res) {
         while ($row = $res->fetch_assoc()) {
             $notifications[] = $row;
@@ -25,15 +25,18 @@ if ($unread_count > 0) {
     $html_output .= '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.7em;">' . $unread_count . '</span>';
 }
 $html_output .= '</a>
-    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width:220px; background:#fff;">
-        <li class="d-flex justify-content-end" style="padding: 0 10px 5px 10px;">
-          <form method="post" action="clear_pm_notifications.php">
-            <button type="submit" class="btn btn-link text-danger p-0" style="font-size:1.1em;" title="Clear all notifications">
-              <i class="fas fa-trash-alt"></i>
-            </button>
-          </form>
-        </li>
-        <li>';
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width:220px; max-height: 400px; overflow-y: auto; background:#fff;">
+        <li class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom" style="position: sticky; top: 0; z-index: 1; background: #fff;">
+            <div class="fw-bold">Notifications</div>
+            <form method="post" action="clear_pm_notifications.php">
+                <button type="submit" class="btn btn-link text-danger p-0" style="font-size:1.1em;" title="Clear all notifications">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </form>
+        </li>';
+
+// Limit notifications to 7
+$notifications = array_slice($notifications, 0, 7);
 if (count($notifications) > 0) {
     foreach ($notifications as $notif) {
         $text = 'text-success';

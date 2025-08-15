@@ -172,16 +172,91 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
-    <link rel="stylesheet" href="po_styles.css" />
+    <link rel="stylesheet" href="client_styles.css" />
     <!-- Cropper.js CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
     <title>My Profile - Client Portal</title>
     <style>
-        #profilepic-preview {
-            width: 200px;
-            height: 200px;
-            object-fit: cover;
-            object-position: center;
+        /* General Styles */
+        body {
+            background-color: #f8f9fa;
+        }
+
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 1.5rem;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+        }
+
+        /* Status Badges */
+        .badge {
+            padding: 0.5em 0.8em;
+            font-weight: 500;
+        }
+
+        /* Progress Bar */
+        .progress {
+            border-radius: 10px;
+            background-color: #e9ecef;
+        }
+
+        /* Sidebar Styles */
+        #sidebar-wrapper {
+            background: linear-gradient(180deg, #4e73df 0%, #224abe 100%);
+            min-height: 100vh;
+            transition: all 0.3s;
+        }
+
+        .sidebar-profile-img {
+            border: 3px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .list-group-item {
+            border: none;
+            padding: 0.8rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .list-group-item:hover,
+        .list-group-item.active {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: #fff !important;
+            border-left: 4px solid #fff;
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            background-color: transparent !important;
+            box-shadow: none !important;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: -15rem;
+            }
+            #wrapper.toggled #sidebar-wrapper {
+                margin-left: 0;
+            }
+            #page-content-wrapper {
+                min-width: 100%;
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -199,42 +274,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <a href="clients_dashboard.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'clients_dashboard.php' ? 'active' : ''; ?>">
                 <i class="fas fa-home"></i> Dashboard
             </a>
-            <a href="clients_profile.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'clients_profile.php' ? 'active' : ''; ?>">
-                <i class="fas fa-user"></i> My Profile
-            </a>
+            <a href="client_projects.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'client_projects.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-project-diagram"></i> Projects
+              </a>
+              <a href="client_gantt.chart.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'client_gantt.chart.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-calendar"></i> Gantt Chart
+              </a>
         </div>
     </div>
     <!-- /#sidebar-wrapper -->
     <!-- Page Content -->
     <div id="page-content-wrapper">
-        <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
-            <div class="d-flex align-items-center">
-                <i class="fas fa-align-left primary-text fs-4 me-3" id="menu-toggle"></i>
-                <h2 class="fs-2 m-0">Client Profile</h2>
-            </div>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle second-text fw-bold" href="#" id="navbarDropdown"
-                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <?php echo htmlspecialchars($user_name); ?>
-                            <img src="<?php echo $userprofile; ?>" alt="User" class="rounded-circle" width="30" height="30" style="margin-left: 8px;">
+    <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-align-left primary-text fs-4 me-3" id="menu-toggle"></i>
+                    <h2 class="fs-2 m-0">Dashboard</h2>
+                </div>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                    <?php 
+                    include 'clients_notification.php'; 
+                    
+                    // Function to count unread messages
+                    function countUnreadMessages($con, $userId) {
+                        $query = "SELECT COUNT(*) as count FROM pm_client_messages WHERE receiver_id = ? AND is_read = 0";
+                        $stmt = $con->prepare($query);
+                        $stmt->bind_param("i", $userId);
+                        $stmt->execute();
+                        $result = $stmt->get_result();
+                        $row = $result->fetch_assoc();
+                        $stmt->close();
+                        return $row['count'];
+                    }
+                    
+                    // Get total unread messages
+                    $unreadCount = countUnreadMessages($con, $_SESSION['user_id']);
+                    ?>
+                    <li class="nav-item ms-2">
+                        <a class="nav-link position-relative" href="client_messenger.php" title="Messages">
+                            <i class="fas fa-comment-dots fs-5"></i>
+                            <?php if ($unreadCount > 0): ?>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6em;">
+                                    <?php echo $unreadCount > 9 ? '9+' : $unreadCount; ?>
+                                </span>
+                            <?php endif; ?>
                         </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="clients_profile.php">Profile</a></li>
-                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
-                        </ul>
                     </li>
-                </ul>
-            </div>
-        </nav>
+                    <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle second-text fw-bold" href="#" id="navbarDropdown"
+                                role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <?php echo htmlspecialchars($user_name); ?>
+                                <img src="<?php echo $userprofile; ?>" alt="User" class="rounded-circle" width="30" height="30" style="margin-left: 8px;">
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="client_profile.php">Profile</a></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#logoutModal">Logout</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
         <div class="container-fluid px-4 py-4">
             <div class="row justify-content-center">
                 <div class="col-12 col-md-6 mb-4">
@@ -323,7 +431,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <input type="email" class="form-control" name="email" id="email" value="<?php echo htmlspecialchars($user_email); ?>" disabled>
                                 </div>
                                 <div class="d-flex justify-content-end">
-                                    <button class="btn btn-success" name="save" type="submit">Save Changes</button>
+                                    <button class="btn text-white" name="save" type="submit" style="background: linear-gradient(180deg, #4e73df 0%, #224abe 100%); border: none; padding: 0.5rem 1.5rem; border-radius: 0.35rem; transition: all 0.3s;" onmouseover="this.style.opacity='0.9'; this.style.transform='translateY(-1px)';" onmouseout="this.style.opacity='1'; this.style.transform='translateY(0)';">
+                                        <i class="fas fa-save me-2"></i>Save Changes
+                                    </button>
                                 </div>
                             </form>
                         </div>

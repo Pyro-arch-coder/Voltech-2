@@ -960,7 +960,7 @@ if ($project_id > 0) {
                                 <div class="alert alert-success d-flex justify-content-between align-items-center">
                                     <div>
                                         <i class="fas fa-info-circle me-2"></i>
-                                        This is the latest schedule of the project
+                                        Schedule of the project
                                     </div>
                                 </div>
 

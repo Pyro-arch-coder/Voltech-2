@@ -217,17 +217,17 @@ if ($userid) {
                     <div class="col-12">
                         <div class="card mb-5 shadow rounded-3">
                             <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h4 class="mb-0">List of Archived Projects</h4>
                                     <a href="projects.php" class="btn btn-secondary ms-2">Back to Project List</a>
-            </div>
+                                </div>
                                 <hr>
                                 <form class="d-flex align-items-center gap-2 mb-3 flex-wrap" method="get" id="filterForm" style="gap: 8px;">
                                     <select name="filter" id="filter" class="form-control" style="width: 140px; min-width: 100px; max-width: 180px;">
-                    <option value="all" <?php echo ($filter === 'all') ? 'selected' : ''; ?>>All</option>
-                    <option value="month" <?php echo ($filter === 'month') ? 'selected' : ''; ?>>This Month</option>
-                    <option value="year" <?php echo ($filter === 'year') ? 'selected' : ''; ?>>This Year</option>
-                </select>
+                                        <option value="all" <?php echo ($filter === 'all') ? 'selected' : ''; ?>>All</option>
+                                        <option value="month" <?php echo ($filter === 'month') ? 'selected' : ''; ?>>This Month</option>
+                                        <option value="year" <?php echo ($filter === 'year') ? 'selected' : ''; ?>>This Year</option>
+                                    </select>
                                     <div class="d-flex align-items-center" style="min-width: 180px;">
                                         <label for="start_date" class="mb-0 me-1" style="font-weight:normal; font-size:0.95em;">Start:</label>
                                         <input type="date" name="start_date" id="start_date" class="form-control" style="width: 130px;" value="<?php echo htmlspecialchars($start_date); ?>">
@@ -237,214 +237,66 @@ if ($userid) {
                                         <input type="date" name="end_date" id="end_date" class="form-control" style="width: 130px;" value="<?php echo htmlspecialchars($end_date); ?>">
                                     </div>
                                     <!-- No Apply Filter button -->
-            </form>
+                                </form>
                                 <div class="table-responsive mb-0">
-                                    <table class="table table-bordered table-striped mb-0">
-                <thead>
-                    <tr>
-                        <th>No.</th>
-                        <th>Project</th>
-                        <th>Location</th>
-                        <th>Deadline</th>
-                        <th>Foreman</th>
-                        <th>Category</th>
-                        <th>Billings</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php
-                $no = 1;
-                $modals = '';
-                if (mysqli_num_rows($query) > 0) {
-                    mysqli_data_seek($query, 0);
-                    while ($row = mysqli_fetch_assoc($query)) {
-                        $pid = $row['project_id'];
-                        // Employees
-                        $emps = [];
-                        $emp_total = 0;
-                        $emp_query = mysqli_query($con, "SELECT pae.*, e.first_name, e.last_name FROM project_add_employee pae LEFT JOIN employees e ON pae.employee_id = e.employee_id WHERE pae.project_id = '$pid'");
-                        while ($erow = mysqli_fetch_assoc($emp_query)) {
-                            $emps[] = $erow;
-                            $emp_total += floatval($erow['total']);
-                        }
-                        // MaterialsF
-                        $mats = [];
-                        $mat_total = 0;
-                        $mat_query = mysqli_query($con, "SELECT * FROM project_add_materials WHERE project_id = '$pid'");
-                        while ($mrow = mysqli_fetch_assoc($mat_query)) {
-                            $mats[] = $mrow;
-                            $mat_total += floatval($mrow['total']);
-                        }
-                        $grand_total = $emp_total + $mat_total;
-?>
-                    <tr>
-                        <td><?php echo $no++; ?></td>
-                        <td><?php echo htmlspecialchars($row['project']); ?></td>
-                        <td><?php echo htmlspecialchars($row['location']); ?></td>
-                        <td><?php echo htmlspecialchars($row['deadline']); ?></td>
-                        <td><?php echo htmlspecialchars($row['foreman']); ?></td>
-                        <td><?php echo htmlspecialchars($row['category']); ?></td>
-                        <td><?php echo htmlspecialchars($row['billings']); ?></td>
-                        <td>
-                            <button class="btn btn-primary btn-sm view-project" data-project-id="<?php echo $pid; ?>">
-                                <i data-feather="eye"></i> View
-                            </button>
-                        </td>
-                    </tr>
-<?php
-// Collect modal HTML for output after the table
-$modals .= '<div class="modal fade" id="viewProjectModal' . $pid . '" tabindex="-1" role="dialog">'
-    . '<div class="modal-dialog modal-lg" role="document">'
-    . '<div class="modal-content">'
-    . '<div class="modal-header bg-primary text-white">'
-    . '<h5 class="modal-title"><i data-feather="folder" class="mr-2"></i>Project Details</h5>'
-    . '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>'
-    . '</div>'
-    . '<div class="modal-body">'
-    . '<div class="card mb-4">'
-    . '<div class="card-header bg-light">'
-    . '<h6 class="mb-0"><i data-feather="info" class="mr-2"></i>Project Information</h6>'
-    . '</div>'
-    . '<div class="card-body">'
-    . '<div class="row">'
-    . '<div class="col-md-6">'
-    . '<div class="mb-3">'
-    . '<strong class="text-primary">Project Name:</strong><br>'
-    . '<span class="h6">' . htmlspecialchars($row['project']) . '</span>'
-    . '</div>'
-    . '<div class="mb-3">'
-    . '<strong class="text-primary">Location:</strong><br>'
-    . '<span>' . htmlspecialchars($row['location']) . '</span>'
-    . '</div>'
-    . '<div class="mb-3">'
-    . '<strong class="text-primary">Category:</strong><br>'
-    . '<span class="badge badge-secondary">' . htmlspecialchars($row['category']) . '</span>'
-    . '</div>'
-    . '</div>'
-    . '<div class="col-md-6">'
-    . '<div class="mb-3">'
-    . '<strong class="text-primary">Deadline:</strong><br>'
-    . '<span class="text-danger">' . date("F d, Y", strtotime($row['deadline'])) . '</span>'
-    . '</div>'
-    . '<div class="mb-3">'
-    . '<strong class="text-primary">Foreman:</strong><br>'
-    . '<span>' . htmlspecialchars($row['foreman']) . '</span>'
-    . '</div>'
-    . '<div class="mb-3">'
-    . '<strong class="text-primary">Billings:</strong><br>'
-    . '<span class="h6 text-success">₱' . number_format(floatval($row['billings']), 2) . '</span>'
-    . '</div>'
-    . '</div>'
-    . '</div>'
-    . '</div>'
-    . '</div>'
-    . '<div class="row">'
-    . '<div class="col-md-6">'
-    . '<div class="card">'
-    . '<div class="card-header bg-light">'
-    . '<h6 class="mb-0"><i data-feather="users" class="mr-2"></i>Employees</h6>'
-    . '</div>'
-    . '<div class="card-body">';
-if (count($emps) > 0) {
-    $modals .= '<ul class="list-group list-group-flush">';
-    foreach ($emps as $emp) {
-        $modals .= '<li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0" style="background: #fff !important; color: #222; font-weight: bold;">'
-            . '<div style="font-weight:bold;color:#222">'
-            . '<i data-feather="user" class="mr-2 text-muted" style="width: 16px; height: 16px;"></i>'
-            . htmlspecialchars(($emp['first_name'] ?? '') . ' ' . ($emp['last_name'] ?? ''))
-            . '</div>'
-            . '<span style="font-weight:bold;color:#222">₱' . number_format($emp['total'], 2) . '</span>'
-            . '</li>';
-    }
-    $modals .= '</ul>';
-} else {
-    $modals .= '<div class="text-muted text-center py-3"><i data-feather="users" class="mr-2"></i>No employees added</div>';
-}
-$modals .= '<div class="text-right mt-3 pt-2 border-top">'
-    . '<span style="font-weight:bold;color:#222">Total: ₱' . number_format($emp_total, 2) . '</span>'
-    . '</div>'
-    . '</div>'
-    . '</div>'
-    . '</div>'
-    . '<div class="col-md-6">'
-    . '<div class="card">'
-    . '<div class="card-header bg-light">'
-    . '<h6 class="mb-0"><i data-feather="package" class="mr-2"></i>Materials</h6>'
-    . '</div>'
-    . '<div class="card-body">';
-if (count($mats) > 0) {
-    $modals .= '<ul class="list-group list-group-flush">';
-    foreach ($mats as $mat) {
-        $modals .= '<li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0" style="background: #fff !important; color: #222; font-weight: bold;">'
-            . '<div style="font-weight:bold;color:#222">'
-            . '<i data-feather="box" class="mr-2 text-muted" style="width: 16px; height: 16px;"></i>'
-            . htmlspecialchars($mat['material_name'])
-            . '</div>'
-            . '<span style="font-weight:bold;color:#222">₱' . number_format($mat['total'], 2) . '</span>'
-            . '</li>';
-    }
-    $modals .= '</ul>';
-} else {
-    $modals .= '<div class="text-muted text-center py-3"><i data-feather="package" class="mr-2"></i>No materials added</div>';
-}
-$modals .= '<div class="text-right mt-3 pt-2 border-top">'
-    . '<span style="font-weight:bold;color:#222">Total: ₱' . number_format($mat_total, 2) . '</span>'
-    . '</div>'
-    . '</div>'
-    . '</div>'
-    . '</div>'
-    . '</div>'
-    . '<div class="text-center mt-3 mb-0" style="font-size:1.2em; font-weight:bold; color:#222;">'
-    . '<span style="font-size:1.3em; vertical-align:middle; margin-right:4px; font-weight:bold; color:#222;">₱</span> Grand Total: <span style="font-weight:bold;color:#222">₱' . number_format($grand_total, 2) . '</span>'
-    . '</div>'
-    . '</div>';
-$modals .= '<div class="modal-footer">'
-    . '<button class="btn btn-success restore-project" data-project-id="' . $pid . '"><i data-feather="refresh-cw" class="mr-1"></i>Restore</button>'
-    . '<button class="btn btn-danger delete-project" data-project-id="' . $pid . '"><i data-feather="trash-2" class="mr-1"></i>Delete</button>'
-    . '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i data-feather="x" class="mr-1"></i>Close</button>'
-    . '</div></div></div></div>';
-    }
-} else {
-    echo '<tr><td colspan="8" class="text-center">No archived projects found.</td></tr>';
-}
-?>
-</tbody>
-</table>
-<?php echo $modals; ?>
-<!-- Confirmation Modal for Restore/Delete -->
-<div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmActionModalLabel">Confirm Action</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p id="confirmActionText"></p>
-        <p class="text-danger" id="confirmActionWarning" style="display:none;">This action cannot be undone.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <a href="#" id="confirmActionBtn" class="btn">Confirm</a>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- View Project Modal -->
-<div class="modal fade" id="viewProjectModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Project Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="projectDetailsBody">
-                <!-- Project details will be loaded here by JS -->
-            </div>
-        </div>
-    </div>
-</div>
+                                <table class="table table-bordered table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>No.</th>
+                                        <th>Project</th>
+                                        <th>Location</th>
+                                        <th>Deadline</th>
+                                        <th>Foreman</th>
+                                        <th>Category</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <?php
+                                $no = 1;
+                                $modals = '';
+                                if (mysqli_num_rows($query) > 0) {
+                                    mysqli_data_seek($query, 0);
+                                    while ($row = mysqli_fetch_assoc($query)) {
+                                        $pid = $row['project_id'];
+                                        // Get foreman's name from employees table
+                                        $foreman_name = '';
+                                        $foreman_query = mysqli_query($con, "SELECT e.first_name, e.last_name 
+                                            FROM project_add_employee pae
+                                            JOIN employees e ON pae.employee_id = e.employee_id
+                                            JOIN positions p ON e.position_id = p.position_id
+                                            WHERE pae.project_id = '$pid' 
+                                            AND p.title = 'Foreman'
+                                            LIMIT 1");
+                                        if ($foreman_row = mysqli_fetch_assoc($foreman_query)) {
+                                            $foreman_name = htmlspecialchars($foreman_row['first_name'] . ' ' . $foreman_row['last_name']);
+                                        }
+                                        ?>
+                                        <tr>
+                                            <td><?php echo $no++; ?></td>
+                                            <td><?php echo htmlspecialchars($row['project'] ?? ''); ?></td>
+                                            <td><?php echo htmlspecialchars($row['location'] ?? ''); ?></td>
+                                            <td><?php echo htmlspecialchars($row['deadline'] ?? ''); ?></td>
+                                            <td><?php echo $foreman_name; ?></td>
+                                            <td><?php echo htmlspecialchars($row['category'] ?? ''); ?></td>
+             
+                                            <td>
+                                                <button class="btn btn-success restore-project" data-project-id="<?php echo $pid; ?>"><i data-feather="refresh-cw" class="mr-1"></i>Restore</button>
+                                                <button class="btn btn-danger delete-project" data-project-id="<?php echo $pid; ?>"><i data-feather="trash-2" class="mr-1"></i>Delete</button>
+                                            </td>
+                                        </tr>
+                                <?php
+                                    } // Close the while loop
+                                } else {
+                                    echo '<tr><td colspan="8" class="text-center">No archived projects found.</td></tr>';
+                                }
+                                ?>
+                                </tbody>
+                                </table>
+                        </div>
+                    </div>
+                </div>
+             </div>
 <!-- Change Password Modal -->
 <div class="modal fade" id="changePasswordModalMain" tabindex="-1" aria-labelledby="changePasswordModalLabelMain" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -484,30 +336,13 @@ $modals .= '<div class="modal-footer">'
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script>
-    var el = document.getElementById("wrapper");
-    var toggleButton = document.getElementById("menu-toggle");
-
-    toggleButton.onclick = function () {
-        el.classList.toggle("toggled");
-    };
-    </script>
-    <script>
-    function fetchProjectDetails(project_id) {
-        $.ajax({
-            url: 'fetch_archived_project_details.php',
-            type: 'GET',
-            data: { id: project_id },
-            success: function(data) {
-                $('#projectDetailsBody').html(data);
-                $('#viewProjectModal').modal('show');
-            }
-        });
-    }
     document.addEventListener('DOMContentLoaded', function() {
+        // Filter form handling
         var filterSelect = document.getElementById('filter');
         var startDate = document.getElementById('start_date');
         var endDate = document.getElementById('end_date');
         var filterForm = document.getElementById('filterForm');
+        
         if (filterSelect) {
             filterSelect.addEventListener('change', function() {
                 filterForm.submit();
@@ -515,96 +350,60 @@ $modals .= '<div class="modal-footer">'
         }
         if (startDate) {
             startDate.addEventListener('change', function() {
-                filterForm.submit();
+                if (endDate.value) {
+                    filterForm.submit();
+                }
             });
         }
         if (endDate) {
             endDate.addEventListener('change', function() {
-                filterForm.submit();
+                if (startDate.value) {
+                    filterForm.submit();
+                }
             });
         }
-
-        // Fix view modal for Bootstrap 5
-        document.querySelectorAll('.view-project').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var pid = this.getAttribute('data-project-id');
-                var modal = document.getElementById('viewProjectModal' + pid);
-                if (modal) {
-                    var bsModal = new bootstrap.Modal(modal);
-                    bsModal.show();
-                }
-            });
+        
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
 
-        // Confirmation modal for restore/delete
-        let actionType = '';
-        let actionUrl = '';
-        let currentProjectModal = null;
-        document.querySelectorAll('.restore-project').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                actionType = 'restore';
-                const pid = this.getAttribute('data-project-id');
-                actionUrl = 'project_archived.php?restore=' + pid;
-                document.getElementById('confirmActionModalLabel').textContent = 'Confirm Restore';
-                document.getElementById('confirmActionText').textContent = 'Are you sure you want to restore this project?';
-                document.getElementById('confirmActionWarning').style.display = 'none';
-                const confirmBtn = document.getElementById('confirmActionBtn');
-                confirmBtn.className = 'btn btn-success';
-                confirmBtn.textContent = 'Restore';
-                // Close the current project modal before showing confirm
-                currentProjectModal = this.closest('.modal');
-                if (currentProjectModal) {
-                    var bsModal = bootstrap.Modal.getInstance(currentProjectModal);
-                    if (bsModal) bsModal.hide();
-                }
-                setTimeout(function() {
-                    var modal = new bootstrap.Modal(document.getElementById('confirmActionModal'));
-                    modal.show();
-                    confirmBtn.onclick = function() { window.location.href = actionUrl; };
-                }, 300);
+        // Initialize modals
+        var restoreModal = new bootstrap.Modal(document.getElementById('restoreModal'));
+        var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        
+        // Store project ID for restore/delete actions
+        var currentProjectId = null;
+        
+        // Handle restore project buttons
+        document.querySelectorAll('.restore-project').forEach(function(button) {
+            button.addEventListener('click', function() {
+                currentProjectId = this.getAttribute('data-project-id');
+                restoreModal.show();
             });
         });
-        document.querySelectorAll('.delete-project').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                actionType = 'delete';
-                const pid = this.getAttribute('data-project-id');
-                actionUrl = 'project_archived.php?delete=' + pid;
-                document.getElementById('confirmActionModalLabel').textContent = 'Confirm Delete';
-                document.getElementById('confirmActionText').textContent = 'Are you sure you want to permanently delete this project?';
-                document.getElementById('confirmActionWarning').style.display = '';
-                const confirmBtn = document.getElementById('confirmActionBtn');
-                confirmBtn.className = 'btn btn-danger';
-                confirmBtn.textContent = 'Delete';
-                // Close the current project modal before showing confirm
-                currentProjectModal = this.closest('.modal');
-                if (currentProjectModal) {
-                    var bsModal = bootstrap.Modal.getInstance(currentProjectModal);
-                    if (bsModal) bsModal.hide();
-                }
-                setTimeout(function() {
-                    var modal = new bootstrap.Modal(document.getElementById('confirmActionModal'));
-                    modal.show();
-                    confirmBtn.onclick = function() { window.location.href = actionUrl; };
-                }, 300);
+        
+        // Handle delete project buttons
+        document.querySelectorAll('.delete-project').forEach(function(button) {
+            button.addEventListener('click', function() {
+                currentProjectId = this.getAttribute('data-project-id');
+                deleteModal.show();
             });
         });
-        // Fix close buttons in all modals for Bootstrap 5
-        document.querySelectorAll('.modal .btn-close, .modal .close').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var modal = btn.closest('.modal');
-                if (modal) {
-                    var bsModal = bootstrap.Modal.getInstance(modal);
-                    if (bsModal) bsModal.hide();
-                }
-            });
+        
+        // Confirm restore action
+        document.getElementById('confirmRestore').addEventListener('click', function() {
+            if (currentProjectId) {
+                window.location.href = 'project_restore.php?id=' + currentProjectId;
+            }
         });
-        // Refresh feather icons after modals are shown
-        document.querySelectorAll('.modal').forEach(function(modalEl) {
-            modalEl.addEventListener('shown.bs.modal', function() {
-                if (window.feather) feather.replace();
-            });
+        
+        // Confirm delete action
+        document.getElementById('confirmDelete').addEventListener('click', function() {
+            if (currentProjectId) {
+                window.location.href = 'project_delete.php?id=' + currentProjectId;
+            }
         });
     });
     </script>
@@ -667,6 +466,44 @@ $modals .= '<div class="modal-footer">'
     color: #009d63;
 }
 </style>
+<!-- Restore Confirmation Modal -->
+<div class="modal fade" id="restoreModal" tabindex="-1" aria-labelledby="restoreModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="restoreModalLabel">Restore Project</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to restore this project? It will be moved back to active projects.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="#" id="confirmRestore" class="btn btn-success">Restore</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Delete Project</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to permanently delete this project? This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="#" id="confirmDelete" class="btn btn-danger">Delete</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Logout Confirmation Modal -->
 <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">

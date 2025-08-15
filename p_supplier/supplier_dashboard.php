@@ -31,12 +31,23 @@ while ($row = mysqli_fetch_assoc($res2)) {
 $top_projects = [];
 $top_labels = [];
 $top_progress = [];
-$top_sql = "SELECT p.project_id, p.project, AVG(d.progress) as avg_progress FROM projects p LEFT JOIN project_divisions d ON p.project_id = d.project_id WHERE p.user_id='$userid' GROUP BY p.project_id, p.project ORDER BY avg_progress DESC LIMIT 3";
+$top_sql = "SELECT p.project_id, p.project, AVG(pt.progress) as avg_progress 
+            FROM projects p 
+            LEFT JOIN project_timeline pt ON p.project_id = pt.project_id 
+            WHERE p.user_id='$userid' 
+            GROUP BY p.project_id, p.project 
+            ORDER BY avg_progress DESC 
+            LIMIT 3";
 $top_res = mysqli_query($con, $top_sql);
-while ($row = mysqli_fetch_assoc($top_res)) {
-    $top_projects[] = $row;
-    $top_labels[] = $row['project'];
-    $top_progress[] = round($row['avg_progress'], 1);
+if ($top_res) {
+    while ($row = mysqli_fetch_assoc($top_res)) {
+        $top_projects[] = $row;
+        $top_labels[] = $row['project'];
+        $top_progress[] = round($row['avg_progress'], 1);
+    }
+} else {
+    // Log error if query fails
+    error_log("Error in supplier_dashboard.php: " . mysqli_error($con));
 }
 
 // --- Equipment Expenses Comparison Data for Chart (Reorder and Backorder only)

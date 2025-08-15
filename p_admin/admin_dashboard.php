@@ -31,7 +31,7 @@ while ($row = mysqli_fetch_assoc($res2)) {
 $top_projects = [];
 $top_labels = [];
 $top_progress = [];
-$top_sql = "SELECT p.project_id, p.project, AVG(d.progress) as avg_progress FROM projects p LEFT JOIN project_divisions d ON p.project_id = d.project_id WHERE p.user_id='$userid' GROUP BY p.project_id, p.project ORDER BY avg_progress DESC LIMIT 3";
+$top_sql = "SELECT p.project_id, p.project, AVG(d.progress) as avg_progress FROM projects p LEFT JOIN project_timeline d ON p.project_id = d.project_id WHERE p.user_id='$userid' GROUP BY p.project_id, p.project ORDER BY avg_progress DESC LIMIT 3";
 $top_res = mysqli_query($con, $top_sql);
 while ($row = mysqli_fetch_assoc($top_res)) {
     $top_projects[] = $row;
@@ -688,6 +688,61 @@ if ($userid) {
       </div>
     </div>
     <script>
+// Date validation for start and end dates
+function validateDates() {
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    const today = new Date().toISOString().split('T')[0];
+
+    // Set minimum date to today for both inputs
+    if (startDateInput) startDateInput.min = today;
+    if (endDateInput) endDateInput.min = today;
+
+    // When start date changes, update end date min value
+    if (startDateInput) {
+        startDateInput.addEventListener('change', function() {
+            const startDate = new Date(this.value);
+            const nextDay = new Date(startDate);
+            nextDay.setDate(startDate.getDate() + 1);
+            
+            // Format next day as YYYY-MM-DD
+            const nextDayFormatted = nextDay.toISOString().split('T')[0];
+            
+            // Update end date min to be the day after start date
+            if (endDateInput) {
+                endDateInput.min = nextDayFormatted;
+                
+                // If current end date is before new min date, update it
+                if (endDateInput.value && new Date(endDateInput.value) < nextDay) {
+                    endDateInput.value = nextDayFormatted;
+                }
+            }
+        });
+    }
+
+    // When end date changes, validate it's not before start date
+    if (endDateInput) {
+        endDateInput.addEventListener('change', function() {
+            if (startDateInput && startDateInput.value && this.value) {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(this.value);
+                
+                if (endDate <= startDate) {
+                    const nextDay = new Date(startDate);
+                    nextDay.setDate(startDate.getDate() + 1);
+                    this.value = nextDay.toISOString().split('T')[0];
+                    alert('End date must be after the start date');
+                }
+            }
+        });
+    }
+}
+
+// Initialize date validation when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    validateDates();
+});
+
 function confirmAndRedirect(message, url) {
   // replaced by showCardConfirmModal
 }

@@ -65,7 +65,13 @@ if ($userid) {
 }
 
 $projects = [];
-$res = mysqli_query($con, "SELECT project_id, project, start_date, deadline FROM projects WHERE user_id='$userid' AND archived=0 ORDER BY project_id DESC");
+$res = mysqli_query($con, "SELECT project_id, project, start_date, deadline 
+                          FROM projects 
+                          WHERE user_id='$userid' 
+                          AND archived=0 
+                          AND (projectmanager_delete IS NULL OR projectmanager_delete=0)
+                          AND status != 'Finished' 
+                          ORDER BY project_id DESC");
 if ($res) {
     while ($row = mysqli_fetch_assoc($res)) {
         $projects[] = $row;

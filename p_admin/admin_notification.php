@@ -7,7 +7,7 @@ require_once '../config.php';
 $unread_count = 0;
 $notifications = [];
 if ($admin_id) {
-    $res = $con->query("SELECT id, notif_type, message, is_read, created_at FROM notifications_admin ORDER BY created_at DESC LIMIT 10");
+    $res = $con->query("SELECT id, notif_type, message, is_read, created_at FROM notifications_admin ORDER BY created_at DESC LIMIT 7");
     if ($res) {
         while ($row = $res->fetch_assoc()) {
             $notifications[] = $row;
@@ -25,16 +25,19 @@ if ($admin_id) {
             </span>
         <?php endif; ?>
     </a>
-    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width:220px; background:#fff;">
-        <li class="d-flex justify-content-end" style="padding: 0 10px 5px 10px;">
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" style="min-width:220px; max-height: 400px; overflow-y: auto; background:#fff;">
+        <li class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom" style="position: sticky; top: 0; z-index: 1; background: #fff;">
+            <div class="fw-bold">Notifications</div>
             <form method="post" action="clear_admin_notifications.php">
                 <button type="submit" class="btn btn-link text-danger p-0" style="font-size:1.1em;" title="Clear all notifications">
                     <i class="fas fa-trash-alt"></i>
                 </button>
             </form>
         </li>
-        <li>
-        <?php if (count($notifications) > 0): ?>
+        <?php 
+        // Limit to 7 notifications
+        $notifications = array_slice($notifications, 0, 7);
+        if (count($notifications) > 0): ?>
             <?php foreach ($notifications as $notif): ?>
                 <?php
                 $text = 'text-success'; // default green

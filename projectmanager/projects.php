@@ -493,9 +493,6 @@ use PHPMailer\PHPMailer\Exception;
                         <div class="mb-3 d-flex flex-wrap gap-2 justify-content-between align-items-center">
                             <h4 class="mb-0">Projects</h4>
                             <div class="d-flex gap-2">
-                                <a href="../forecasting/analogous_forecasting.php" class="btn btn-outline-primary">
-                                    <i class="fas fa-chart-line me-1"></i>Forecasting
-                                </a>
                                 <a href="project_archived.php" class="btn btn-outline-secondary">
                                     <i class="fas fa-archive me-1"></i>Archived
                                 </a>
@@ -889,6 +886,27 @@ use PHPMailer\PHPMailer\Exception;
         </div>
     </div>
 
+    
+    <div class="modal fade" id="archiveModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Archive Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to archive this project?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmArchive">Archive</button>
+            </div> <!-- <-- THIS WAS MISSING -->
+        </div> <!-- <-- THIS WAS MISSING -->
+    </div>
+</div>
+
+   
+
     <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -937,23 +955,6 @@ use PHPMailer\PHPMailer\Exception;
             </div>
         </div>
         </div>
-
-    <div class="modal fade" id="archiveModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Archive Project</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Are you sure you want to archive this project?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" id="confirmArchive">Archive</button>
-            </div>
-        </div>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/project_forecast.js"></script>

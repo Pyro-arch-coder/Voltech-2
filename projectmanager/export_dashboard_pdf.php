@@ -25,6 +25,11 @@ while ($row = mysqli_fetch_assoc($proj_query)) {
 $average_budget = $project_count > 0 ? $total_budget / $project_count : 0;
 $estimated_total_expenses = $total_budget; // This is the sum of all project budgets
 
+// Get total profit from project_profits table
+$profit_query = mysqli_query($con, "SELECT SUM(profit) as total_profit FROM project_profits");
+$profit_row = mysqli_fetch_assoc($profit_query);
+$total_profit = isset($profit_row['total_profit']) ? floatval($profit_row['total_profit']) : 0;
+
 // Total expenses (from expenses table, filtered by expensedate)
 $total_expenses = 0;
 $exp_query = mysqli_query($con, "SELECT SUM(expense) as total FROM expenses WHERE user_id='$userid' AND expensedate BETWEEN '$start' AND '$end'");
@@ -57,8 +62,8 @@ $pdf->Cell(95, 8, 'Total Projects', 1);
 $pdf->Cell(95, 8, $project_count, 1, 1);
 $pdf->Cell(95, 8, 'Average Project Budget', 1);
 $pdf->Cell(95, 8, 'Php ' . number_format($average_budget, 2), 1, 1);
-$pdf->Cell(95, 8, 'Estimated Total Expenses', 1);
-$pdf->Cell(95, 8, 'Php ' . number_format($estimated_total_expenses, 2), 1, 1);
+$pdf->Cell(95, 8, 'Total Profit', 1);
+$pdf->Cell(95, 8, 'Php ' . number_format($total_profit, 2), 1, 1);
 // Projects by Category (full width)
 $pdf->SetFont('Arial', 'B', 10);
 $pdf->Cell(190, 8, 'Projects by Category', 1, 1, 'C');

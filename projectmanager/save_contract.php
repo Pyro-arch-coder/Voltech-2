@@ -69,7 +69,43 @@ try {
     $stmt->execute();
     $stmt->close();
 
-    // ... notification logic unchanged ...
+    // --- NOTIFICATION LOGIC START ---
+    // Get client_email and user_id for this project
+    $client_email = '';
+    $user_id = null;
+    $stmt_proj = $con->prepare("SELECT client_email, user_id FROM projects WHERE project_id = ?");
+    $stmt_proj->bind_param("i", $projectId);
+    $stmt_proj->execute();
+    $stmt_proj->bind_result($client_email, $user_id);
+    $stmt_proj->fetch();
+    $stmt_proj->close();
+
+    if ($client_email && $user_id) {
+        $notif_type = 'contract_upload_' . $contractType;
+        $type_map = [
+            'original' => 'Original Contract',
+            'yoursigned' => 'Your Signed Contract',
+            'clientsigned' => 'Client Signed Contract'
+        ];
+        $contractLabel = $type_map[$contractType] ?? ucfirst($contractType);
+        $message = "A new {$contractLabel} has been uploaded for your project.";
+        $is_read = 0;
+
+        $stmt_notif = $con->prepare(
+            "INSERT INTO notifications_client (user_id, client_email, notif_type, message, is_read, created_at) VALUES (?, ?, ?, ?, ?, NOW())"
+        );
+        $stmt_notif->bind_param(
+            "isssi",
+            $user_id,
+            $client_email,
+            $notif_type,
+            $message,
+            $is_read
+        );
+        $stmt_notif->execute();
+        $stmt_notif->close();
+    }
+    // --- NOTIFICATION LOGIC END ---
 
     $response['success'] = true;
     $response['message'] = 'Contract uploaded successfully!';

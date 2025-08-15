@@ -201,7 +201,7 @@ if ($userid) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
     <link rel="stylesheet" href="style.css" />
-    <title>Project Manager Dashboard</title>
+    <title>Project Manager Messenger</title>
 </head>
 
 <body>
@@ -364,6 +364,7 @@ if ($userid) {
                                     <div class="d-flex align-items-center p-3 border-bottom contact-item" 
                                          style="cursor: pointer;"
                                          data-user-id="<?php echo htmlspecialchars($contact['id']); ?>"
+                                         data-last-message-time="<?php echo !empty($contact['last_message_time']) ? $contact['last_message_time'] : '0'; ?>"
                                          data-user-level="<?php echo $contact['user_level']; ?>"
                                          onclick="selectContact('<?php echo htmlspecialchars($contact['id']); ?>', 
                                                              '<?php echo htmlspecialchars($contact['name']); ?>',
@@ -447,24 +448,31 @@ if ($userid) {
                     <!-- Middle Column: Chat Box -->
                     <div class="col-md-8 col-lg-9 d-flex flex-column" style="height: 80vh;">
                         <!-- Chat Header -->
-                        <div class="border-bottom p-3 d-flex align-items-center bg-light">
-                            <div id="chatContactImage" class="me-3">
-                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; overflow: hidden;">
-                                    <i class="fas fa-user text-muted" style="font-size: 1.25rem;" id="defaultAvatarIcon"></i>
-                                    <img src="" alt="Profile" id="contactProfileImage" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                        <div class="border-bottom p-3 d-flex align-items-center justify-content-between bg-light">
+                            <div class="d-flex align-items-center">
+                                <div id="chatContactImage" class="me-3">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; overflow: hidden;">
+                                        <i class="fas fa-user text-muted" style="font-size: 1.25rem;" id="defaultAvatarIcon"></i>
+                                        <img src="" alt="Profile" id="contactProfileImage" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
                                 <div>
                                     <h6 class="mb-0 fw-bold" id="chatContactName">Select Contact</h6>
                                     <small class="text-muted d-block" id="chatContactEmail">Select a contact to start chatting</small>
-                                    <small class="text-muted" id="chatContactStatus">Offline</small>
                                 </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-link text-muted p-0" type="button" id="chatOptions" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item text-danger delete-conversation" href="#">Delete Conversation</a></li>
+                                </ul>
                             </div>
                         </div>
 
                         <!-- Chat Messages -->
-                        <div id="chatMessages" class="d-flex flex-column-reverse p-3 overflow-auto" style="height: calc(100vh - 300px);">
+                        <div id="chatMessages" class="d-flex flex-column p-3 overflow-auto" style="height: calc(100vh - 300px);">
                             <div id="messageContainer" class="d-flex flex-column">
                                 <!-- Messages will be inserted here -->
                             </div>
@@ -473,17 +481,29 @@ if ($userid) {
                         <!-- Chat Input -->
                         <div class="p-3 border-top bg-white">
                             <form class="d-flex align-items-center" id="chatForm" autocomplete="off" onsubmit="return false;">
-                                <button type="button" class="btn btn-link text-muted me-2">
-                                    <i class="far fa-smile fa-lg"></i>
-                                </button>
-                                <button type="button" class="btn btn-link text-muted me-2">
+                            
+                                <input type="file" 
+                                       id="fileInput" 
+                                       style="display: none;" 
+                                       accept="image/*,.pdf"
+                                       onchange="handleFileSelect(event)">
+                                <button type="button" 
+                                        class="btn btn-link text-muted me-2" 
+                                        onclick="document.getElementById('fileInput').click()"
+                                        title="Attach file">
                                     <i class="fas fa-paperclip fa-lg"></i>
                                 </button>
-                                <input type="text" 
-                                       class="form-control rounded-pill me-2" 
-                                       placeholder="Type a message..." 
-                                       id="chatInput" 
-                                       autocomplete="off">
+                                <div class="position-relative flex-grow-1 me-2">
+                                    <input type="text" 
+                                           class="form-control rounded-pill" 
+                                           placeholder="Type a message..." 
+                                           id="chatInput" 
+                                           autocomplete="off"
+                                           style="padding-right: 30px;">
+                                    <div id="filePreview" class="position-absolute top-50 end-0 translate-middle-y me-3 d-none">
+                                        <i class="fas fa-file text-primary"></i>
+                                    </div>
+                                </div>
                                 <button type="submit" 
                                         class="btn btn-primary rounded-circle" 
                                         style="width: 40px; height: 40px;"
@@ -643,14 +663,107 @@ document.addEventListener('DOMContentLoaded', function() {
         const messageInput = document.getElementById('chatInput');
         const sendButton = document.getElementById('sendButton');
         if (messageInput && sendButton) {
-            sendButton.disabled = messageInput.value.trim() === '';
+            sendButton.disabled = messageInput.value.trim() === '' && !selectedFile;
         }
     }
 
     // Initialize chat functionality when the page loads
     document.addEventListener('DOMContentLoaded', function() {
-        // Enable/disable send button based on input
+        const chatForm = document.getElementById('chatForm');
         const messageInput = document.getElementById('chatInput');
+        
+        // Handle form submission
+        if (chatForm) {
+            chatForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const activeContact = document.querySelector('.contact-item.active');
+                if (!activeContact) {
+                    showAlert('Please select a contact first', 'warning');
+                    return;
+                }
+                
+                const receiverId = activeContact.getAttribute('data-user-id');
+                const userLevel = activeContact.getAttribute('data-user-level');
+                const messageText = messageInput.value.trim();
+                
+                if (!messageText && !selectedFile) {
+                    showAlert('Please enter a message or select a file', 'warning');
+                    return;
+                }
+                
+                const sendButton = document.getElementById('sendButton');
+                const originalButtonHTML = sendButton ? sendButton.innerHTML : '';
+                
+                // Disable send button and show loading state
+                if (sendButton) {
+                    sendButton.disabled = true;
+                    sendButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                }
+                
+                try {
+                    let filePath = '';
+                    let message = messageText;
+                    
+                    // Upload file if selected
+                    if (selectedFile) {
+                        const uploadResult = await uploadFile();
+                        if (uploadResult && uploadResult.file_path) {
+                            filePath = uploadResult.file_path;
+                            if (message) {
+                                message += '\n';
+                            }
+                            message += `[File: ${filePath}]`;
+                        }
+                    }
+                    
+                    // Send message
+                    const formData = new FormData();
+                    formData.append('receiver_id', receiverId);
+                    formData.append('message', message);
+                    formData.append('table', getMessageTable(userLevel));
+                    
+                    const response = await fetch('send_message.php', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to send message');
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (!result.success) {
+                        throw new Error(result.error || 'Failed to send message');
+                    }
+                    
+                    // Clear input and reset file selection
+                    messageInput.value = '';
+                    if (selectedFile) {
+                        document.getElementById('fileInput').value = '';
+                        document.getElementById('filePreview').classList.add('d-none');
+                        selectedFile = null;
+                    }
+                    
+                    // Reload messages
+                    loadMessages(receiverId, userLevel);
+                    
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    showAlert('Failed to send message: ' + error.message, 'danger');
+                } finally {
+                    // Re-enable send button
+                    if (sendButton) {
+                        sendButton.disabled = false;
+                        sendButton.innerHTML = originalButtonHTML;
+                    }
+                }
+            });
+        }
+        
+        // Enable/disable send button based on input
         if (messageInput) {
             messageInput.addEventListener('input', updateSendButton);
             
@@ -660,7 +773,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     e.preventDefault();
                     const sendButton = document.getElementById('sendButton');
                     if (sendButton && !sendButton.disabled) {
-                        document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+                        chatForm.dispatchEvent(new Event('submit'));
                     }
                 }
             });
@@ -677,6 +790,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 searchInput.value = '';
                 filterContacts(); // Show all contacts again
             }
+            
+            // Clear message input and reset file selection
+            const messageInput = document.getElementById('chatInput');
+            if (messageInput) {
+                messageInput.value = '';
+            }
+            
+            // Reset file input if exists
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            
+            // Hide file preview if visible
+            const filePreview = document.getElementById('filePreview');
+            if (filePreview) {
+                filePreview.classList.add('d-none');
+            }
+            
+            // Reset selected file
+            selectedFile = null;
 
             // Update active state
             document.querySelectorAll('.contact-item').forEach(item => {
@@ -766,6 +900,96 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // File upload handling
+    let selectedFile = null;
+
+// 1. File selection and preview function (called on file input change)
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        // Check file type
+        const fileType = file.type;
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+        
+        if (!validTypes.includes(fileType)) {
+            alert('Only JPG, PNG, GIF, and PDF files are allowed');
+            return;
+        }
+        
+        // Check file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size exceeds 5MB limit');
+            return;
+        }
+        
+        selectedFile = file;
+        const chatInput = document.getElementById('chatInput');
+        const filePreview = document.getElementById('filePreview');
+        
+        // Show file name in input
+        chatInput.value = '';
+        chatInput.placeholder = file.name;
+        filePreview.classList.remove('d-none');
+        
+        // Update send button state
+        updateSendButton();
+        
+        // If it's an image, show a preview
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                filePreview.innerHTML = `<img src="${e.target.result}" style="max-height: 24px; max-width: 24px; border-radius: 4px;" title="${file.name}">`;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            filePreview.innerHTML = '<i class="fas fa-file-pdf text-danger"></i>';
+        }
+    }
+
+    
+  // 2. File upload to server function (called before sending a message)
+    async function uploadFile() {
+        if (!selectedFile) return null;
+        
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        try {
+            const response = await fetch('../includes/upload_file.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin' // Include session cookies
+            });
+            
+            // First check if the response is JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Unexpected response:', text);
+                throw new Error('Server returned an invalid response');
+            }
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.error || `Server returned ${response.status} status`);
+            }
+            
+            if (result.success) {
+                return result;
+            } else {
+                throw new Error(result.error || 'Failed to upload file');
+            }
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            showAlert('Failed to upload file: ' + error.message, 'danger');
+            throw error; // Re-throw to be caught by the caller
+        }
+    }
+
+
+
     // Function to get the appropriate message table based on user level
     function getMessageTable(userLevel) {
         console.log('Getting message table for user level:', userLevel);
@@ -795,126 +1019,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return table;
     }
 
-    // Function to show alert message
-    function showAlert(message, type = 'success') {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show mb-3`;
-        alertDiv.role = 'alert';
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
-        
-        const chatContainer = document.getElementById('chatMessages');
-        if (chatContainer) {
-            chatContainer.prepend(alertDiv);
-            
-            // Auto-hide after 3 seconds
-            setTimeout(() => {
-                const bsAlert = new bootstrap.Alert(alertDiv);
-                bsAlert.close();
-            }, 3000);
-        } else {
-            alert(message);
-        }
-    }
 
-    // Handle form submission
-    document.addEventListener('submit', async function(e) {
-        if (e.target.id !== 'chatForm') return;
-        e.preventDefault();
-        
-        const messageInput = document.getElementById('chatInput');
-        const message = messageInput.value.trim();
-        const activeContact = document.querySelector('.contact-item.active');
-        
-        if (!activeContact) {
-            showAlert('Please select a contact first', 'warning');
-            return;
-        }
-        
-        const receiverId = activeContact.getAttribute('data-user-id');
-        const receiverLevel = activeContact.getAttribute('data-user-level');
-        
-        if (!message) {
-            showAlert('Please enter a message', 'warning');
-            return;
-        }
-        
-        // Disable input and show sending state
-        const form = e.target;
-        const sendButton = document.getElementById('sendButton');
-        const originalButtonHTML = sendButton?.innerHTML;
-        
-        if (sendButton) {
-            sendButton.disabled = true;
-            sendButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-        }
-        
-        // Determine which table to use based on receiver's level
-        const messageTable = getMessageTable(receiverLevel);
-        if (!messageTable) {
-            showAlert('Cannot send message to this user', 'danger');
-            if (sendButton) {
-                sendButton.disabled = false;
-                sendButton.innerHTML = originalButtonHTML;
-            }
-            return;
-        }
-        
-        try {
-            // Send message via AJAX
-            const formData = new FormData();
-            formData.append('receiver_id', receiverId);
-            formData.append('message', message);
-            formData.append('table', messageTable);
-            
-            const response = await fetch('send_message.php', {
-                method: 'POST',
-                body: formData,
-                credentials: 'same-origin'
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok || !data.success) {
-                throw new Error(data.error || 'Failed to send message');
-            }
-            
-            // Clear input on success
-            messageInput.value = '';
-            updateSendButton(); // Update send button state
-            
-            // Show success message
-            showAlert('Message sent successfully!');
-            
-        } catch (error) {
-            console.error('Error sending message:', error);
-            showAlert('Failed to send message: ' + error.message, 'danger');
-        } finally {
-            // Re-enable input and button
-            if (sendButton) {
-                sendButton.disabled = false;
-                sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
-            }
-            
-            // Get the current chat info to reload messages
-            const activeContact = document.querySelector('.contact-item.active');
-            if (activeContact) {
-                const userId = activeContact.getAttribute('data-user-id');
-                const userLevel = activeContact.getAttribute('data-user-level');
-                const userName = activeContact.querySelector('.contact-name').textContent;
-                const userEmail = activeContact.querySelector('.contact-email').textContent;
-                const userImage = activeContact.querySelector('img')?.src || '';
-                
-                // Reload messages for the current chat
-                loadMessages(userId, userLevel);
-            }
-            
-            messageInput.focus();
-        }
-    });
-    
     // Function to load messages for a contact
     function loadMessages(userId, userLevel) {
         const chatMessages = document.getElementById('chatMessages');
@@ -957,46 +1062,141 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error(data.error || 'Failed to load messages');
                 }
                 
-                if (data.messages.length === 0) {
+                // Clear existing messages
+                chatMessages.innerHTML = '';
+                
+                // Check if current user has sent any messages
+                const currentUserId = <?php echo $_SESSION['user_id']; ?>;
+                const hasUserSentMessage = data.messages.some(msg => msg.sender_id == currentUserId);
+                
+                // Show start conversation message if user hasn't sent any messages
+                if (data.messages.length === 0 || !hasUserSentMessage) {
                     chatMessages.innerHTML = `
-                        <div class="d-flex flex-column justify-content-center align-items-center h-100 text-muted">
-                            <i class="far fa-comment-dots fa-3x mb-3"></i>
-                            <p class="mb-0">No messages yet</p>
-                            <small>Start a new conversation</small>
-                        </div>`;
+                        <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                            <i class="fas fa-comment-alt fa-3x mb-3"></i>
+                            <h5>No messages yet</h5>
+                            <p>Send a message to start the conversation</p>
+                        </div>
+                    `;
                     return;
                 }
                 
-                // Render messages with sender info only for other users
-                let messagesHtml = '';
+                // Process and display messages
                 data.messages.forEach(msg => {
-                    const isMe = msg.is_me;
-                    const messageClass = isMe ? 'justify-content-end' : 'justify-content-start';
-                    const alignClass = isMe ? 'align-items-end' : 'align-items-start';
-                    const bubbleClass = isMe ? 'bg-primary text-white' : 'bg-light';
+                    const isMe = msg.sender_id == <?php echo $_SESSION['user_id']; ?>;
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `d-flex mb-3 ${isMe ? 'justify-content-end' : 'justify-content-start'}`;
                     
-                    messagesHtml += `
-                        <div class="d-flex mb-3 ${messageClass}">
-                            <div class="d-flex flex-column ${alignClass}" style="max-width: 80%;">
-                                ${!isMe ? `
-                                    <div class="d-flex align-items-center mb-1">
-                                        <img src="${msg.sender_avatar}" class="rounded-circle me-2" width="30" height="30" alt="${msg.sender_name}">
-                                        <small class="text-muted">${msg.sender_name}</small>
-                                    </div>
-                                ` : ''}
-                                <div class="p-3 rounded-3 mb-1 ${bubbleClass}">
-                                    ${msg.message.replace(/\n/g, '<br>')}
+                    let messageContent = msg.message;
+                    
+                    // Check if message contains a file link
+                    if (msg.message.includes('[File: ') && msg.message.includes(']')) {
+                        const filePath = msg.message.match(/\[File: (.*?)\]/)[1];
+                        const fileName = filePath.split('/').pop();
+                        const fileExt = fileName.split('.').pop().toLowerCase();
+                        const isImage = ['jpg', 'jpeg', 'png', 'gif'].includes(fileExt);
+                        const isPdf = fileExt === 'pdf';
+                        
+                        let fileIcon = '<i class="fas fa-file me-2"></i>';
+                        if (isImage) fileIcon = '<i class="fas fa-file-image me-2"></i>';
+                        else if (isPdf) fileIcon = '<i class="fas fa-file-pdf me-2"></i>';
+                        
+                        const fileLink = `<div class="mt-2"><a href="../${filePath}" target="_blank" class="text-decoration-none ${isMe ? 'text-white' : 'text-primary'} fw-medium">
+                            ${fileIcon}${fileName}
+                        </a></div>`;
+                        
+                        // If the message is just the file link, show only the file
+                        if (msg.message.trim() === `[File: ${filePath}]`) {
+                            messageContent = fileLink;
+                        } 
+                        // If there's other text in the message, show it with the file below
+                        else {
+                            messageContent = msg.message.replace(`[File: ${filePath}]`, '').trim();
+                            messageContent = messageContent.replace(/\n/g, '<br>') + fileLink;
+                        }
+                    } else {
+                        // Only apply line breaks to regular text messages
+                        messageContent = messageContent.replace(/\n/g, '<br>');
+                    }
+                    
+                    // Format timestamp
+                    const timestamp = new Date(msg.date_sent).toLocaleString();
+                    
+                    messageDiv.innerHTML = `
+                        <div class="d-flex flex-column ${isMe ? 'align-items-end' : 'align-items-start'}" style="max-width: 80%;">
+                            ${!isMe ? `
+                                <div class="d-flex align-items-center mb-1">
+                                    <img src="${msg.sender_avatar || '../uploads/default_profile.png'}" 
+                                         class="rounded-circle me-2" 
+                                         width="30" 
+                                         height="30" 
+                                         alt="${msg.sender_name}">
+                                    <small class="fw-bold">${msg.sender_name}</small>
                                 </div>
-                                <small class="text-muted">
-                                    ${new Date(msg.date_sent).toLocaleString()}
-                                    ${msg.is_read ? ' <i class="fas fa-check-double ms-1"></i>' : ''}
-                                </small>
+                            ` : ''}
+                            <div class="d-flex align-items-center">
+                                ${isMe ? `
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-link text-${isMe ? 'muted' : 'muted'} p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="#" onclick="return false;">Reply</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="return false;">Forward</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        ${isMe ? `
+                                        <li><a class="dropdown-item text-danger delete-message" href="#" data-action="delete-for-everyone" data-message-id="${msg.id}">Delete for everyone</a></li>
+                                        ` : ''}
+                                        <li><a class="dropdown-item text-danger delete-message" href="#" data-action="delete-for-me" data-message-id="${msg.id}">
+                                            ${isMe ? 'Delete for me' : 'Delete message'}
+                                        </a></li>
+                                    </ul>
+                                </div>
+                                ` : ''}
+                                <div class="p-3 rounded-3 ${isMe ? 'bg-primary text-white' : 'bg-light'} ${isMe ? '' : 'me-2'}">
+                                    ${messageContent}
+                                </div>
+                                ${!isMe ? `
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="#" onclick="return false;">Reply</a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="return false;">Forward</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger delete-message" href="#" data-action="delete-for-me" data-message-id="${msg.id}">Delete for me</a></li>
+                                    </ul>
+                                </div>
+                                ` : ''}
                             </div>
-                        </div>`;
+                            <small class="text-muted mt-1">
+                                ${timestamp}
+                                ${msg.is_read ? ' <i class="fas fa-check-double ms-1"></i>' : ''}
+                            </small>
+                        </div>
+                    `;
+                    
+                    chatMessages.appendChild(messageDiv);
                 });
                 
-                chatMessages.innerHTML = messagesHtml;
-                chatMessages.scrollTop = chatMessages.scrollHeight;
+                // Scroll to bottom with smooth animation to show latest message
+                const scrollToBottom = () => {
+                    chatMessages.scrollTo({
+                        top: chatMessages.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                };
+                
+                // Initial scroll to bottom
+                scrollToBottom();
+                
+                // Additional scroll after a short delay to ensure all content is rendered
+                setTimeout(scrollToBottom, 100);
+                
+                // Mark messages as read
+              
+                
             })
             .catch(error => {
                 console.error('Error loading messages:', error);
@@ -1006,6 +1206,95 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>`;
             });
     }
+    
+    // Handle message deletion
+    document.addEventListener('click', async function(e) {
+        if (e.target.closest('.delete-message')) {
+            e.preventDefault();
+            
+            const deleteButton = e.target.closest('.delete-message');
+            const action = deleteButton.getAttribute('data-action');
+            const messageId = deleteButton.getAttribute('data-message-id');
+            const messageDiv = deleteButton.closest('.d-flex.mb-3');
+            
+            if (!messageId) return;
+            
+            // Show confirmation dialog
+            const confirmMessage = action === 'delete-for-everyone' 
+                ? 'Are you sure you want to delete this message for everyone?'
+                : 'Are you sure you want to delete this message for yourself?';
+                
+            if (!confirm(confirmMessage)) return;
+            
+            try {
+                // Get the active contact to reload messages after deletion
+                const activeContact = document.querySelector('.contact-item.active');
+                if (!activeContact) return;
+                
+                const receiverId = activeContact.getAttribute('data-user-id');
+                const userLevel = activeContact.getAttribute('data-user-level');
+                
+                const response = await fetch('delete_message.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `message_id=${encodeURIComponent(messageId)}&action=${encodeURIComponent(action)}`
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Reload messages to reflect the deletion
+                    loadMessages(receiverId, userLevel);
+                } else {
+                    alert('Failed to delete message: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error deleting message:', error);
+                alert('An error occurred while deleting the message');
+            }
+        }
+    });
+
+    // Function to automatically select the most recent conversation
+    function autoSelectMostRecentConversation() {
+        const contactItems = document.querySelectorAll('.contact-item');
+        let mostRecentTime = 0;
+        let mostRecentContact = null;
+        
+        // Find the contact with the most recent message
+        contactItems.forEach(contact => {
+            const lastMessageTime = contact.getAttribute('data-last-message-time');
+            if (lastMessageTime) {
+                const messageTime = parseInt(lastMessageTime);
+                if (messageTime > mostRecentTime) {
+                    mostRecentTime = messageTime;
+                    mostRecentContact = contact;
+                }
+            }
+        });
+        
+        // If we found a contact with messages, select it
+        if (mostRecentContact) {
+            const userId = mostRecentContact.getAttribute('data-user-id');
+            const userName = mostRecentContact.querySelector('.contact-name')?.textContent || '';
+            const userEmail = mostRecentContact.querySelector('.contact-email')?.textContent || '';
+            const userLevel = mostRecentContact.getAttribute('data-user-level') || '';
+            const userImage = mostRecentContact.querySelector('img')?.src || '';
+            
+            // Trigger the selectContact function
+            selectContact(userId, userName, userEmail, userLevel, userImage);
+        } else if (contactItems.length > 0) {
+            // If no messages but we have contacts, select the first one
+            contactItems[0].click();
+        }
+    }
+    
+    // Run auto-select after a short delay to ensure DOM is fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(autoSelectMostRecentConversation, 500);
+    });
 </script>
 
 </body>
