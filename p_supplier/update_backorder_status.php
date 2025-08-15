@@ -82,7 +82,6 @@ try {
                        VALUES (?, ?, ?, ?)";
         $stmt = $con->prepare($insertQuery);
         $orderType = ($backorder['reason'] === 'Reorder') ? 'reorder' : 'backorder';
-        // Assign array values to variables for bind_param
         $mat_name = $material['material_name'];
         $logged_in_user_id = $_SESSION['user_id'];
         $stmt->bind_param('isis', $logged_in_user_id, $mat_name, $backorder['quantity'], $orderType);
@@ -93,6 +92,7 @@ try {
         // Assign material values to variables for bind_param
         $mat_brand = $material['brand'];
         $mat_spec = $material['specification'];
+
         // Now use ONLY the values from materials for the supplier lookup!
         $supplierMaterialQuery = "SELECT id, quantity FROM suppliers_materials 
                                  WHERE supplier_id = ? AND material_name = ? AND brand = ? AND specification = ? LIMIT 1";
@@ -105,13 +105,16 @@ try {
             throw new Exception("Insufficient quantity available (supplier_id: $supplier_id, material_name: {$mat_name})");
         }
 
+        // Decide material delivery status based on backorder/reorder
+        $delivery_status = ($backorder['reason'] === 'Reorder') ? 'Reorder Delivery' : 'Backorder Delivery';
+
         // Update material delivery status
         $updateStmt = $con->prepare("
             UPDATE materials 
-            SET delivery_status = 'On Delivery'
+            SET delivery_status = ?
             WHERE material_name = ? AND brand = ? AND specification = ?
         ");
-        $updateStmt->bind_param('sss', $mat_name, $mat_brand, $mat_spec);
+        $updateStmt->bind_param('ssss', $delivery_status, $mat_name, $mat_brand, $mat_spec);
         if (!$updateStmt->execute()) {
             throw new Exception("Failed to update material delivery status: " . $updateStmt->error);
         }

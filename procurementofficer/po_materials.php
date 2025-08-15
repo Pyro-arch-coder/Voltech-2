@@ -149,6 +149,26 @@ function short_number_format($num, $precision = 1) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
     <link rel="stylesheet" href="po_styles.css" />
     <title>Procurement Officer Materials</title>
+    <style>
+        /* Success and Error Modals */
+        .modal-backdrop {
+            opacity: 0.5 !important;
+        }
+        .fade.show {
+            transition: opacity 0.15s linear;
+        }
+        #successModal .modal-header {
+            background-color: #28a745;
+            color: white;
+        }
+        #errorModal .modal-header {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn-close-white {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+    </style>
 </head>
 
 <body>
@@ -590,8 +610,8 @@ function short_number_format($num, $precision = 1) {
                                                         <button type="submit" class="btn btn-sm btn-success"
                                                                 <?php 
                                                                 $isReceiveDisabled = true;
-                                                                $receiveTitle = 'Receive is only available for materials with Pending or In Transit status';
-                                                                if (isset($row['delivery_status']) && in_array($row['delivery_status'], ['Pending', 'In Transit', 'Pending Reorder'])) {
+                                                                $receiveTitle = 'Receive is only available for Backorder Delivery, Reorder Delivery, or Material on Delivery status';
+                                                                if (isset($row['delivery_status']) && in_array($row['delivery_status'], ['Backorder Delivery', 'Reorder Delivery', 'Material On Delivery'])) {
                                                                     $isReceiveDisabled = false;
                                                                     $receiveTitle = 'Mark this material as received';
                                                                 }
@@ -1342,8 +1362,95 @@ function short_number_format($num, $precision = 1) {
         </div>
         </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>>
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="successModalLabel">Success</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="successMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="errorModalLabel">Error</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="errorMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Handle success and error messages from the server
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for success message in the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const successMessage = '<?php echo isset($_SESSION["success_message"]) ? addslashes($_SESSION["success_message"]) : ""; ?>';
+            const errorMessage = '<?php echo isset($_SESSION["error_message"]) ? addslashes($_SESSION["error_message"]) : ""; ?>';
+
+            // Initialize modals
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+
+            // Show success modal if there's a success message
+            if (successMessage) {
+                document.getElementById('successMessage').textContent = successMessage;
+                successModal.show();
+                
+                // Clear the success message from the URL
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, '', newUrl);
+                
+                // Clear the session message
+                <?php unset($_SESSION['success_message']); ?>
+            }
+
+            // Show error modal if there's an error message
+            if (errorMessage) {
+                document.getElementById('errorMessage').textContent = errorMessage;
+                errorModal.show();
+                
+                // Clear the error message from the URL
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, '', newUrl);
+                
+                // Clear the session message
+                <?php unset($_SESSION['error_message']); ?>
+            }
+
+            // Add confirmation to all receive forms
+            document.querySelectorAll('form[action*="receive_material.php"]').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    const materialName = this.querySelector('input[name="material_name"]')?.value || 'this material';
+                    if (!confirm(`Are you sure you want to mark ${materialName} as received?`)) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    return true;
+                });
+            });
+        });
+    </script>
     <script src="po_materials.js"></script>
     <script>
 
