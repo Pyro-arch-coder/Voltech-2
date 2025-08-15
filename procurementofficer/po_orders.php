@@ -170,7 +170,7 @@ $result = mysqli_query($con, $query);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
     <link rel="stylesheet" href="po_styles.css" />
-    <title>Procurement Officer Orders</title>
+    <title>Procurement Officer Purchases</title>
 </head>
 
 <body>
@@ -188,7 +188,7 @@ $result = mysqli_query($con, $query);
                     <i class="fas fa-home"></i>Dashboard
                 </a>
                 <a href="po_orders.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'po_orders.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-file-invoice"></i>Orders
+                    <i class="fas fa-file-invoice"></i>Purchases
                 </a>
                 <a class="list-group-item list-group-item-action bg-transparent second-text d-flex justify-content-between align-items-center <?php echo ($current_page == 'po_equipment.php' || $current_page == 'po_materials.php' || $current_page == 'po_warehouse_materials.php') ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#inventoryCollapse" role="button" aria-expanded="<?php echo ($current_page == 'po_equipment.php' || $current_page == 'po_materials.php' || $current_page == 'po_warehouse_materials.php') ? 'true' : 'false'; ?>" aria-controls="inventoryCollapse">
                     <span><i class="fas fa-boxes"></i>Inventory</span>
@@ -217,7 +217,7 @@ $result = mysqli_query($con, $query);
             <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
                 <div class="d-flex align-items-center">
                     <i class="fas fa-align-left primary-text fs-4 me-3" id="menu-toggle"></i>
-                    <h2 class="fs-2 m-0">Orders Expenses</h2>
+                    <h2 class="fs-2 m-0">Purchase Expenses</h2>
                 </div>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -250,7 +250,7 @@ $result = mysqli_query($con, $query);
                 <div class="card mb-5 shadow rounded-3">
                   <div class="card-body p-4">
                     <div class="mb-3 d-flex justify-content-between align-items-center">
-                      <h4 class="mb-0">Orders Expense</h4>
+                      <h4 class="mb-0">Purchase Expense</h4>
                       <div>
                         <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
                           <i class="fas fa-plus"></i> Add Expense

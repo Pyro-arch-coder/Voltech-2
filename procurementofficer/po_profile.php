@@ -172,7 +172,7 @@ unset($_SESSION['success_message'], $_SESSION['error_message']);
                     <i class="fas fa-home"></i>Dashboard
                 </a>
                 <a href="po_orders.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'po_orders.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-file-invoice"></i>Orders
+                    <i class="fas fa-file-invoice"></i>Purchases
                 </a>
                 <a class="list-group-item list-group-item-action bg-transparent second-text d-flex justify-content-between align-items-center <?php echo ($current_page == 'po_equipment.php' || $current_page == 'po_materials.php' || $current_page == 'po_warehouse_materials.php') ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#inventoryCollapse" role="button" aria-expanded="<?php echo ($current_page == 'po_equipment.php' || $current_page == 'po_materials.php' || $current_page == 'po_warehouse_materials.php') ? 'true' : 'false'; ?>" aria-controls="inventoryCollapse">
                     <span><i class="fas fa-boxes"></i>Inventory</span>

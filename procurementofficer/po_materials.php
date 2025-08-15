@@ -166,7 +166,7 @@ function short_number_format($num, $precision = 1) {
                     <i class="fas fa-home"></i>Dashboard
                 </a>
                 <a href="po_orders.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'po_orders.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-file-invoice"></i>Orders
+                    <i class="fas fa-file-invoice"></i>Purchases
                 </a>
                 <a class="list-group-item list-group-item-action bg-transparent second-text d-flex justify-content-between align-items-center <?php echo ($current_page == 'po_equipment.php' || $current_page == 'po_materials.php' || $current_page == 'po_warehouse_materials.php') ? 'active' : ''; ?>" data-bs-toggle="collapse" href="#inventoryCollapse" role="button" aria-expanded="<?php echo ($current_page == 'po_equipment.php' || $current_page == 'po_materials.php' || $current_page == 'po_warehouse_materials.php') ? 'true' : 'false'; ?>" aria-controls="inventoryCollapse">
                     <span><i class="fas fa-boxes"></i>Inventory</span>
@@ -264,12 +264,36 @@ function short_number_format($num, $precision = 1) {
                                         <?php endwhile; ?>
                                     </select>
                         </form>
-                            <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                var searchInput = document.getElementById('searchInput');
-                                var categoryFilter = document.getElementById('categoryFilter');
-                                var statusFilter = document.getElementById('statusFilter');
-                                var supplierFilter = document.getElementById('supplierFilter');
+                        
+                        <!-- Backorder Success Modal -->
+                        <div class="modal fade" id="backorderSuccessModal" tabindex="-1" aria-labelledby="backorderSuccessModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-success text-white">
+                                        <h5 class="modal-title" id="backorderSuccessModalLabel">Backorder Created Successfully</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <div class="mb-3">
+                                            <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                                        </div>
+                                        <h5>Backorder has been created successfully!</h5>
+                                        <p class="mb-0">The material has been marked as "Pending Backorder" and the supplier has been notified.</p>
+                                    </div>
+                                    <div class="modal-footer justify-content-center">
+                                        <button type="button" class="btn btn-success" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <script>
+                        // Show backorder success modal if redirected from successful backorder
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const urlParams = new URLSearchParams(window.location.search);
+                            if (urlParams.has('backorder_success')) {
+                                const backorderModal = new bootstrap.Modal(document.getElementById('backorderSuccessModal'));
+                                backorderModal.show();
                                 var searchForm = document.getElementById('searchForm');
                                 
                                 // Search validation
@@ -514,8 +538,16 @@ function short_number_format($num, $precision = 1) {
                                                 <form method="POST" action="reorder_material.php" style="display:inline;">
                                                     <input type="hidden" name="material_id" value="<?php echo $row['id']; ?>">
                                                     <button type="submit" class="btn btn-sm btn-warning reorder-btn" 
-                                                            <?php if ($max_stock > 0 && $row['quantity'] > $reorder_50) echo 'disabled'; ?>
-                                                            title="<?php if ($max_stock > 0 && $row['quantity'] > $reorder_50) echo 'Stock level is above reorder threshold'; ?>">
+                                                            <?php 
+                                                            $isDisabled = true;
+                                                            $title = 'Reorder is only allowed for delivered materials';
+                                                            if (isset($row['delivery_status']) && $row['delivery_status'] === 'Delivered') {
+                                                                $isDisabled = false;
+                                                                $title = 'Click to reorder this material';
+                                                            }
+                                                            if ($isDisabled) echo 'disabled';
+                                                            ?>
+                                                            title="<?php echo htmlspecialchars($title); ?>">
                                                         Reorder
                                                     </button>
                                                 </form>
@@ -525,7 +557,19 @@ function short_number_format($num, $precision = 1) {
                                                         data-material-id="<?php echo $row['id']; ?>"
                                                         data-material-name="<?php echo htmlspecialchars($row['material_name']); ?>"
                                                         data-current-quantity="<?php echo $row['quantity']; ?>"
-                                                        data-unit="<?php echo htmlspecialchars($row['unit']); ?>">
+                                                        data-unit="<?php echo htmlspecialchars($row['unit']); ?>"
+                                                        <?php 
+                                                        $isBackorderDisabled = false;
+                                                        $backorderTitle = '';
+                                                        if (isset($row['delivery_status']) && $row['delivery_status'] !== 'Delivered') {
+                                                            $isBackorderDisabled = true;
+                                                            $backorderTitle = 'Backorder is only allowed when delivery status is Delivered. Current status: ' . htmlspecialchars($row['delivery_status']);
+                                                        }
+                                                        if ($isBackorderDisabled) {
+                                                            echo 'disabled';
+                                                        }
+                                                        ?>
+                                                        title="<?php echo $isBackorderDisabled ? htmlspecialchars($backorderTitle) : 'Create a backorder for this material'; ?>">
                                                     Backorder
                                                 </button>
                                             </td>
@@ -2149,55 +2193,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// --- Reorder Modal logic (DO NOT PUT INSIDE DOMContentLoaded AGAIN!) ---
-document.addEventListener('show-reorder-modal', function(e) {
-    document.getElementById('reorderMaterialId').value = e.detail.materialId;
-    document.getElementById('reorderQty').value = e.detail.qty;
-    document.getElementById('reorderSummary').innerText = `Do you want to reorder ${e.detail.qty} unit(s)?`;
-    var reorderModal = new bootstrap.Modal(document.getElementById('reorderModal'));
-    reorderModal.show();
-});
-
-document.getElementById('reorderForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const qty = document.getElementById('reorderQty').value;
-    const materialId = document.getElementById('reorderMaterialId').value;
-    // TODO: Add your actual reorder AJAX/PHP logic here
-    alert(`Reorder placed for ${qty} unit(s) of material ID ${materialId}!`);
-    bootstrap.Modal.getInstance(document.getElementById('reorderModal')).hide();
-});
+// Reorder functionality has been removed as per user request
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Show reorder modal if URL param says so (after backorder redirect)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('show_reorder') === '1') {
-        const materialId = urlParams.get('material_id');
-        const qty = urlParams.get('qty');
-        // Prefill the reorder modal fields
-        document.getElementById('reorderMaterialId').value = materialId;
-        document.getElementById('reorderQty').value = qty;
-        document.getElementById('reorderSummary').innerText = `Do you want to reorder ${qty} unit(s)?`;
-        // Show the modal
-        var reorderModal = new bootstrap.Modal(document.getElementById('reorderModal'));
-        reorderModal.show();
-
-        // Clean up URL so it doesn't open again on refresh
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
-    // Handle reorder form submission
-    document.getElementById('reorderForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const qty = document.getElementById('reorderQty').value;
-        const materialId = document.getElementById('reorderMaterialId').value;
-        // Do your reorder logic here (AJAX, or redirect, or PHP form submission)
-        
-        bootstrap.Modal.getInstance(document.getElementById('reorderModal')).hide();
-    });
-});
-
+// Reorder modal and its functionality have been removed as per user request
 document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
 
@@ -2208,78 +2208,18 @@ document.addEventListener('DOMContentLoaded', function() {
             `Backorder completed! Quantity updated${urlParams.get('qty') ? ' (-' + urlParams.get('qty') + ')' : ''}.`;
         backorderSuccessModal.show();
 
-        // After 5 seconds, hide success modal and show reorder modal
+        // After 5 seconds, hide success modal 
         setTimeout(function() {
             backorderSuccessModal.hide();
-            showReorderModal(urlParams.get('material_id'), urlParams.get('qty'));
         }, 2000);
 
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
-
-    function showReorderModal(materialId, qty) {
-        document.getElementById('reorderMaterialId').value = materialId;
-        document.getElementById('reorderQty').value = qty;
-        document.getElementById('reorderSummary').innerText = `Do you want to reorder ${qty} unit(s)?`;
-        var reorderModal = new bootstrap.Modal(document.getElementById('reorderModal'));
-        reorderModal.show();
-
-        // Optional: Attach handler for cancel button
-        document.getElementById('cancelReorderBtn').onclick = function() {
-            reorderModal.hide();
-        };
-    }
-
-    // Handle reorder form submission
-    document.getElementById('reorderForm').addEventListener('submit', function(e) {
-        e.preventDefault();
+      
         
-        const qty = document.getElementById('reorderQty').value;
-        const materialId = document.getElementById('reorderMaterialId').value;
-        const modal = bootstrap.Modal.getInstance(document.getElementById('reorderModal'));
+            
         
-        // Show loading state
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalBtnText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-        
-        // Send reorder request
-        fetch('reordertwo.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `material_id=${materialId}&quantity=${qty}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Show success message
-                const successModal = new bootstrap.Modal(document.getElementById('reorderSuccessModal'));
-                document.getElementById('reorderSuccessMessage').innerText = data.message || 'Reorder request submitted successfully!';
-                modal.hide();
-                successModal.show();
-                
-                // Reload the page after 2 seconds
-                setTimeout(() => {
-                window.location.reload();
-                }, 2000);
-            } else {
-                // Show error message
-                alert(data.message || 'Failed to process reorder. Please try again.');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while processing your request. Please try again.');
-        })
-        .finally(() => {
-            // Reset button state
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnText;
-        });
     });
 });
 </script>
