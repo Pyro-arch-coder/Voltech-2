@@ -7,8 +7,9 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
 
 require_once '../config.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id']) && isset($_POST['quantity'])) {
     $material_id = intval($_POST['material_id']);
+    $reorder_quantity = intval($_POST['quantity']);
     $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
     
     // Get material info
@@ -18,10 +19,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
     if ($material_result && $material_result->num_rows > 0) {
         $material = $material_result->fetch_assoc();
         
-        // Insert into back_orders table with Pending status (set quantity to 0)
-        $quantity = 0;
+        // Check if total quantity will exceed 1000
+        $current_quantity = intval($material['quantity']);
+        $total_after_reorder = $current_quantity + $reorder_quantity;
+        
+        if ($total_after_reorder > 1000) {
+            header('Location: po_materials.php?error=' . urlencode('Total quantity cannot exceed 1000. Current: ' . $current_quantity . ', Reorder: ' . $reorder_quantity . ', Total would be: ' . $total_after_reorder));
+            exit();
+        }
+        
+        // Insert into back_orders table with Pending status and the specified quantity
         $insert = $con->prepare("INSERT INTO back_orders (material_id, quantity, reason, requested_by, created_at) VALUES (?, ?, 'Reorder', ?, NOW())");
-        $insert->bind_param("iii", $material_id, $quantity, $user_id);
+        $insert->bind_param("iii", $material_id, $reorder_quantity, $user_id);
         if ($insert->execute()) {
             $backorder_id = $con->insert_id;
             $insert->close();
@@ -32,10 +41,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['material_id'])) {
             $update_material->execute();
             $update_material->close();
             
-            // Insert supplier notification (no quantity in message)
+            // Insert supplier notification with quantity
             $supplier_id = isset($material['supplier_id']) ? intval($material['supplier_id']) : 0;
             $notif_type = 'Material Reorder';
-            $message = "A reorder for material '{$material['material_name']}' was placed and is pending supplier action.";
+            $message = "A reorder for {$reorder_quantity} {$material['unit']} of '{$material['material_name']}' was placed and is pending supplier action. Total after reorder: {$total_after_reorder} {$material['unit']}";
             $is_read = 0;
 
             $insert_notif = $con->prepare("INSERT INTO notifications_supplier (user_id, notif_type, message, is_read, created_at) VALUES (?, ?, ?, ?, NOW())");

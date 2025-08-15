@@ -1,85 +1,93 @@
+// Format number with commas and 2 decimal places
+function formatNumber(num) {
+    const n = Number(num);
+    return isNaN(n) ? '0.00' : n.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
 // Project Forecast Calculation
 async function calculateForecast(size) {
-    // Get DOM elements safely
     const forecastValueEl = document.getElementById('forecastedValue');
-    const forecastAmountEl = document.getElementById('forecastedAmount');
+    const categorySelect = document.querySelector('select[name="category"]');
     
-    if (!forecastValueEl || !forecastAmountEl) {
+    // Check if required elements exist
+    if (!forecastValueEl || !categorySelect) {
         console.error('Required DOM elements not found');
         return;
     }
     
-    // Reset display
-    forecastValueEl.style.display = 'none';
-    
-    // Validate input
+    // Check if size is a valid number
     const parsedSize = parseFloat(size);
     if (isNaN(parsedSize) || parsedSize <= 0) {
+        forecastValueEl.classList.add('d-none');
         return;
     }
     
+    // Check if category is selected
+    const selectedCategory = categorySelect ? categorySelect.value : '';
+    if (!selectedCategory) {
+        forecastValueEl.classList.add('d-none');
+        return;
+    }
+    
+    // Show loading state
+    forecastValueEl.classList.remove('d-none');
+    forecastValueEl.classList.add('forecast-loading');
+    forecastValueEl.innerHTML = `
+        <div class="forecast-amount">
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+            <span>Calculating...</span>
+        </div>
+    `;
+    
     try {
-        // Show loading state
-        forecastAmountEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        forecastValueEl.style.display = 'flex';
-        
-        // Get the selected category safely
-        const categoryEl = document.getElementById('category');
-        const category = categoryEl ? categoryEl.value : '';
-        
-        // Make API call to get forecast data
-        const response = await fetch(`get_forecast.php?size=${parsedSize}&category=${encodeURIComponent(category)}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
+        const response = await fetch(`get_forecast.php?size=${encodeURIComponent(parsedSize)}&category=${encodeURIComponent(selectedCategory)}`);
         const data = await response.json();
         
-        if (!data || !data.success) {
-            throw new Error(data?.message || 'Failed to get forecast data');
+        // Remove loading state
+        forecastValueEl.classList.remove('forecast-loading');
+        
+        if (data && data.success) {
+            const formattedAmount = formatNumber(data.forecasted_cost);
+            const costPerSqm = formatNumber(data.cost_per_sqm || 0);
+            const sampleSize = data.sample_size || 0;
+            const categoryName = data.category || selectedCategory;
+            
+            forecastValueEl.innerHTML = `
+                <div class="forecast-amount">₱${formattedAmount}</div>
+                <div class="forecast-details">
+                    <small class="text-muted">Based on ${sampleSize} ${sampleSize === 1 ? 'project' : 'projects'}</small>
+                </div>
+            `;
+            
+            // Add tooltip with additional details
+            forecastValueEl.setAttribute('data-bs-toggle', 'tooltip');
+            forecastValueEl.setAttribute('data-bs-placement', 'top');
+            forecastValueEl.setAttribute('title', 
+                `Project Size: ${formatNumber(parsedSize)} m²\n` +
+                `Cost per m²: ₱${costPerSqm}\n` +
+                `Based on ${sampleSize} ${sampleSize === 1 ? 'project' : 'projects'} in ${categoryName}`
+            );
+            
+            // Initialize tooltip if Bootstrap tooltips are available
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                new bootstrap.Tooltip(forecastValueEl);
+            }
+        } else {
+            forecastValueEl.innerHTML = `
+                <div class="forecast-amount text-danger">N/A</div>
+                <div class="forecast-details text-danger small">${data?.message || 'Unable to calculate'}</div>
+            `;
         }
-        
-        // Safely get values with defaults
-        const sampleSize = Number(data.sample_size) || 0;
-        const avgCost = Number(data.average_cost) || 0;
-        const avgSize = Number(data.average_size) || 0;
-        
-        // Calculate forecast using the formula: (average_cost * new_size) / average_old_size
-        let forecastedValue = 0;
-        
-        if (avgSize > 0) {
-            forecastedValue = (avgCost * parsedSize) / avgSize;
-        } else if (sampleSize > 0) {
-            // Fallback: If no average size, use just the average cost
-            forecastedValue = avgCost;
-        }
-        
-        // Format the values with proper checks
-        const formatNumber = (num) => {
-            const n = Number(num);
-            return isNaN(n) ? '0.00' : n.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-        };
-        
-        forecastAmountEl.innerHTML = '₱' + formatNumber(forecastedValue);
-        
-        // Add tooltip with details
-        forecastAmountEl.title = `Based on ${sampleSize} projects\n` +
-                              `Avg Cost: ₱${formatNumber(avgCost)}\n` +
-                              `Avg Size: ${formatNumber(avgSize)} m²`;
-        
     } catch (error) {
-        console.error('Error in calculateForecast:', error);
-        forecastValueEl.style.display = 'none';
-        
-        // Show error to user if possible
-        if (forecastAmountEl) {
-            forecastAmountEl.innerHTML = 'Error calculating forecast';
-            forecastAmountEl.title = error.message || 'An error occurred';
-        }
+        console.error('Error fetching forecast:', error);
+        forecastValueEl.classList.remove('forecast-loading');
+        forecastValueEl.innerHTML = `
+            <div class="forecast-amount text-danger">Error</div>
+            <div class="forecast-details text-danger small">Failed to load data</div>
+        `;
     }
 }
 
@@ -87,10 +95,18 @@ async function calculateForecast(size) {
 document.addEventListener('DOMContentLoaded', function() {
     const sizeInput = document.getElementById('size');
     const categorySelect = document.getElementById('category');
+    const forecastValueEl = document.getElementById('forecastedValue');
+    
+    // Only initialize if all required elements exist
+    if (!sizeInput || !categorySelect || !forecastValueEl) {
+        console.log('Forecast elements not found on this page');
+        return;
+    }
     
     // Calculate forecast when Enter is pressed or input loses focus
-    sizeInput?.addEventListener('keypress', function(e) {
+    sizeInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
+            e.preventDefault();
             const size = parseFloat(this.value);
             if (size > 0) {
                 calculateForecast(size);
@@ -99,21 +115,24 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Also calculate when input loses focus (tab out or click away)
-    sizeInput?.addEventListener('blur', function() {
+    sizeInput.addEventListener('blur', function() {
         const size = parseFloat(this.value);
         if (size > 0) {
             calculateForecast(size);
-        } else {
+        } else if (forecastValueEl) {
             // Hide forecast if size is not valid
-            document.getElementById('forecastedValue').style.display = 'none';
+            forecastValueEl.style.display = 'none';
         }
     });
     
     // Recalculate forecast when category changes (if we have a valid size)
-    categorySelect?.addEventListener('change', function() {
+    categorySelect.addEventListener('change', function() {
         const size = parseFloat(sizeInput.value);
         if (size > 0) {
             calculateForecast(size);
         }
     });
+    
+    // Log that forecast is initialized
+    console.log('Project forecast initialized');
 });

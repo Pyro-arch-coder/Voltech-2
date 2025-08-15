@@ -68,6 +68,12 @@ if ($userid) {
         $userprofile = isset($user['profile_path']) && $user['profile_path'] ? '../uploads/' . $user['profile_path'] : '../uploads/default_profile.png';
     }
 }
+
+$categories = [];
+$res = $con->query("SELECT id, category_name FROM electrical_equipment_categories");
+while ($row = $res->fetch_assoc()) {
+    $categories[] = $row;
+}
 // Handle delete action
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
@@ -90,6 +96,7 @@ $delivery_status_filter = isset($_GET['delivery_status']) ? mysqli_real_escape_s
 
 // Get location filter from URL
 $location_filter = isset($_GET['location']) ? $_GET['location'] : '';
+$category_filter = isset($_GET['category']) ? intval($_GET['category']) : 0;
 
 // Build WHERE clause
 $where_conditions = [];
@@ -105,11 +112,25 @@ if (!empty($location_filter)) {
 if (!empty($delivery_status_filter)) {
     $where_conditions[] = "delivery_status = '$delivery_status_filter'";
 }
+if (!empty($category_filter)) {
+    $where_conditions[] = "equipment_categories = $category_filter";
+}
 
 $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
 
 // Get distinct locations for dropdown
 $locations_query = $con->query("SELECT DISTINCT location FROM equipment WHERE location IS NOT NULL AND location != '' ORDER BY location ASC");
+
+// Get equipment categories for filter
+$categories_query = $con->query("SELECT DISTINCT e.equipment_categories, c.category_name 
+    FROM equipment e 
+    LEFT JOIN electrical_equipment_categories c ON e.equipment_categories = c.id 
+    WHERE e.equipment_categories IS NOT NULL 
+    ORDER BY c.category_name ASC");
+$categories = [];
+while ($cat = $categories_query->fetch_assoc()) {
+    $categories[] = $cat;
+}
 
 // Pagination settings
 $items_per_page = 10;
@@ -140,11 +161,7 @@ $maintenance = $maintenance_query->fetch_assoc();
 $statuses_query = "SELECT DISTINCT status FROM equipment ORDER BY status";
 $statuses = $con->query($statuses_query);
 
-// Get distinct delivery status values for filter (only 'On Delivery' and 'Delivered')
-$delivery_statuses_query = "SELECT 'On Delivery' as delivery_status UNION SELECT 'Delivered' as delivery_status";
-$delivery_statuses = $con->query($delivery_statuses_query);
-
-// Fetch equipment with pagination and filters
+// Fetch quipment with pagination and filters
 $sql = "SELECT * FROM equipment $where_clause ORDER BY id DESC LIMIT $offset, $items_per_page";
 if (!empty($where_clause)) {
     $sql = "SELECT * FROM equipment $where_clause ORDER BY id DESC LIMIT $offset, $items_per_page";
@@ -295,20 +312,19 @@ $result = $con->query($sql);
                                 }
                                 ?>
                             </select>
-                            <select name="delivery_status" class="form-select" style="width: 200px;" id="deliveryStatusFilter">
-                                <option value="">All Delivery Status</option>
+                            <select name="category" class="form-select" style="width: 200px;" id="categoryFilter">
+                                <option value="">All Categories</option>
                                 <?php 
-                                if ($delivery_statuses) {
-                                    $delivery_statuses->data_seek(0);
-                                    while ($ds = $delivery_statuses->fetch_assoc()): 
-                                        if (!empty($ds['delivery_status'])):
+                                if (!empty($categories)) {
+                                    foreach ($categories as $cat): 
+                                        if (!empty($cat['equipment_categories']) && !empty($cat['category_name'])):
                                 ?>
-                                    <option value="<?php echo htmlspecialchars($ds['delivery_status']); ?>" <?php echo ($delivery_status_filter === $ds['delivery_status']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($ds['delivery_status']); ?>
+                                    <option value="<?php echo $cat['equipment_categories']; ?>" <?php echo ($category_filter == $cat['equipment_categories']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($cat['category_name']); ?>
                                     </option>
                                 <?php 
                                         endif;
-                                    endwhile; 
+                                    endforeach; 
                                 }
                                 ?>
                             </select>
@@ -341,7 +357,14 @@ $result = $con->query($sql);
                                     searchForm.submit();
                                 });
                             }
-                            [searchInput, statusFilter, locationFilter, deliveryStatusFilter].forEach(function(element) {
+                            var categoryFilter = document.getElementById('categoryFilter');
+                            if (categoryFilter && searchForm) {
+                                categoryFilter.addEventListener('change', function() {
+                                    searchForm.submit();
+                                });
+                            }
+                            
+                            [searchInput, statusFilter, locationFilter, categoryFilter, deliveryStatusFilter].forEach(function(element) {
                                 if (element) {
                                     element.addEventListener('change', function() {
                                         searchForm.submit();
@@ -356,12 +379,9 @@ $result = $con->query($sql);
                                     <tr>
                                         <th>No.</th>
                                         <th>Equipment Name</th>
-                                        <th>Brand</th>
-                                        <th>Specification</th>
                                         <th>Location</th>
                                         <th>Equipment Price</th>
                                         <th>Depreciation</th>
-                                        <th>Delivery Status</th>
                                         <th>Status</th>
                                         <th class="text-center">Actions</th>
                                     </tr>
@@ -374,8 +394,6 @@ $result = $con->query($sql);
                                     <tr>
                                         <td><?php echo $no++; ?></td>
                                                 <td><?php echo htmlspecialchars($row['equipment_name']); ?></td>
-                                                <td><?php echo htmlspecialchars($row['brand'] ?? 'N/A'); ?></td>
-                                                <td><?php echo !empty($row['specification']) ? htmlspecialchars(substr($row['specification'], 0, 30) . (strlen($row['specification']) > 30 ? '...' : '')) : 'N/A'; ?></td>
                                                 <td><?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></td>
                                                 <td>
                                                     <?php
@@ -395,11 +413,6 @@ $result = $con->query($sql);
                                                         echo 'N/A';
                                                     }
                                                     ?>
-                                                </td>
-                                                <td>
-                                                    <span class="badge bg-<?php echo ($row['delivery_status'] == 'Delivered') ? 'success' : (($row['delivery_status'] == 'In Transit') ? 'info' : (($row['delivery_status'] == 'Cancelled') ? 'danger' : 'warning')); ?>">
-                                                        <?php echo htmlspecialchars($row['delivery_status'] ?? 'N/A'); ?>
-                                                    </span>
                                                 </td>
                                                 <td>
                                                     <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : (($row['status'] == 'In Use') ? 'warning' : (($row['status'] == 'Maintenance') ? 'info' : 'secondary')); ?>">
@@ -452,48 +465,56 @@ $result = $con->query($sql);
                     <h5 class="modal-title" id="addEquipmentModalLabel">Add New Equipment</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="container mt-4">
                 <form action="add_equipment.php" method="POST">
+                    <!-- Hidden input for company/category -->
                     <input type="hidden" name="category" value="Company">
-                    <div class="modal-body">
-                        <div class="row g-3">
-                            <div class="col-md-12">
-                                <div class="form-group mb-3">
-                                    <label for="equipmentNameInput">Equipment Name *</label>
-                                    <input type="text" class="form-control" id="equipmentNameInput" name="equipment_name" required>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="addLocationSelect">Location (Warehouse)</label>
-                                    <select class="form-control" name="location" id="addLocationSelect">
-                                        <option value="" selected>None</option>
-                                        <?php foreach ($warehouses as $wh): ?>
-                                            <option value="<?php echo htmlspecialchars($wh); ?>"><?php echo htmlspecialchars($wh); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="equipmentPriceInput">Equipment Price</label>
-                                    <input type="number" step="0.01" min="0" class="form-control" id="equipmentPriceInput" name="equipment_price">
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="depreciationInput">Depreciation (Years)</label>
-                                    <input type="number" step="0.01" min="0" class="form-control" id="depreciationInput" name="depreciation">
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="brandInput">Brand</label>
-                                    <input type="text" class="form-control" id="brandInput" name="brand" placeholder="Enter brand name">
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="specificationInput">Specification</label>
-                                    <textarea class="form-control" id="specificationInput" name="specification" rows="2" placeholder="Enter specifications"></textarea>
-                                </div>
-                            </div>
-                        </div>
+                    
+                   
+                    <div class="form-group mb-3">
+                        <label for="equipmentNameInput">Equipment Name *</label>
+                        <input type="text" class="form-control" id="equipmentNameInput" name="equipment_name" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="addLocationSelect">Location (Warehouse)</label>
+                        <select class="form-control" name="location" id="addLocationSelect">
+                            <?php foreach ($warehouses as $wh): ?>
+                                <option value="<?php echo htmlspecialchars($wh); ?>"><?php echo htmlspecialchars($wh); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="equipmentCategorySelect">Equipment Category *</label>
+                        <select class="form-control" name="equipment_category" id="equipmentCategorySelect" required>
+                            <?php foreach ($categories as $cat): ?>
+                                <option value="<?php echo htmlspecialchars($cat['id']); ?>">
+                                    <?php echo htmlspecialchars($cat['category_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="equipmentPriceInput">Equipment Price</label>
+                        <input type="number" step="0.01" min="0" class="form-control" id="equipmentPriceInput" name="equipment_price">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="depreciationInput">Depreciation (Years)</label>
+                        <input type="number" step="0.01" min="0" class="form-control" id="depreciationInput" name="depreciation">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="brandInput">Brand</label>
+                        <input type="text" class="form-control" id="brandInput" name="brand" placeholder="Enter brand name">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="specificationInput">Specification</label>
+                        <textarea class="form-control" id="specificationInput" name="specification" rows="2" placeholder="Enter specifications"></textarea>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-secondary" onclick="window.history.back();">Close</button>
                         <button type="submit" class="btn btn-primary">Save Equipment</button>
                     </div>
                 </form>
+                            </div>
             </div>
         </div>
     </div>
@@ -522,11 +543,6 @@ $result = $con->query($sql);
                                         <div class="text-muted small"><i class="fas fa-map-marker-alt me-1"></i>Location: <?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></div>
                                     </div>
                                     <div class="col-md-4 mb-2 text-md-end">
-                                        <span class="fw-bold text-secondary d-block mb-1"><i class="fas fa-truck me-1"></i>Delivery Status:</span>
-                                        <span class="badge bg-<?php echo ($row['delivery_status'] == 'Delivered') ? 'success' : (($row['delivery_status'] == 'In Transit') ? 'info' : (($row['delivery_status'] == 'Cancelled') ? 'danger' : 'warning')); ?> mb-2">
-                                            <?php echo htmlspecialchars($row['delivery_status'] ?? 'N/A'); ?>
-                                        </span>
-                                        
                                         <span class="fw-bold text-secondary d-block mb-1"><i class="fas fa-info-circle me-1"></i>Status:</span>
                                         <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : (($row['status'] == 'In Use') ? 'warning' : (($row['status'] == 'Maintenance') ? 'info' : 'secondary')); ?>">
                                             <?php echo htmlspecialchars($row['status']); ?>
@@ -621,13 +637,6 @@ $result = $con->query($sql);
                                 <div class="form-group mb-3">
                                     <label>Depreciation (Years)</label>
                                     <input type="number" step="0.01" min="0" class="form-control" name="depreciation" value="<?php echo isset($row['depreciation']) ? htmlspecialchars($row['depreciation']) : ''; ?>">
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label>Delivery Status</label>
-                                    <select class="form-control" name="delivery_status" required>
-                                        <option value="Delivered" <?php echo (isset($row['delivery_status']) && $row['delivery_status'] == 'Delivered') ? 'selected' : ''; ?>>Delivered</option>
-                                        <option value="Cancelled" <?php echo (isset($row['delivery_status']) && $row['delivery_status'] == 'Cancelled') ? 'selected' : ''; ?>>Cancelled</option>
-                                    </select>
                                 </div>
                                 <div class="form-group mb-3">
                                     <label>Status</label>

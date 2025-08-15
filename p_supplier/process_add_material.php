@@ -138,23 +138,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
 
         if ($stmt->execute()) {
-            if (isset($stmt)) {
-                $stmt->close();
-            }
-            $con->close();
-            header("Location: supplier_materials.php?success=add");
-            exit();
+            $response['success'] = true;
+            $response['message'] = 'Material added successfully';
         } else {
             throw new Exception('Failed to add material: ' . $stmt->error);
         }
 
     } catch (Exception $e) {
+        $response['message'] = $e->getMessage();
+    } finally {
         if (isset($stmt)) {
             $stmt->close();
         }
         $con->close();
-        $error = urlencode($e->getMessage());
-        header("Location: supplier_materials.php?error=$error");
+        
+        // Set the content type to JSON
+        header('Content-Type: application/json');
+        echo json_encode($response);
         exit();
     }
 } else {

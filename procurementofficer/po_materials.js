@@ -1,6 +1,44 @@
 // JS for po_materials.php
 // All code moved from inline <script> tags
 
+// Function to validate quantity input (max 1000)
+function validateQuantity(input) {
+    const value = parseInt(input.value);
+    const feedback = input.nextElementSibling;
+    
+    // Remove any existing feedback
+    if (feedback && feedback.classList.contains('invalid-feedback')) {
+        feedback.remove();
+    }
+    
+    if (isNaN(value) || value < 1) {
+        input.value = 1;
+        showValidationError(input, 'Minimum quantity is 1');
+    } else if (value > 1000) {
+        input.value = 1000;
+        showValidationError(input, 'Maximum quantity is 1000');
+    }
+}
+
+// Function to show validation error below input field
+function showValidationError(input, message) {
+    // Create or update the feedback element
+    let feedback = input.nextElementSibling;
+    if (!feedback || !feedback.classList.contains('invalid-feedback')) {
+        feedback = document.createElement('div');
+        feedback.className = 'invalid-feedback d-block';
+        input.parentNode.insertBefore(feedback, input.nextSibling);
+    }
+    feedback.textContent = message;
+    
+    // Auto-remove the message after 3 seconds
+    setTimeout(() => {
+        if (feedback && feedback.parentNode) {
+            feedback.remove();
+        }
+    }, 3000);
+}
+
 // Sidebar toggle
 var el = document.getElementById("wrapper");
 var toggleButton = document.getElementById("menu-toggle");

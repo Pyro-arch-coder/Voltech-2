@@ -342,6 +342,24 @@ function short_number_format($num, $precision = 1) {
                                     });
                                 }
                                 
+                                // Field validation function
+                                function validateField(field) {
+                                    var isValid = true;
+                                    var value = field.value.trim();
+                                    
+                                    // Remove existing validation classes
+                                    field.classList.remove('is-valid', 'is-invalid');
+                                    
+                                    // Field validation logic here
+                                    if (field.required && !value) {
+                                        field.classList.add('is-invalid');
+                                        return false;
+                                    }
+                                    
+                                    field.classList.add('is-valid');
+                                    return true;
+                                }
+                                
                                 // Edit form validation
                                 document.querySelectorAll('[id^="editForm"]').forEach(function(form) {
                                     var formId = form.id;
@@ -389,14 +407,6 @@ function short_number_format($num, $precision = 1) {
                                         this.submit();
                                     });
                                 });
-                                
-                                // Field validation function
-                                function validateField(field) {
-                                    var isValid = true;
-                                    var value = field.value.trim();
-                                    
-                                    // Remove existing validation classes
-                                    field.classList.remove('is-valid', 'is-invalid');
                                     
                                     // Check if field is required
                                     if (field.hasAttribute('required') && !value) {
@@ -535,45 +545,111 @@ function short_number_format($num, $precision = 1) {
                                                 <a href="#" class="btn btn-sm btn-primary text-white font-weight-bold" data-bs-toggle="modal" data-bs-target="#viewModal<?php echo $row['id']; ?>">
                                                     <i class="fas fa-eye"></i> View More
                                                 </a>
-                                                <form method="POST" action="reorder_material.php" style="display:inline;">
-                                                    <input type="hidden" name="material_id" value="<?php echo $row['id']; ?>">
-                                                    <button type="submit" class="btn btn-sm btn-warning reorder-btn" 
-                                                            <?php 
-                                                            $isDisabled = true;
-                                                            $title = 'Reorder is only allowed for delivered materials';
-                                                            if (isset($row['delivery_status']) && $row['delivery_status'] === 'Delivered') {
-                                                                $isDisabled = false;
-                                                                $title = 'Click to reorder this material';
-                                                            }
-                                                            if ($isDisabled) echo 'disabled';
-                                                            ?>
-                                                            title="<?php echo htmlspecialchars($title); ?>">
-                                                        Reorder
-                                                    </button>
-                                                </form>
-                                                <button type="button" class="btn btn-sm btn-danger backorder-btn" 
+                                                <button type="button" class="btn btn-sm btn-warning reorder-btn" 
                                                         data-bs-toggle="modal" 
-                                                        data-bs-target="#backorderModal<?php echo $row['id']; ?>"
+                                                        data-bs-target="#reorderModal<?php echo $row['id']; ?>"
                                                         data-material-id="<?php echo $row['id']; ?>"
                                                         data-material-name="<?php echo htmlspecialchars($row['material_name']); ?>"
                                                         data-current-quantity="<?php echo $row['quantity']; ?>"
                                                         data-unit="<?php echo htmlspecialchars($row['unit']); ?>"
                                                         <?php 
-                                                        $isBackorderDisabled = false;
-                                                        $backorderTitle = '';
-                                                        if (isset($row['delivery_status']) && $row['delivery_status'] !== 'Delivered') {
-                                                            $isBackorderDisabled = true;
-                                                            $backorderTitle = 'Backorder is only allowed when delivery status is Delivered. Current status: ' . htmlspecialchars($row['delivery_status']);
+                                                        $isDisabled = true;
+                                                        $title = 'Reorder is only allowed for delivered materials';
+                                                        if (isset($row['delivery_status']) && $row['delivery_status'] === 'Delivered') {
+                                                            $isDisabled = false;
+                                                            $title = 'Click to reorder this material';
                                                         }
-                                                        if ($isBackorderDisabled) {
-                                                            echo 'disabled';
-                                                        }
+                                                        if ($isDisabled) echo 'disabled';
                                                         ?>
-                                                        title="<?php echo $isBackorderDisabled ? htmlspecialchars($backorderTitle) : 'Create a backorder for this material'; ?>">
-                                                    Backorder
+                                                        title="<?php echo htmlspecialchars($title); ?>">
+                                                    Reorder
                                                 </button>
+                                                    <button type="button" class="btn btn-sm btn-danger backorder-btn" 
+                                                            data-bs-toggle="modal" 
+                                                            data-bs-target="#backorderModal<?php echo $row['id']; ?>"
+                                                            data-material-id="<?php echo $row['id']; ?>"
+                                                            data-material-name="<?php echo htmlspecialchars($row['material_name']); ?>"
+                                                            data-current-quantity="<?php echo $row['quantity']; ?>"
+                                                            data-unit="<?php echo htmlspecialchars($row['unit']); ?>"
+                                                            <?php 
+                                                            $isBackorderDisabled = false;
+                                                            $backorderTitle = '';
+                                                            if (isset($row['delivery_status']) && $row['delivery_status'] !== 'Delivered') {
+                                                                $isBackorderDisabled = true;
+                                                                $backorderTitle = 'Backorder is only allowed when delivery status is Delivered. Current status: ' . htmlspecialchars($row['delivery_status']);
+                                                            }
+                                                            if ($isBackorderDisabled) {
+                                                                echo 'disabled';
+                                                            }
+                                                            ?>
+                                                            title="<?php echo $isBackorderDisabled ? htmlspecialchars($backorderTitle) : 'Create a backorder for this material'; ?>">
+                                                        Backorder
+                                                    </button>
+                                                    <form method="POST" action="receive_material.php" style="display: inline-block;">
+                                                        <input type="hidden" name="material_id" value="<?php echo $row['id']; ?>">
+                                                        <button type="submit" class="btn btn-sm btn-success"
+                                                                <?php 
+                                                                $isReceiveDisabled = true;
+                                                                $receiveTitle = 'Receive is only available for materials with Pending or In Transit status';
+                                                                if (isset($row['delivery_status']) && in_array($row['delivery_status'], ['Pending', 'In Transit', 'Pending Reorder'])) {
+                                                                    $isReceiveDisabled = false;
+                                                                    $receiveTitle = 'Mark this material as received';
+                                                                }
+                                                                if ($isReceiveDisabled) {
+                                                                    echo 'disabled';
+                                                                }
+                                                                ?>
+                                                                title="<?php echo htmlspecialchars($receiveTitle); ?>">
+                                                            <i class="fas fa-check-circle me-1"></i> Receive
+                                                        </button>
+                                                    </form>
                                             </td>
                                         </tr>
+                                        <!-- Reorder Modal -->
+                                        <div class="modal fade" id="reorderModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="reorderModalLabel<?php echo $row['id']; ?>" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <form id="reorderForm<?php echo $row['id']; ?>" method="POST" action="reorder_material.php" onsubmit="return validateReorderForm(<?php echo $row['id']; ?>, <?php echo $row['quantity']; ?>)">
+                                                        <input type="hidden" name="material_id" value="<?php echo $row['id']; ?>">
+                                                        <div class="modal-header bg-warning text-white">
+                                                            <h5 class="modal-title" id="reorderModalLabel<?php echo $row['id']; ?>">
+                                                                <i class="fas fa-sync-alt me-2"></i>Reorder Material
+                                                            </h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="mb-3">
+                                                                <label for="quantity<?php echo $row['id']; ?>" class="form-label">
+                                                                    Quantity to Reorder
+                                                                    <small class="text-muted">(Current: <?php echo $row['quantity'] . ' ' . htmlspecialchars($row['unit']); ?>)</small>
+                                                                </label>
+                                                                <div class="input-group">
+                                                                    <input type="number" class="form-control" id="quantity<?php echo $row['id']; ?>" 
+                                                                           name="quantity" min="1" max="<?php echo 1000 - $row['quantity']; ?>" required 
+                                                                           oninput="updateTotal(<?php echo $row['id']; ?>, <?php echo $row['quantity']; ?>, '<?php echo htmlspecialchars($row['unit']); ?>')"
+                                                                           placeholder="Enter quantity">
+                                                                    <span class="input-group-text"><?php echo htmlspecialchars($row['unit']); ?></span>
+                                                                </div>
+                                                                <div class="form-text">
+                                                                    <div>Current: <?php echo $row['quantity']; ?> <?php echo htmlspecialchars($row['unit']); ?></div>
+                                                                    <div>Max allowed: <?php echo 1000 - $row['quantity']; ?> <?php echo htmlspecialchars($row['unit']); ?> (Max total: 1000 <?php echo htmlspecialchars($row['unit']); ?>)</div>
+                                                                    <div id="totalAfterReorder<?php echo $row['id']; ?>">Total after reorder: <?php echo $row['quantity']; ?> <?php echo htmlspecialchars($row['unit']); ?></div>
+                                                                </div>
+                                                            </div>
+
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                                <i class="fas fa-times me-1"></i> Cancel
+                                                            </button>
+                                                            <button type="submit" class="btn btn-warning">
+                                                                <i class="fas fa-check me-1"></i> Confirm Reorder
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <!-- View Modal -->
                                             <div class="modal fade" id="viewModal<?php echo $row['id']; ?>" tabindex="-1" aria-labelledby="viewModalLabel<?php echo $row['id']; ?>" aria-hidden="true">
                                                 <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -582,7 +658,7 @@ function short_number_format($num, $precision = 1) {
                                                             <h5 class="modal-title" id="viewModalLabel<?php echo $row['id']; ?>">Material Details</h5>
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                         </div>
-                                                        <div class="modal-body">
+                                                        <div class="modal-body text-center">
                                                             <div class="container-fluid">
                                                                 <div class="row mb-3">
                                                                     <div class="col-md-8 mb-2">
@@ -643,8 +719,8 @@ function short_number_format($num, $precision = 1) {
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                        <div class="modal-footer justify-content-center">
+                                                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Close</button>
                                                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editModal<?php echo $row['id']; ?>" data-bs-dismiss="modal">Edit</button>
                                                             <a href="#" class="btn btn-danger text-white delete-material-btn" data-id="<?php echo $row['id']; ?>" data-name="<?php echo htmlspecialchars($row['material_name']); ?>">
                                                                 <i class="fas fa-trash"></i> Delete
@@ -663,8 +739,8 @@ function short_number_format($num, $precision = 1) {
                                                     </div>
                                                         <form id="editForm<?php echo $row['id']; ?>" action="update_materials.php" method="POST" novalidate>
                                                         <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                                                            <input type="hidden" name="update" value="1">
-                                                        <div class="modal-body">
+                                                        <input type="hidden" name="update" value="1">
+                                                        <div class="modal-body text-center">
                                                             <div class="row">
                                                                 <div class="col-md-6">
                                                                     <div class="form-group">
@@ -765,18 +841,12 @@ function short_number_format($num, $precision = 1) {
                                                                             Please enter a valid cost (0-999,999.99).
                                                                         </div>
                                                                     </div>
-                                                                    <div class="form-group">
-                                                                        <label>Delivery Status</label>
-                                                                        <select class="form-control" name="delivery_status">
-                                                                            <option value="Delivered" <?php echo (isset($row['delivery_status']) && $row['delivery_status'] == 'Delivered') ? 'selected' : ''; ?>>Delivered</option>
-                                                                            <option value="Cancelled" <?php echo (isset($row['delivery_status']) && $row['delivery_status'] == 'Cancelled') ? 'selected' : ''; ?>>Cancelled</option>
-                                                                        </select>
-                                                                    </div>
+                                                                   
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <div class="modal-footer">
-                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                        <div class="modal-footer justify-content-center">
+                                                                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Close</button>
                                                             <button type="submit" name="update" class="btn btn-primary">Update Material</button>
                                                         </div>
                                                     </form>
@@ -927,8 +997,9 @@ function short_number_format($num, $precision = 1) {
                           </select>
                         </div>
                         <div class="col-md-3">
-                          <label for="quantityInput" class="form-label">Quantity:</label>
-                          <input type="number" class="form-control" id="quantityInput" value="1" min="1">
+                          <label for="quantityInput" class="form-label">Quantity (max 1000):</label>
+                          <input type="number" class="form-control" id="quantityInput" value="1" min="1" max="1000" oninput="validateQuantity(this)">
+                          <div class="form-text">Maximum quantity: 1000</div>
                         </div>
                         <div class="col-md-3">
                           <label class="form-label">&nbsp;</label>
@@ -991,7 +1062,6 @@ function short_number_format($num, $precision = 1) {
                             <div class="form-group mb-3">
                             <label>Location</label>
                             <select class="form-control" id="locationSelect" required>
-                                <option value="">Select Location</option>
                                 <?php if ($all_warehouses) { $all_warehouses->data_seek(0); while($wh = $all_warehouses->fetch_assoc()): ?>
                                 <option value="<?php echo htmlspecialchars($wh['warehouse']); ?>">
                                     <?php echo htmlspecialchars($wh['warehouse']); ?>
@@ -1006,10 +1076,11 @@ function short_number_format($num, $precision = 1) {
                               <div class="col-6">
                                 <div class="form-group mb-3">
                                   <label>Quantity <span class="text-danger">*</span></label>
-                                  <input type="number" class="form-control" id="finalQuantityInput" min="1" max="999999" required>
+                                  <input type="number" class="form-control" id="finalQuantityInput" min="1" max="1000" required>
                                   <div class="invalid-feedback">
-                                    Please enter a valid quantity (1-999,999).
+                                    Please enter a valid quantity (1-1000).
                                   </div>
+                                  <div class="form-text">Maximum allowed quantity: 1000</div>
                                 </div>
                               </div>
                               <div class="col-6">
@@ -1271,10 +1342,11 @@ function short_number_format($num, $precision = 1) {
         </div>
         </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="po_materials.js"></script>
     <script>
+
     function showFeedbackModal(success, message, details, action) {
         var icon = document.getElementById('feedbackIcon');
         var title = document.getElementById('feedbackTitle');
@@ -1325,27 +1397,27 @@ function short_number_format($num, $precision = 1) {
     })();
     </script>
     <script>
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.exportPdfBtn').forEach(function(exportBtn) {
-    exportBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      var modal = new bootstrap.Modal(document.getElementById('exportPdfModal'));
-      modal.show();
+    document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.exportPdfBtn').forEach(function(exportBtn) {
+        exportBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var modal = new bootstrap.Modal(document.getElementById('exportPdfModal'));
+        modal.show();
+        });
     });
-  });
-  var exportBtn = document.getElementById('confirmExportPdf');
-  if (exportBtn) {
-    exportBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      var modalEl = document.getElementById('exportPdfModal');
-      var modalInstance = bootstrap.Modal.getInstance(modalEl);
-      if (modalInstance) modalInstance.hide();
-      setTimeout(function() {
-        window.open('export_materials_pdf.php', '_blank');
-      }, 300);
+    var exportBtn = document.getElementById('confirmExportPdf');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        var modalEl = document.getElementById('exportPdfModal');
+        var modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+        setTimeout(function() {
+            window.open('export_materials_pdf.php', '_blank');
+        }, 300);
+        });
+    }
     });
-  }
-});
 </script>
 
 <script>
@@ -1447,7 +1519,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Compare suppliers button click
     compareSuppliersBtn.addEventListener('click', function() {
         if (!materialNameSelect.value) {
-            alert('Please select a material first.');
+            showFeedbackModal(false,'Please select a material first.');
             return;
         }
         compareSuppliersForAdd();
@@ -1466,7 +1538,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Supplier data received:', data);
                 
                 if (data.error || !data.suppliers || data.suppliers.length === 0) {
-                    alert('No suppliers found for this material.');
+                    showFeedbackModal(false,'No suppliers found for this material.');
                     return;
                 }
                 
@@ -1476,7 +1548,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Error comparing suppliers:', error);
-                alert('Error loading supplier data.');
+                showFeedbackModal(false,'Error loading supplier data.');
             });
     }
     
@@ -1632,7 +1704,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             case 'quantity':
                 const quantityValue = parseInt(value);
-                if (!value || quantityValue < 1 || quantityValue > 999999) {
+                if (!value || quantityValue < 1 || quantityValue > 1000) {
                     field.classList.add('is-invalid');
                     isValid = false;
                 } else {
@@ -1747,10 +1819,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Validate quantity
         const quantityValue = parseInt(quantity.value);
-        if (!quantity.value || quantityValue < 1 || quantityValue > 999999) {
+        if (!quantity.value || quantityValue < 1 || quantityValue > 1000) {
             quantity.classList.add('is-invalid');
             isValid = false;
-            errorMessage += '• Please enter a valid quantity (1-999,999).\n';
+            errorMessage += '• Please enter a valid quantity (1-1000).\n';
         } else {
             quantity.classList.add('is-valid');
         }
@@ -1776,9 +1848,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        if (!isValid) {
-            alert('Please correct the following errors:\n\n' + errorMessage);
-        }
+    
         
         return isValid;
     }
@@ -1801,7 +1871,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Get selected suppliers
         const selectedCheckboxes = document.querySelectorAll('input[name="selectedSuppliers"]:checked');
         if (selectedCheckboxes.length === 0) {
-            alert('Please select at least one supplier.');
+            showFeedbackModal(false,'Please select at least one supplier.');
             return;
         }
         
@@ -1850,7 +1920,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedCheckboxes = document.querySelectorAll('input[name="selectedSuppliers"]:checked');
         
         if (selectedCheckboxes.length === 0) {
-            alert('Please select at least one supplier.');
+           showFeedbackModal(false,'Please select at least one supplier.');
             return;
         }
         
@@ -1882,10 +1952,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Validate quantity
         const quantityValue = parseInt(quantity.value);
-        if (!quantity.value || quantityValue < 1 || quantityValue > 999999) {
+        if (!quantity.value || quantityValue < 1 || quantityValue > 1000) {
             quantity.classList.add('is-invalid');
             isValid = false;
-            errorMessage += '• Please enter a valid quantity (1-999,999).\n';
+            errorMessage += '• Please enter a valid quantity (1-1000).\n';
         } else {
             quantity.classList.add('is-valid');
         }
@@ -1912,7 +1982,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         if (!isValid) {
-            alert('Please correct the following errors:\n\n' + errorMessage);
+            showFeedbackModal(false,'Please correct the following errors:\n\n' + errorMessage);
             return;
         }
         
@@ -1933,7 +2003,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         if (hasInsufficientStock) {
-            alert(`Insufficient stock for the requested quantity:${insufficientStockMessage}\n\nPlease reduce the quantity or select different suppliers.`);
+            showFeedbackModal(false,`Insufficient stock for the requested quantity:${insufficientStockMessage}\n\nPlease reduce the quantity or select different suppliers.`);
             return;
         }
         
@@ -2042,7 +2112,25 @@ document.addEventListener('DOMContentLoaded', function() {
             saveAllMaterials();
         }
     });
-    
+
+    function showConfirmSaveModal(materialCount) {
+        // Message sa modal
+        document.getElementById('confirmSaveMessage').innerHTML = 
+            `Are you sure you want to save <strong>${materialCount}</strong> materials?`;
+
+        const modalEl = document.getElementById('confirmSaveModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        const confirmBtn = document.getElementById('confirmSaveBtn');
+
+        // Reset click handler para walang duplicate events
+        confirmBtn.onclick = function() {
+            modal.hide();
+            saveAllMaterials();
+        };
+    }
+        
     // Save all materials
     function saveAllMaterials() {
         const formData = new FormData();
@@ -2216,11 +2304,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
     }
-      
-        
-            
-        
-    });
 });
 </script>
 </body>

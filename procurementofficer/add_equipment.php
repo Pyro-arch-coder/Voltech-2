@@ -5,10 +5,12 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     exit();
 }
 require_once '../config.php';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $equipment_name = mysqli_real_escape_string($con, $_POST['equipment_name']);
     $status = 'Available'; // Default status
     $category = mysqli_real_escape_string($con, $_POST['category']);
+    $equipment_categories = isset($_POST['equipment_category']) ? mysqli_real_escape_string($con, $_POST['equipment_category']) : null; // <-- new
     $user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
     $user_level = isset($_SESSION['user_level']) ? intval($_SESSION['user_level']) : 0;
     $user_name = isset($_SESSION['firstname']) && isset($_SESSION['lastname']) ? trim($_SESSION['firstname'] . ' ' . $_SESSION['lastname']) : '';
@@ -38,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         return_time,
         brand,
         specification,
-        delivery_status
+        equipment_categories
     ) VALUES (
         '$equipment_name', 
         " . ($location ? "'$location'" : "NULL") . ", 
@@ -51,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         '0000-00-00 00:00:00',
         " . ($brand ? "'$brand'" : "NULL") . ",
         " . ($specification ? "'$specification'" : "NULL") . ",
-        'On Delivery'
+        " . ($equipment_categories ? "'$equipment_categories'" : "NULL") . "
     )";
     
     if ($con->query($insert_query)) {
@@ -67,4 +69,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: po_equipment.php?error=$err");
         exit();
     }
-} 
+}
+?>

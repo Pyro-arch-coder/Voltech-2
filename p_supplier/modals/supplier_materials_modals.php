@@ -30,19 +30,21 @@
                                     <select class="form-control" name="category" required>
                                         <option value="">Select Category</option>
                                         <?php 
-                                        $categories = $con->query("SELECT DISTINCT category FROM supplier_category WHERE category IS NOT NULL AND category != '' ORDER BY category");
+                                        $userEmail = isset($_SESSION['email']) ? $_SESSION['email'] : '';
+                                        $stmt = $con->prepare("SELECT DISTINCT category FROM supplier_category WHERE email = ? AND category IS NOT NULL AND category != '' ORDER BY category");
+                                        $stmt->bind_param("s", $userEmail);
+                                        $stmt->execute();
+                                        $categories = $stmt->get_result();
                                         while($cat = $categories->fetch_assoc()): 
                                         ?>
                                             <option value="<?php echo htmlspecialchars($cat['category']); ?>"><?php echo htmlspecialchars($cat['category']); ?></option>
-                                        <?php endwhile; ?>
+                                        <?php endwhile; 
+                                        $stmt->close();
+                                        ?>
                                     </select>
                                     <div class="invalid-feedback">Please select a category.</div>
                                 </div>
-                                <div class="form-group mb-3">
-                                    <label>Quantity</label>
-                                    <input type="number" min="0" max="999999" class="form-control" name="quantity" value="0">
-                                    <div class="invalid-feedback">Quantity must be between 0 and 999,999.</div>
-                                </div>
+                                <input type="hidden" name="quantity" value="99999999">
                                 <div class="form-group mb-3">
                                     <label>Unit *</label>
                                     <select class="form-control" name="unit" required>
@@ -80,11 +82,7 @@
                                     </div>
                                     <div class="invalid-feedback">Please enter a valid price (greater than 0).</div>
                                 </div>
-                                <div class="form-group mb-3">
-                                    <label>Low Stock Threshold</label>
-                                    <input type="number" min="0" max="999999" class="form-control" name="low_stock_threshold" value="10">
-                                    <div class="invalid-feedback">Low stock threshold must be between 0 and 999,999.</div>
-                                </div>
+                                <input type="hidden" min="0" max="999999" class="form-control" name="low_stock_threshold" value="10">
                                 <div class="form-group mb-3">
                                     <label>Lead Time (Days)</label>
                                     <input type="number" min="0" max="365" class="form-control" name="lead_time" value="0">
@@ -169,17 +167,34 @@
                                 </div>
                                 <div class="form-group mb-3">
                                     <label>Category *</label>
-                                    <select class="form-control" name="category" id="edit_category" required>
-                                        <option value="">Select Category</option>
-                                        <?php 
-                                        $categories = $con->query("SELECT DISTINCT category FROM supplier_category WHERE category IS NOT NULL AND category != '' ORDER BY category");
-                                        while($cat = $categories->fetch_assoc()): 
-                                        ?>
-                                            <option value="<?php echo htmlspecialchars($cat['category']); ?>"><?php echo htmlspecialchars($cat['category']); ?></option>
-                                        <?php endwhile; ?>
+                                    <?php
+                                        if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
+                                            die("Unauthorized access");
+                                        }
+
+                                        $userEmail = $_SESSION['email'];
+
+                                        $sql = "SELECT * FROM supplier_category WHERE email = ?";
+                                        $stmt = $con->prepare($sql);
+                                        $stmt->bind_param("s", $userEmail);
+                                        $stmt->execute();
+                                        $result = $stmt->get_result();
+
+                                        $categories = [];
+                                        while ($row = $result->fetch_assoc()) {
+                                            $categories[] = $row;
+                                        }
+                                    ?>
+                                    <select name="category" class="form-control" required>
+                                        <?php foreach ($categories as $cat): ?>
+                                            <option value="<?php echo htmlspecialchars($cat['category']); ?>">
+                                                <?php echo htmlspecialchars($cat['category']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
                                     </select>
                                     <div class="invalid-feedback">Please select a category.</div>
                                 </div>
+
                                 <div class="form-group mb-3">
                                     <label>Status</label>
                                     <select class="form-control" name="status" id="edit_material_status">
@@ -311,6 +326,24 @@
                     <p class="mb-0" id="feedbackMessage"><!-- Message will be inserted here --></p>
                 </div>
                 <div class="modal-footer justify-content-center border-0 pt-0">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Notification</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="feedbackMessage" class="text-center"></div>
+                </div>
+                <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
                 </div>
             </div>

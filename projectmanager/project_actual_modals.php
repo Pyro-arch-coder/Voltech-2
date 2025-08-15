@@ -256,7 +256,13 @@ if ($employees_result) {
         <input type="hidden" name="project_id" value="<?php echo $project_id; ?>">
         <div class="modal-body">
           <!-- Filter Controls -->
-          <div class="row mb-3">
+          <div class="row mb-3 g-3">
+            <div class="col-12">
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search"></i></span>
+                <input type="text" class="form-control border-start-0" id="employeeSearchInput" placeholder="Search employees by name..." onkeyup="filterEmployeeTable()">
+              </div>
+            </div>
             <div class="col-md-6">
               <label for="filterPosition" class="form-label fw-bold">Filter by Position</label>
               <select class="form-select" id="filterPosition" onchange="filterEmployeeTable()">
@@ -449,10 +455,26 @@ if ($employees_result) {
         <input type="hidden" name="category" value="Company">
         
         <div class="modal-body">
-          <div class="mb-3">
-            <div class="input-group">
-              <span class="input-group-text"><i class="fas fa-search"></i></span>
-              <input type="text" id="equipmentSearchInput" class="form-control" placeholder="Search equipment...">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" id="equipmentSearchInput" class="form-control" placeholder="Search equipment...">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <select id="categoryFilter" class="form-select">
+                <option value="0">All Categories</option>
+                <?php
+                // Fetch categories for the filter
+                $categories_query = $con->query("SELECT * FROM electrical_equipment_categories ORDER BY category_name ASC");
+                if ($categories_query && $categories_query->num_rows > 0) {
+                    while ($cat = $categories_query->fetch_assoc()) {
+                        echo '<option value="' . $cat['id'] . '">' . htmlspecialchars($cat['category_name']) . '</option>';
+                    }
+                }
+                ?>
+              </select>
             </div>
           </div>
           
@@ -462,6 +484,7 @@ if ($employees_result) {
                 <tr>
                   <th width="50">#</th>
                   <th>Equipment Name</th>
+                  <th>Category</th>
                   <th>Status</th>
                   <th>Price</th>
                   <th>Depreciation</th>
@@ -563,16 +586,29 @@ function toggleAllEmployees(source) {
 
 // JS Filter Function
 function filterEmployeeTable() {
-  var positionFilter = document.getElementById('filterPosition').value.toLowerCase();
-  var companyTypeFilter = document.getElementById('filterCompanyType').value.toLowerCase();
-  var rows = document.querySelectorAll('#employeeChecklistTable tbody .employee-row');
+  var searchTerm = document.getElementById('employeeSearchInput').value.toLowerCase();
+  var position = document.getElementById('filterPosition').value.toLowerCase();
+  var companyType = document.getElementById('filterCompanyType').value.toLowerCase();
+  
+  var rows = document.querySelectorAll('#employeeChecklistTable tbody tr');
+  
   rows.forEach(function(row) {
-    var rowPosition = row.getAttribute('data-position').toLowerCase();
-    var rowCompanyType = row.getAttribute('data-company-type').toLowerCase();
-    var show = true;
-    if (positionFilter && rowPosition !== positionFilter) show = false;
-    if (companyTypeFilter && rowCompanyType !== companyTypeFilter) show = false;
-    row.style.display = show ? '' : 'none';
+    var rowPosition = row.getAttribute('data-position') ? row.getAttribute('data-position').toLowerCase() : '';
+    var rowCompanyType = row.getAttribute('data-company-type') ? row.getAttribute('data-company-type').toLowerCase() : '';
+    var employeeName = row.cells[1].textContent.toLowerCase(); // Full name is in the second cell (index 1)
+    var lastName = row.cells[2].textContent.toLowerCase(); // Last name is in the third cell (index 2)
+    
+    var searchMatch = searchTerm === '' || 
+                     employeeName.includes(searchTerm) || 
+                     lastName.includes(searchTerm);
+    var positionMatch = position === '' || rowPosition.includes(position);
+    var companyTypeMatch = companyType === '' || rowCompanyType.includes(companyType);
+    
+    if (searchMatch && positionMatch && companyTypeMatch) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
   });
 }
 </script>
@@ -1006,7 +1042,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const tbody = document.getElementById('equipmentTableBody');
         if (!tbody) return;
         
-        fetch('get_available_equipment.php')
+        // Get selected category
+        const categoryFilter = document.getElementById('categoryFilter');
+        const categoryId = categoryFilter ? categoryFilter.value : 0;
+        
+        // Show loading state
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Loading equipment...</p>
+                </td>
+            </tr>`;
+        
+        // Fetch equipment with category filter
+        fetch(`get_available_equipment.php?category=${categoryId}`)
             .then(response => response.json())
             .then(data => {
                 renderEquipmentInModal(data);
@@ -1048,6 +1100,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <tr data-equipment-id="${eq.id}" class="${!isAvailable ? 'table-secondary' : ''}">
                     <td class="text-center">${index + 1}</td>
                     <td>${eq.equipment_name || 'N/A'}</td>
+                    <td>${eq.category_name || 'Uncategorized'}</td>
                     <td>
                         <span class="badge bg-${statusClass}">${statusText}</span>
                     </td>
@@ -1132,23 +1185,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Setup equipment search functionality
     function setupEquipmentSearch() {
         const searchInput = document.getElementById('equipmentSearchInput');
-        if (!searchInput) return;
+        const categoryFilter = document.getElementById('categoryFilter');
         
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const rows = document.querySelectorAll('#equipmentTableBody tr');
-            
-            rows.forEach(row => {
-                const name = row.querySelector('td:nth-child(2)')?.textContent?.toLowerCase() || '';
-                const status = row.querySelector('td:nth-child(3)')?.textContent?.toLowerCase() || '';
+        // Handle search input
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const rows = document.querySelectorAll('#equipmentTableBody tr[data-equipment-id]');
                 
-                if (name.includes(searchTerm) || status.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
+                rows.forEach(row => {
+                    const equipmentName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    if (equipmentName.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
             });
-        });
+        }
+        
+        // Handle category filter change
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', function() {
+                loadEquipmentForModal();
+            });
+        }
     }
     
     // Setup clear selection button

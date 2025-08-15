@@ -57,10 +57,6 @@ $user_lastname = isset($_SESSION['lastname']) ? $_SESSION['lastname'] : '';
 $user_name = trim($user_firstname . ' ' . $user_lastname);
 $current_page = basename($_SERVER['PHP_SELF']);
 
-// Handle add equipment
-// Handle edit equipment
-// Handle delete action
-
 
 $user = null;
 $userprofile = '../uploads/default_profile.png';
@@ -74,14 +70,13 @@ if ($userid) {
         $userprofile = isset($user['profile_path']) && $user['profile_path'] ? '../uploads/' . $user['profile_path'] : '../uploads/default_profile.png';
     }
 }
-// Remove add equipment logic
-// Remove edit equipment logic
-// Remove delete equipment logic
+
 
 // Get filter values
 $search = isset($_GET['search']) ? mysqli_real_escape_string($con, $_GET['search']) : '';
 $status_filter = isset($_GET['status']) ? mysqli_real_escape_string($con, $_GET['status']) : '';
 $location_filter = isset($_GET['location_filter']) ? mysqli_real_escape_string($con, $_GET['location_filter']) : '';
+$category_filter = isset($_GET['category_filter']) ? intval($_GET['category_filter']) : 0;
 $price_sort = isset($_GET['price_sort']) ? $_GET['price_sort'] : '';
 
 // Handle sorting
@@ -105,15 +100,18 @@ error_log("Status Filter: " . $status_filter);
 error_log("Location Filter: " . $location_filter);
 
 // Build WHERE clause
-$where_conditions = ["delivery_status = 'Delivered'"]; // Only show delivered items by default
+$where_conditions = [];
 if (!empty($search)) {
-    $where_conditions[] = "(equipment_name LIKE '%$search%' OR brand LIKE '%$search%' OR specification LIKE '%$search%' OR location LIKE '%$search%' OR status LIKE '%$search%')";
+    $where_conditions[] = "(e.equipment_name LIKE '%$search%' OR e.brand LIKE '%$search%' OR e.specification LIKE '%$search%' OR e.location LIKE '%$search%' OR e.status LIKE '%$search%')";
 }
 if (!empty($status_filter)) {
-    $where_conditions[] = "status = '" . mysqli_real_escape_string($con, $status_filter) . "'";
+    $where_conditions[] = "e.status = '" . mysqli_real_escape_string($con, $status_filter) . "'";
 }
 if (!empty($location_filter)) {
-    $where_conditions[] = "location = '" . mysqli_real_escape_string($con, $location_filter) . "'";
+    $where_conditions[] = "e.location = '" . mysqli_real_escape_string($con, $location_filter) . "'";
+}
+if ($category_filter > 0) {
+    $where_conditions[] = "e.equipment_categories = $category_filter";
 }
 
 $where_clause = !empty($where_conditions) ? "WHERE " . implode(" AND ", $where_conditions) : "";
@@ -127,7 +125,7 @@ $order_by = [];
 // Handle price sorting
 if (!empty($price_sort)) {
     $price_order = ($price_sort == 'lowest') ? 'ASC' : 'DESC';
-    $order_by[] = "equipment_price $price_order";
+    $order_by[] = "e.equipment_price $price_order";
     error_log("Price sort applied: equipment_price $price_order");
 }
 
@@ -146,12 +144,33 @@ $items_per_page = 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $offset = ($page - 1) * $items_per_page;
 
+// Build the final query with joins
+$select_query = "SELECT e.*, c.category_name 
+                FROM equipment e 
+                LEFT JOIN electrical_equipment_categories c ON e.equipment_categories = c.id";
+
 // Get total number of records with filters
-$total_query = "SELECT COUNT(*) as total FROM equipment $where_clause";
+$total_query = "SELECT COUNT(*) as total FROM equipment e";
+if (!empty($where_conditions)) {
+    $where_clause = " WHERE " . implode(" AND ", $where_conditions);
+    $total_query .= $where_clause;
+    $select_query .= $where_clause;
+}
+
 $total_result = $con->query($total_query);
 $total_row = $total_result->fetch_assoc();
 $total_items = $total_row['total'];
 $total_pages = ceil($total_items / $items_per_page);
+
+// Add sorting and pagination to select query
+$select_query .= " $order_by_clause LIMIT $offset, $items_per_page";
+$result = $con->query($select_query);
+
+// Check for query errors
+if (!$result) {
+    error_log("Query failed: " . $con->error);
+    echo "<div class='alert alert-danger'>Error loading equipment data. Please try again later.</div>";
+}
 
 // Add summary card queries
 $total_equipment_query = $con->query("SELECT COUNT(*) as total FROM equipment");
@@ -166,21 +185,13 @@ $inuse = $inuse_query->fetch_assoc();
 $maintenance_query = $con->query("SELECT COUNT(*) as total FROM equipment WHERE status = 'Maintenance'");
 $maintenance = $maintenance_query->fetch_assoc();
 
-// Get distinct status values for filter (only for delivered items)
-$statuses_query = "SELECT DISTINCT status FROM equipment WHERE delivery_status = 'Delivered' ORDER BY status";
+// Get distinct status values for filter
+$statuses_query = "SELECT DISTINCT status FROM equipment ORDER BY status";
 $statuses = $con->query($statuses_query);
 
-// Debug: Output the SQL query for testing
-error_log("SQL Query: SELECT * FROM equipment $where_clause $order_by_clause LIMIT $offset, $items_per_page");
-
-// Fetch equipment with pagination, filters, and sorting
-$sql = "SELECT * FROM equipment $where_clause $order_by_clause LIMIT $offset, $items_per_page";
-$result = $con->query($sql);
-
-// Check for query errors
-if (!$result) {
-    error_log("Query failed: " . $con->error);
-}
+// Get categories for filter
+$categories_query = "SELECT * FROM electrical_equipment_categories ORDER BY category_name ASC";
+$categories = $con->query($categories_query);
 
 ?>
 <!DOCTYPE html>
@@ -383,6 +394,22 @@ if (!$result) {
                                     </select>
                                 </div>
                                 
+                                <!-- Category filter -->
+                                <div class="filter-group">
+                                    <select name="category_filter" class="form-control w-100" id="categoryFilter">
+                                        <option value="0">All Categories</option>
+                                        <?php 
+                                        if ($categories && $categories->num_rows > 0) {
+                                            $categories->data_seek(0);
+                                            while ($category = $categories->fetch_assoc()) {
+                                                $selected = ($category_filter == $category['id']) ? 'selected' : '';
+                                                echo "<option value='" . $category['id'] . "' $selected>" . htmlspecialchars($category['category_name']) . "</option>";
+                                            }
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                                
                                 <!-- Price sort dropdown -->
                                 <div class="filter-group">
                                     <select name="price_sort" class="form-control w-100" id="priceSort">
@@ -398,6 +425,7 @@ if (!$result) {
                             var searchInput = document.getElementById('searchInput');
                             var statusFilter = document.getElementById('statusFilter');
                             var locationFilter = document.getElementById('locationFilter');
+                            var categoryFilter = document.getElementById('categoryFilter');
                             var priceSort = document.getElementById('priceSort');
                             var searchForm = document.getElementById('searchForm');
                             
@@ -406,16 +434,11 @@ if (!$result) {
                                 searchForm.submit();
                             }
                             
-                            // Add event listeners for all filter dropdowns
-                            if (statusFilter) {
-                                statusFilter.addEventListener('change', submitForm);
-                            }
-                            if (locationFilter) {
-                                locationFilter.addEventListener('change', submitForm);
-                            }
-                            if (priceSort) {
-                                priceSort.addEventListener('change', submitForm);
-                            }
+                            // Add event listeners for filter changes
+                            if (statusFilter) statusFilter.addEventListener('change', submitForm);
+                            if (locationFilter) locationFilter.addEventListener('change', submitForm);
+                            if (categoryFilter) categoryFilter.addEventListener('change', submitForm);
+                            if (priceSort) priceSort.addEventListener('change', submitForm);
                             
                             // Search input with debounce
                             if (searchInput && searchForm) {
@@ -427,11 +450,6 @@ if (!$result) {
                                     }, 400);
                                 });
                             }
-                            if (statusFilter && searchForm) {
-                                statusFilter.addEventListener('change', function() {
-                                    searchForm.submit();
-                                });
-                            }
                         });
                         </script>
                         <div class="table-responsive mb-0">
@@ -440,7 +458,7 @@ if (!$result) {
                                     <tr>
                                         <th>No.</th>
                                         <th>
-                                            <a href="?sort=equipment_name&order=<?php echo ($sort_field == 'equipment_name' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="text-white text-decoration-none">
+                                            <a href="?sort=equipment_name&order=<?php echo ($sort_field == 'equipment_name' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location_filter=' . urlencode($location_filter) : ''; ?><?php echo !empty($category_filter) ? '&category_filter=' . urlencode($category_filter) : ''; ?>" class="text-white text-decoration-none">
                                                 Equipment Name
                                                 <?php if ($sort_field == 'equipment_name'): ?>
                                                     <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
@@ -450,7 +468,37 @@ if (!$result) {
                                             </a>
                                         </th>
                                         <th>
-                                            <a href="?sort=location&order=<?php echo ($sort_field == 'location' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="text-white text-decoration-none">
+                                            <a href="?sort=category_name&order=<?php echo ($sort_field == 'category_name' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location_filter=' . urlencode($location_filter) : ''; ?><?php echo !empty($category_filter) ? '&category_filter=' . urlencode($category_filter) : ''; ?>" class="text-white text-decoration-none">
+                                                Category
+                                                <?php if ($sort_field == 'category_name'): ?>
+                                                    <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
+                                                <?php else: ?>
+                                                    <i class="fas fa-sort ms-1 text-white-50"></i>
+                                                <?php endif; ?>
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="?sort=brand&order=<?php echo ($sort_field == 'brand' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location_filter=' . urlencode($location_filter) : ''; ?><?php echo !empty($category_filter) ? '&category_filter=' . urlencode($category_filter) : ''; ?>" class="text-white text-decoration-none">
+                                                Brand
+                                                <?php if ($sort_field == 'brand'): ?>
+                                                    <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
+                                                <?php else: ?>
+                                                    <i class="fas fa-sort ms-1 text-white-50"></i>
+                                                <?php endif; ?>
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="?sort=specification&order=<?php echo ($sort_field == 'specification' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location_filter=' . urlencode($location_filter) : ''; ?><?php echo !empty($category_filter) ? '&category_filter=' . urlencode($category_filter) : ''; ?>" class="text-white text-decoration-none">
+                                                Specification
+                                                <?php if ($sort_field == 'specification'): ?>
+                                                    <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
+                                                <?php else: ?>
+                                                    <i class="fas fa-sort ms-1 text-white-50"></i>
+                                                <?php endif; ?>
+                                            </a>
+                                        </th>
+                                        <th>
+                                            <a href="?sort=location&order=<?php echo ($sort_field == 'location' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location_filter=' . urlencode($location_filter) : ''; ?><?php echo !empty($category_filter) ? '&category_filter=' . urlencode($category_filter) : ''; ?>" class="text-white text-decoration-none">
                                                 Location
                                                 <?php if ($sort_field == 'location'): ?>
                                                     <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
@@ -460,7 +508,7 @@ if (!$result) {
                                             </a>
                                         </th>
                                         <th>
-                                            <a href="?sort=equipment_price&order=<?php echo ($sort_field == 'equipment_price' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="text-white text-decoration-none">
+                                            <a href="?sort=equipment_price&order=<?php echo ($sort_field == 'equipment_price' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location_filter=' . urlencode($location_filter) : ''; ?><?php echo !empty($category_filter) ? '&category_filter=' . urlencode($category_filter) : ''; ?>" class="text-white text-decoration-none">
                                                 Equipment Price
                                                 <?php if ($sort_field == 'equipment_price'): ?>
                                                     <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
@@ -471,7 +519,7 @@ if (!$result) {
                                         </th>
                                         <th>Depreciation</th>
                                         <th>
-                                            <a href="?sort=status&order=<?php echo ($sort_field == 'status' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="text-white text-decoration-none">
+                                            <a href="?sort=status&order=<?php echo ($sort_field == 'status' && $sort_order == 'ASC') ? 'DESC' : 'ASC'; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?><?php echo !empty($location_filter) ? '&location_filter=' . urlencode($location_filter) : ''; ?><?php echo !empty($category_filter) ? '&category_filter=' . urlencode($category_filter) : ''; ?>" class="text-white text-decoration-none">
                                                 Status
                                                 <?php if ($sort_field == 'status'): ?>
                                                     <i class="fas fa-sort-<?php echo ($sort_order == 'ASC') ? 'up' : 'down'; ?> ms-1"></i>
@@ -491,35 +539,17 @@ if (!$result) {
                                     <tr>
                                         <td><?php echo $no++; ?></td>
                                         <td><?php echo htmlspecialchars($row['equipment_name']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['category_name'] ?? 'Uncategorized'); ?></td>
+                                        <td><?php echo htmlspecialchars($row['brand'] ?? 'N/A'); ?></td>
+                                        <td><?php echo htmlspecialchars($row['specification'] ?? 'N/A'); ?></td>
                                         <td><?php echo htmlspecialchars($row['location'] ?? 'N/A'); ?></td>
-                                                <td>
-                                                    <?php
-                                                    if (isset($row['category']) && $row['category'] == 'Company') {
-                                                        echo isset($row['equipment_price']) && $row['equipment_price'] !== '' ? '₱ ' . number_format($row['equipment_price'], 2) : 'N/A';
-                                                    } else {
-                                                        echo '—';
-                                                    }
-                                                    ?>
-                                                </td>
-                                                <td>
-                                                    <?php
-                                                    if (isset($row['category']) && $row['category'] == 'Rental') {
-                                                        echo isset($row['rental_fee']) && $row['rental_fee'] !== '' ? '₱ ' . number_format($row['rental_fee'], 2) : 'N/A';
-                                                    } else {
-                                                        if (isset($row['depreciation']) && $row['depreciation'] !== '') {
-                                                            $depr = $row['depreciation'];
-                                                            echo (intval($depr) == floatval($depr)) ? intval($depr) . ' years' : number_format($depr, 2) . ' years';
-                                                        } else {
-                                                            echo 'N/A';
-                                                        }
-                                                    }
-                                                    ?>
-                                                </td>
-                                                <td>
-                                                    <span class="badge bg-<?php echo ($row['status'] == 'Available') ? 'success' : 'warning'; ?>">
-                                                        <?php echo htmlspecialchars($row['status']); ?>
-                                                    </span>
-                                                </td>
+                                        <td>₱<?php echo number_format($row['equipment_price'], 2); ?></td>
+                                        <td><?php echo $row['depreciation'] ? $row['depreciation'] . '%' : 'N/A'; ?></td>
+                                        <td><span class="badge bg-<?php 
+                                                echo $row['status'] == 'Available' ? 'success' : 
+                                                    ($row['status'] == 'In Use' ? 'warning' : 
+                                                    ($row['status'] == 'Maintenance' ? 'info' : 'secondary')); 
+                                            ?>"><?php echo htmlspecialchars($row['status']); ?></span></td>
                                         <td class="text-center">
                                             <div class="action-buttons">
                                                 <a href="#" class="btn btn-sm btn-primary text-white font-weight-bold" data-bs-toggle="modal" data-bs-target="#viewModal<?php echo $row['id']; ?>">

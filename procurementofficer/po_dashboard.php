@@ -285,7 +285,7 @@ if ($userid) {
                 <div class="row g-3 my-2">
                   <div class="col-12 mb-3 d-flex flex-column flex-md-row align-items-center justify-content-between">
                     <!-- Left: Date Range + Export (no background) -->
-                    <form class="row g-2 align-items-end flex-nowrap mb-3 mb-md-0" method="post" action="export_dashboard_pdf.php" target="_blank">
+                    <form class="row g-2 align-items-end flex-nowrap mb-3 mb-md-0" method="post" action="export_dashboard_pdf.php" target="_blank" onsubmit="return validateDateRange()">
                       <div class="col-auto">
                         <label for="start_date" class="form-label mb-0">Start Date</label>
                         <input type="date" class="form-control" id="start_date" name="start_date" required>
@@ -300,6 +300,47 @@ if ($userid) {
                         </button>
                       </div>
                     </form>
+                    <script>
+                    function validateDateRange() {
+                        const startDate = new Date(document.getElementById('start_date').value);
+                        const endDate = new Date(document.getElementById('end_date').value);
+                        
+                        if (startDate > endDate) {
+                            alert('Error: End date cannot be before start date');
+                            return false;
+                        }
+                        return true;
+                    }
+                    
+                    // Set minimum date for end date when start date changes
+                    document.getElementById('start_date').addEventListener('change', function() {
+                        const startDate = this.value;
+                        const endDateInput = document.getElementById('end_date');
+                        
+                        // If current end date is before new start date, reset it
+                        if (endDateInput.value && new Date(endDateInput.value) < new Date(startDate)) {
+                            endDateInput.min = startDate;
+                            endDateInput.value = startDate;
+                        }
+                    });
+                    
+                    // Initialize date inputs
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // No minimum date restriction, allowing past dates
+                        const startDateInput = document.getElementById('start_date');
+                        const endDateInput = document.getElementById('end_date');
+                        
+                        // When start date changes, update end date's minimum allowed date
+                        startDateInput.addEventListener('change', function() {
+                            endDateInput.min = this.value;
+                            
+                            // If end date is before start date, update it
+                            if (endDateInput.value && new Date(endDateInput.value) < new Date(this.value)) {
+                                endDateInput.value = this.value;
+                            }
+                        });
+                    });
+                    </script>
                     <!-- Right: Clock and Date (with background) -->
                     <div class="d-flex flex-column align-items-end ms-md-auto"
                          style="background: linear-gradient(90deg, #e0f7fa 0%, #fff 100%); border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); padding: 1.2rem 2.2rem;">
@@ -346,18 +387,18 @@ if ($userid) {
                     </div>
                     <div class="col-md-3">
                         <div class="p-3 bg-white shadow d-flex justify-content-around align-items-center rounded card-link"
-                             onclick="showCardConfirmModal('Do you want to view all equipment?', 'po_equipment.php')">
+                             onclick="showCardConfirmModal('Do you want to view all suppliers?', 'po_suppliers.php')">
                             <div>
                                 <h3 class="fs-2">
                                 <?php
-                                      $rent_query = mysqli_query($con, "SELECT COUNT(*) as count FROM equipment WHERE category = 'Rental'");
-                                      $rent_result = mysqli_fetch_assoc($rent_query);
-                                      echo number_format($rent_result['count'] ?? 0);
+                                      $supplier_query = mysqli_query($con, "SELECT COUNT(*) as count FROM suppliers");
+                                      $supplier_result = mysqli_fetch_assoc($supplier_query);
+                                      echo number_format($supplier_result['count'] ?? 0);
                                       ?>
                                 </h3>
-                                <p class="fs-5">Equipment (Rental)</p>
+                                <p class="fs-5">Total Suppliers</p>
                             </div>
-                            <i class="fas fa-hand-holding-usd fs-1 primary-text"></i>
+                            <i class="fas fa-truck fs-1 primary-text"></i>
                         </div>
                     </div>
                     <div class="col-md-3">

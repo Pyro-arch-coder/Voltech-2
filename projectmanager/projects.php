@@ -9,6 +9,77 @@ require '../vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+// Add CSS styles for the forecast display
+function addForecastStyles() {
+    echo '<style>
+        /* Forecast Styles */
+        #forecastedValue {
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+            background: white;
+            border: 2px solid #0d6efd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .forecast-amount {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0d6efd;
+            margin: 0;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .forecast-details {
+            font-size: 0.7rem;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 4px;
+            line-height: 1.3;
+        }
+
+        .forecast-loading {
+            background: #f8f9fa;
+        }
+
+        .forecast-loading .forecast-amount {
+            color: #6c757d;
+        }
+
+        @keyframes loadingShimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        @keyframes barMove {
+            0% { background-position: 0% 0; }
+            100% { background-position: 100% 0; }
+        }
+        
+        /* Tooltip styles */
+        [data-bs-toggle="tooltip"] {
+            cursor: help;
+            border-bottom: 1px dotted #6c757d;
+        }
+        
+        .tooltip-inner {
+            max-width: 300px;
+            padding: 0.5rem 1rem;
+            text-align: left;
+            white-space: pre-line;
+        }
+    </style>';
+}
+
+addForecastStyles();
 
     $userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
     $user_email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
@@ -848,21 +919,28 @@ use PHPMailer\PHPMailer\Exception;
                                     </select>
                                 </div>
 
-                                <!-- Forecasted Value - Malupit Design -->
-                                <div class="col-md-6 mb-3 d-flex align-items-end">
-                                    <span 
-                                        class="input-group-text bg-white border-3 border-primary rounded-3 shadow-sm py-3 px-4 d-flex flex-column align-items-center w-100"
-                                        id="forecastedValue" 
-                                        style="min-width: 200px; display: none; position: relative; overflow: hidden;"
-                                    >
-                                        <span class="d-flex align-items-center mb-2">
-                                            <i class="fas fa-chart-line me-2 text-primary fs-4"></i> 
-                                            <span class="fw-semibold text-secondary" style="letter-spacing:1px;">Forecasted Value</span>
-                                        </span>
-                                        <span id="forecastedAmount" class="fw-bold text-primary display-6" style="font-size:2rem;">0.00</span>
-                                        <!-- Animated indicator bar -->
-                                        <span class="mt-2 w-100" style="height: 6px; background: linear-gradient(90deg, #0d6efd 50%, #cfe2ff 100%); border-radius: 3px; animation: barMove 2s infinite alternate;"></span>
-                                    </span>
+                                <!-- Forecasted Value -->
+                                <div class="col-md-6 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0 fw-bold text-primary">Analogous Forecasting</h6>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary">Beta</span>
+                                    </div>
+                                    <div class="w-100">
+                                        <div 
+                                            id="forecastedValue" 
+                                            class="bg-white border-2 border-primary rounded p-3 d-flex flex-column align-items-center w-100"
+                                            data-bs-toggle="tooltip"
+                                            data-bs-placement="top"
+                                            title="Enter project size and select a category to see forecast"
+                                        >
+                                            <div class="forecast-amount text-muted">
+                                                <i class="fas fa-calculator me-2"></i> FORECAST COST
+                                            </div>
+                                            <div class="forecast-details small text-muted mt-1 text-center">
+                                                Enter size & select category
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <!-- Hidden location input -->
                                 <input type="hidden" id="location" name="location" required>

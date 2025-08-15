@@ -137,6 +137,7 @@ if (isset($_SESSION['error'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
     <link rel="stylesheet" href="po_styles.css" />
+    <link rel="stylesheet" href="supplier_style.css" />
     <title>Supplier Materials Management</title>
 </head>
 
@@ -159,6 +160,9 @@ if (isset($_SESSION['error'])) {
                 </a>
                 <a href="supplier_category.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'supplier_category.php' ? 'active' : ''; ?>">
                     <i class="fas fa-list"></i>Category
+                </a>
+                <a href="supplier_approval.php" class="list-group-item list-group-item-action bg-transparent second-text <?php echo $current_page == 'supplier_approval.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-clipboard-check"></i>Order Management
                 </a>
             </div>
         </div>
@@ -394,6 +398,68 @@ if (isset($_SESSION['error'])) {
             });
         });
 
+        // Handle add material form submission
+        const addMaterialForm = document.querySelector('#addMaterialModal form');
+        if (addMaterialForm) {
+            addMaterialForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                
+                fetch('process_add_material.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message before reloading
+                        const feedbackMessage = document.getElementById('feedbackMessage');
+                        const feedbackModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+                        
+                        feedbackMessage.textContent = data.message || 'Material added successfully!';
+                        feedbackMessage.className = 'text-success';
+                        
+                        // Show the feedback modal
+                        feedbackModal.show();
+                        
+                        // Reload the page after the modal is shown
+                        feedbackModal._element.addEventListener('hidden.bs.modal', function () {
+                            window.location.reload();
+                        });
+                        
+                        // Close the add material modal
+                        const addMaterialModal = bootstrap.Modal.getInstance(document.getElementById('addMaterialModal'));
+                        if (addMaterialModal) {
+                            addMaterialModal.hide();
+                        }
+                    } else {
+                        // Show error message in feedback modal
+                        const feedbackMessage = document.getElementById('feedbackMessage');
+                        const feedbackModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+                        
+                        if (data.message) {
+                            feedbackMessage.textContent = data.message;
+                            feedbackMessage.className = 'text-danger';
+                        } else {
+                            feedbackMessage.textContent = 'An error occurred while adding the material.';
+                            feedbackMessage.className = 'text-danger';
+                        }
+                        
+                        feedbackModal.show();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const feedbackMessage = document.getElementById('feedbackMessage');
+                    const feedbackModal = new bootstrap.Modal(document.getElementById('feedbackModal'));
+                    feedbackMessage.textContent = 'An error occurred while processing your request.';
+                    feedbackMessage.className = 'text-danger';
+                    feedbackModal.show();
+                });
+            });
+        }
+
         // Handle edit material functionality
         document.querySelectorAll('.edit-material').forEach(function(button) {
             button.addEventListener('click', function() {
@@ -585,6 +651,15 @@ if (isset($_SESSION['error'])) {
             showFeedbackModal(false, '<?php echo htmlspecialchars($_GET['error']); ?>', '', 'error');
         <?php endif; ?>
     });
+    </script>
+
+<script>
+        var el = document.getElementById("wrapper");
+        var toggleButton = document.getElementById("menu-toggle");
+
+        toggleButton.onclick = function () {
+            el.classList.toggle("toggled");
+        };
     </script>
 
   </body>

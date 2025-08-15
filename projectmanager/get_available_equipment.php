@@ -14,12 +14,22 @@ header('Content-Type: application/json');
 $response = [];
 
 try {
-    // Get all equipment that's available, not damaged, and has delivery status 'Delivered'
-    $query = "SELECT * FROM equipment 
-              WHERE LOWER(COALESCE(status, '')) = 'available'
-              AND LOWER(COALESCE(status, '')) NOT IN ('damaged', 'damage')
-              AND delivery_status = 'Delivered' 
-              ORDER BY equipment_name ASC";
+    // Get category filter if set
+    $category_filter = isset($_GET['category']) ? intval($_GET['category']) : 0;
+    
+    // Build the base query
+    $query = "SELECT e.*, c.category_name 
+              FROM equipment e
+              LEFT JOIN electrical_equipment_categories c ON e.equipment_categories = c.id
+              WHERE LOWER(COALESCE(e.status, '')) = 'available'
+              AND LOWER(COALESCE(e.status, '')) NOT IN ('damaged', 'damage')";
+              
+    // Add category filter if specified
+    if ($category_filter > 0) {
+        $query .= " AND e.equipment_categories = " . $category_filter;
+    }
+    
+    $query .= " ORDER BY e.equipment_name ASC";
     $result = mysqli_query($con, $query);
     
     if (!$result) {
@@ -33,7 +43,9 @@ try {
             'equipment_name' => $row['equipment_name'],
             'equipment_price' => $row['equipment_price'],
             'depreciation' => $row['depreciation'],
-            'status' => $row['status']
+            'status' => $row['status'],
+            'category_name' => $row['category_name'] ?? 'Uncategorized',
+            'category_id' => $row['equipment_categories'] ?? 0
         ];
     }
     
