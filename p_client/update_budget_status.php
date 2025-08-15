@@ -66,33 +66,79 @@ $budget_val = (isset($budget_row['budget']) && is_numeric($budget_row['budget'])
 $budget_amount = '₱' . number_format($budget_val, 2);
 
 if ($status === 'Approved') {
-    // Update existing record only
-    $update_sql = "UPDATE project_budget_approval SET status = ?, updated_at = NOW() WHERE project_id = ?";
-    $stmt3 = $con->prepare($update_sql);
-    if (!$stmt3) {
-        echo json_encode(['success' => false, 'message' => 'Database error: prepare failed (update)']);
+    // Start transaction
+    $con->begin_transaction();
+    
+    try {
+        // Update budget approval status
+        $update_sql = "UPDATE project_budget_approval SET status = ?, updated_at = NOW() WHERE project_id = ?";
+        $stmt3 = $con->prepare($update_sql);
+        if (!$stmt3) {
+            throw new Exception('Database error: prepare failed (update budget approval)');
+        }
+        $stmt3->bind_param('si', $status, $project_id);
+        if (!$stmt3->execute()) {
+            throw new Exception('Database error: execute failed (update budget approval)');
+        }
+        $stmt3->close();
+        
+        // Update projects table with the approved budget
+        $update_project_sql = "UPDATE projects SET budget = ? WHERE project_id = ?";
+        $stmt4 = $con->prepare($update_project_sql);
+        if (!$stmt4) {
+            throw new Exception('Database error: prepare failed (update projects)');
+        }
+        $stmt4->bind_param('di', $budget_val, $project_id);
+        if (!$stmt4->execute()) {
+            throw new Exception('Database error: execute failed (update projects)');
+        }
+        $stmt4->close();
+        
+        // Commit the transaction
+        $con->commit();
+    } catch (Exception $e) {
+        // Rollback the transaction in case of any error
+        $con->rollback();
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         exit();
     }
-    $stmt3->bind_param('si', $status, $project_id);
-    if (!$stmt3->execute()) {
-        echo json_encode(['success' => false, 'message' => 'Database error: execute failed (update)']);
-        exit();
-    }
-    $stmt3->close();
 } elseif ($status === 'Rejected') {
-    // Delete the budget approval entry
-    $delete_sql = "DELETE FROM project_budget_approval WHERE project_id = ?";
-    $stmt3 = $con->prepare($delete_sql);
-    if (!$stmt3) {
-        echo json_encode(['success' => false, 'message' => 'Database error: prepare failed (delete)']);
+    // Start transaction for rejection
+    $con->begin_transaction();
+    
+    try {
+        // Delete the budget approval entry
+        $delete_sql = "DELETE FROM project_budget_approval WHERE project_id = ?";
+        $stmt3 = $con->prepare($delete_sql);
+        if (!$stmt3) {
+            throw new Exception('Database error: prepare failed (delete budget approval)');
+        }
+        $stmt3->bind_param('i', $project_id);
+        if (!$stmt3->execute()) {
+            throw new Exception('Database error: execute failed (delete budget approval)');
+        }
+        $stmt3->close();
+        
+        // Set budget to NULL in projects table when rejected
+        $update_project_sql = "UPDATE projects SET budget = NULL WHERE project_id = ?";
+        $stmt4 = $con->prepare($update_project_sql);
+        if (!$stmt4) {
+            throw new Exception('Database error: prepare failed (update projects on reject)');
+        }
+        $stmt4->bind_param('i', $project_id);
+        if (!$stmt4->execute()) {
+            throw new Exception('Database error: execute failed (update projects on reject)');
+        }
+        $stmt4->close();
+        
+        // Commit the transaction
+        $con->commit();
+    } catch (Exception $e) {
+        // Rollback the transaction in case of any error
+        $con->rollback();
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         exit();
     }
-    $stmt3->bind_param('i', $project_id);
-    if (!$stmt3->execute()) {
-        echo json_encode(['success' => false, 'message' => 'Database error: execute failed (delete)']);
-        exit();
-    }
-    $stmt3->close();
 }
 
 // Insert notification for the project manager if status is Approved or Rejected
