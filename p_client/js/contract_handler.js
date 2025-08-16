@@ -332,9 +332,9 @@ function checkRequiredContracts() {
         if (!yourSignedHasFile && !clientSignedHasFile) {
             contractAlert.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> Please upload both Your Signed Contract and Client Signed Contract to proceed.';
         } else if (!yourSignedHasFile) {
-            contractAlert.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> Please upload Your Signed Contract to proceed.';
-        } else {
             contractAlert.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> Please upload Client Signed Contract to proceed.';
+        } else {
+            contractAlert.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> Please upload Your Signed Contract to proceed.';
         }
     } else {
         // All required contracts are uploaded

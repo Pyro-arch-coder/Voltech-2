@@ -13,8 +13,8 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['user_level'] != 6) {
 $client_id = $_SESSION['user_id'];
 $new_step = isset($_POST['new_step']) ? intval($_POST['new_step']) : 1;
 
-// Validate step number (1-5)
-if ($new_step < 1 || $new_step > 5) {
+// Validate step number (1-6)
+if ($new_step < 1 || $new_step > 6) {
     echo json_encode(['success' => false, 'message' => 'Invalid step number']);
     exit();
 }
@@ -61,8 +61,8 @@ try {
         }
     }
     
-    // Calculate the progress percentage based on the step (1-5)
-    $progress_percentage = min(100, ($new_step / 5) * 100);
+    // Calculate the progress percentage based on the step (1-6)
+    $progress_percentage = min(100, ($new_step / 6) * 100);
     
     // Update both client_step_progress and client_progress_indicator in projects table
     $update_query = "UPDATE projects SET 

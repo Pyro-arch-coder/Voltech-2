@@ -55,6 +55,12 @@ async function calculateForecast(size) {
             const sampleSize = data.sample_size || 0;
             const categoryName = data.category || selectedCategory;
             
+            // Store the forecasted cost in the hidden input field
+            const forecastedCostInput = document.getElementById('forecasted_cost');
+            if (forecastedCostInput) {
+                forecastedCostInput.value = data.forecasted_cost;
+            }
+            
             forecastValueEl.innerHTML = `
                 <div class="forecast-amount">₱${formattedAmount}</div>
                 <div class="forecast-details">
@@ -80,6 +86,12 @@ async function calculateForecast(size) {
                 <div class="forecast-amount text-danger">N/A</div>
                 <div class="forecast-details text-danger small">${data?.message || 'Unable to calculate'}</div>
             `;
+            
+            // Reset forecasted cost to 0 when calculation fails
+            const forecastedCostInput = document.getElementById('forecasted_cost');
+            if (forecastedCostInput) {
+                forecastedCostInput.value = '0';
+            }
         }
     } catch (error) {
         console.error('Error fetching forecast:', error);
@@ -88,6 +100,12 @@ async function calculateForecast(size) {
             <div class="forecast-amount text-danger">Error</div>
             <div class="forecast-details text-danger small">Failed to load data</div>
         `;
+        
+        // Reset forecasted cost to 0 when there's an error
+        const forecastedCostInput = document.getElementById('forecasted_cost');
+        if (forecastedCostInput) {
+            forecastedCostInput.value = '0';
+        }
     }
 }
 
@@ -135,4 +153,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Log that forecast is initialized
     console.log('Project forecast initialized');
+    
+    // Reset forecasted cost when form is reset or modal is closed
+    const resetForecastedCost = () => {
+        const forecastedCostInput = document.getElementById('forecasted_cost');
+        if (forecastedCostInput) {
+            forecastedCostInput.value = '0';
+        }
+    };
+    
+    // Listen for form reset events
+    const form = document.getElementById('multiStepForm');
+    if (form) {
+        form.addEventListener('reset', resetForecastedCost);
+    }
+    
+    // Listen for modal close events
+    const modal = document.getElementById('addProjectModal');
+    if (modal) {
+        modal.addEventListener('hidden.bs.modal', resetForecastedCost);
+    }
 });

@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'a567ace28de02cf05487e553cb9b672c18165032',
+        'reference' => '7489dc5491be5c4285ade375d39facccf46ef8b0',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'a567ace28de02cf05487e553cb9b672c18165032',
+            'reference' => '7489dc5491be5c4285ade375d39facccf46ef8b0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -38,8 +38,8 @@
             'dev_requirement' => false,
         ),
         'google/apiclient-services' => array(
-            'pretty_version' => 'v0.404.0',
-            'version' => '0.404.0.0',
+            'pretty_version' => 'v0.407.0',
+            'version' => '0.407.0.0',
             'reference' => '8366037e450b62ffc1c5489459f207640acca2b4',
             'type' => 'library',
             'install_path' => __DIR__ . '/../google/apiclient-services',

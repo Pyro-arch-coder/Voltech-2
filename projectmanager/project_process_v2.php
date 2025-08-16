@@ -397,10 +397,49 @@ if ($project_id > 0) {
                                     </button>
                                 </div>
                             </div>
-                            <div class="step-content d-none" id="step2">
-                                <h4 class="mb-4">Step 2: Cost Estimation</h4>
-                                <!-- Project Materials Section -->
-                                <div class="card mb-3 shadow-sm">
+                                                         <div class="step-content d-none" id="step2">
+                                 <h4 class="mb-4">Step 2: Cost Estimation</h4>
+                                 
+                                 <!-- Forecasted Cost Display Card -->
+                                 <div class="row justify-content-center mb-4">
+                                     <div class="col-lg-6">
+                                         <div class="card border-0 shadow-sm bg-gradient-primary text-white">
+                                             <div class="card-body text-center p-4">
+                                                 <div class="d-flex align-items-center justify-content-center mb-3">
+                                                     <i class="fas fa-chart-line fa-2x me-3"></i>
+                                                     <h5 class="card-title mb-0">Forecasted Project Cost</h5>
+                                                 </div>
+                                                                                                   <div class="display-6 fw-bold mb-2">
+                                                      ₱<?php 
+                                                      if ($project_id > 0) {
+                                                          $forecast_query = "SELECT forecasted_cost FROM projects WHERE project_id = ?";
+                                                          if ($stmt = $con->prepare($forecast_query)) {
+                                                              $stmt->bind_param("i", $project_id);
+                                                              $stmt->execute();
+                                                              $result = $stmt->get_result();
+                                                              if ($result && $result->num_rows > 0) {
+                                                                  $row = $result->fetch_assoc();
+                                                                  $forecasted_cost = $row['forecasted_cost'];
+                                                                  echo number_format($forecasted_cost, 2);
+                                                              } else {
+                                                                  echo "0.00";
+                                                              }
+                                                              $stmt->close();
+                                                          } else {
+                                                              echo "0.00";
+                                                          }
+                                                      } else {
+                                                          echo "0.00";
+                                                      }
+                                                      ?>
+                                                  </div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                 </div>
+                                 
+                                 <!-- Project Materials Section -->
+                                 <div class="card mb-3 shadow-sm">
                                     <div class="card-header bg-success text-white d-flex align-items-center">
                                         <span class="flex-grow-1">Project Materials</span>
                                         <button type="button" class="btn btn-light btn-sm ml-auto" id="addMaterialsBtn" data-bs-toggle="modal" data-bs-target="#addMaterialsModal">
@@ -541,7 +580,7 @@ if ($project_id > 0) {
                                 </div>
                             </div>
                             <div class="step-content d-none" id="step3">
-                                <h4 class="mb-4 fw-bold text-success">Step 3: Budget Approval</h4>
+                                <h4 class="mb-4 fw-bold text-success">Step 3: Initial Budget Request</h4>
 
                                 <div class="alert alert-info d-flex align-items-center mb-4">
                                     <i class="fas fa-info-circle me-2"></i>
@@ -549,52 +588,10 @@ if ($project_id > 0) {
                                 </div>
 
                                 <form id="budgetForm" autocomplete="off">
-                                    <input type="hidden" name="project_id" value="">
+                                    <input type="hidden" name="project_id" value="<?php echo htmlspecialchars($project_id); ?>">
 
-                                    <div class="row g-4">
-                                        <div class="col-lg-8">
-                                            <div class="card mb-4 shadow-sm h-100">
-                                                <div class="card-body">
-                                                    <h5 class="card-title mb-4 text-primary">
-                                                        <i class="fas fa-file-invoice-dollar me-2"></i>Budget Documents
-                                                    </h5>
-                                                    <label class="form-label fw-bold mb-2">Budget Files</label>
-                                                    <div class="card border-2 border-dashed rounded-3"
-                                                        id="budgetDropZone" style="min-height: 170px; cursor: pointer; transition: border .2s;">
-                                                        <div class="card-body d-flex flex-column align-items-center justify-content-center p-4 text-center">
-                                                            <i class="fas fa-file-upload fa-3x text-primary mb-3"></i>
-                                                            <h5 class="mb-2">Drag &amp; drop your budget files here</h5>
-                                                            <p class="text-muted mb-3">or</p>
-                                                            <button type="button" class="btn btn-outline-primary px-4 mb-2" id="browseBudgetFilesBtn" tabindex="0">
-                                                                <i class="fas fa-folder-open me-2"></i>Browse Files
-                                                            </button>
-                                                            <input type="file" class="d-none" name="budget_files[]" id="budgetFiles" multiple accept=".pdf">
-                                                            <p class="small text-muted mt-3 mb-0">Supported format: <strong>PDF only</strong> (Max 10MB per file)</p>
-                                                        </div>
-                                                    </div>
-                                                    <div class="d-flex justify-content-between align-items-center mt-3">
-                                                        <div id="budgetFileList" class="flex-grow-1"></div>
-                                                        <div class="d-flex">
-                                                            <!-- View Files button -->
-                                                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#budgetFilesModal">
-                                                                <i class="fas fa-eye me-2"></i>View Budget Files
-                                                            </button>
-                                                            <button type="button"
-                                                                class="btn <?= $budget_doc_exists ? 'btn-primary' : 'btn-primary' ?> ms-2"
-                                                                id="uploadBudgetBtn">
-                                                                <i class="fas fa-cloud-upload-alt me-2"></i>
-                                                                <?= $budget_doc_exists ? 'Re-upload File' : 'Upload Files' ?>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <!-- Upload status message -->
-                                                    <div id="uploadStatus" class="text-muted small mt-2"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Budget Amount Approval Card -->
-                                        <div class="col-lg-4">
+                                    <div class="row justify-content-center">
+                                        <div class="col-lg-6">
                                             <div class="card mb-4 shadow-sm h-100">
                                                 <div class="card-body">
                                                     <h5 class="card-title mb-4 text-success">
@@ -607,52 +604,20 @@ if ($project_id > 0) {
                                                             <input type="text" class="form-control form-control-lg" name="budget"
                                                                 id="budgetAmount"
                                                                 placeholder="100000"
-                                                                pattern="1\d{5}" inputmode="numeric"
-                                                                aria-describedby="budgetMessage"
-                                                                oninput="validateBudgetInput(this)">
+                                                                inputmode="numeric"
+                                                                aria-describedby="budgetMessage">
                                                         </div>
                                                         <div class="form-text text-muted" id="budgetMessage">
-                                                            Enter 6-9 digits starting with 1 (e.g., <strong>100000</strong>)
+                                                            Enter a budget amount (6-9 digits, e.g., <strong>100000</strong>)
                                                         </div>
                                                     </div>
                                                     <div class="text-center mt-4">
-                                                        <button type="button" id="requestBudgetBtn" class="btn btn-success w-100" disabled>
-                                                            <i class="fas fa-paper-plane me-1"></i>
-                                                            Request Budget Approval
+                                                        <button type="button" id="requestBudgetBtn" class="btn btn-secondary w-100" disabled>
+                                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                                            Enter Budget Amount First
                                                         </button>
                                                     </div>
-                                                    <script>
-                                                    function validateBudgetInput(input) {
-                                                        // Only allow numbers and limit to 9 digits starting with 1
-                                                        input.value = input.value.replace(/[^0-9]/g,'').replace(/^[^1]/, '1').slice(0,9);
-                                                        
-                                                        // Get the request button
-                                                        const requestBtn = document.getElementById('requestBudgetBtn');
-                                                        const budgetMessage = document.getElementById('budgetMessage');
-                                                        
-                                                        // Check if input is between 6 and 9 digits and starts with 1
-                                                        const isValid = /^1\d{5,8}$/.test(input.value) || /^1\d{8}$/.test(input.value);
-                                                        
-                                                        // Update help text based on input length
-                                                        if (input.value.length > 0 && input.value.length < 6) {
-                                                            budgetMessage.innerHTML = 'Minimum 6 digits required (e.g., <strong>100000</strong>)';
-                                                            budgetMessage.className = 'form-text text-danger';
-                                                            requestBtn.disabled = true;
-                                                        } else if (input.value.length > 9) {
-                                                            budgetMessage.innerHTML = 'Maximum 9 digits allowed (e.g., <strong>199999999</strong>)';
-                                                            budgetMessage.className = 'form-text text-danger';
-                                                            requestBtn.disabled = true;
-                                                        } else if (!input.value.startsWith('1')) {
-                                                            budgetMessage.innerHTML = 'Must start with 1 (e.g., <strong>100000</strong>)';
-                                                            budgetMessage.className = 'form-text text-danger';
-                                                            requestBtn.disabled = true;
-                                                        } else {
-                                                            budgetMessage.innerHTML = 'Enter 6-9 digits starting with 1 (e.g., <strong>100000</strong>)';
-                                                            budgetMessage.className = 'form-text text-muted';
-                                                            requestBtn.disabled = !isValid;
-                                                        }
-                                                    }
-                                                    </script>
+                                                    <!-- Budget validation is now handled in project_budget.js -->
                                                 </div>
                                             </div>
                                         </div>
@@ -667,8 +632,8 @@ if ($project_id > 0) {
                                         Next <i class="fas fa-arrow-right ms-1"></i>
                                     </button>
                                 </div>
-                            </div>
-                            <div class="step-content d-none" id="step4">
+                                </div>
+                                <div class="step-content d-none" id="step4">
                                 <h4 class="mb-4">Step 4: Contract Signing</h4>
 
                                 <div class="alert alert-info">
@@ -814,7 +779,7 @@ if ($project_id > 0) {
                                                 <div class="card h-100 border-2 border-dashed" id="lguDropZone">
                                                     <div class="card-body d-flex flex-column align-items-center justify-content-center p-4 text-center" style="min-height: 200px;">
                                                         <i class="fas fa-landmark fa-3x text-primary mb-3"></i>
-                                                        <h6 class="mb-2">LGU Clearance</h6>
+                                                        <h6 class="mb-2">LGU Clearance <span class="badge bg-danger ms-1">Required</span></h6>
                                                         <p class="small text-muted mb-3">Drag & drop your file here</p>
                                                         <p class="small text-muted mb-0">or</p>
                                                         <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="browseLguBtn">
@@ -1261,51 +1226,83 @@ if ($project_id > 0) {
                                 </div>
                             </div>
                             <div class="step-content d-none" id="step8">
-                                <h4 class="mb-4 fw-bold text-success">Step 8: Proof of Approval</h4>
+                                <h4 class="mb-4 fw-bold text-success">Step 8: Billing & Payment Management</h4>
                                 <div class="row g-4">
-                                    <!-- Proof of Payment Card -->
+                                    <!-- Budget Request Input Card -->
                                     <div class="col-md-6">
-                                    <div class="card mb-4 shadow-sm">
-                                        <div class="card-body d-flex align-items-center justify-content-between">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-file-invoice-dollar fa-2x text-success me-3"></i>
-                                            <div>
-                                            <h5 class="card-title mb-1">Proof of Payment</h5>
-                                            <p class="mb-0 text-muted small">
-                                                Uploaded: <span id="proofDate">2025-08-15</span>
-                                            </p>
-                                            <p class="mb-0 text-muted small">
-                                                Amount: <span id="proofAmount">₱50,000.00</span>
-                                            </p>
-                                            <button class="btn btn-link p-0 mt-2" onclick="showProofModal('uploads/proof_of_payment1.pdf','application/pdf')">
-                                                <i class="fas fa-eye"></i> View File
-                                            </button>
+                                        <div class="card mb-4 shadow-sm">
+                                            <div class="card-header bg-primary text-white">
+                                                <h5 class="card-title mb-0"><i class="fas fa-money-bill-wave me-2"></i>Submit Budget Request</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <form id="budgetRequestForm">
+                                                    <input type="hidden" name="project_id" value="<?php echo htmlspecialchars($project_id); ?>">
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-bold">Budget Amount (₱)</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text">₱</span>
+                                                            <input type="number" class="form-control" name="budget_amount" id="budgetAmount" 
+                                                                   placeholder="Enter budget amount (6-9 digits)" min="100000" max="999999999" step="100" required>
+                                                        </div>
+                                                                                                                 <div class="form-text">Enter amount between ₱100,000 to ₱999,999,999 (6-9 digits only)</div>
+                                                         <div class="alert alert-info mt-2 small">
+                                                             <i class="fas fa-info-circle me-1"></i>
+                                                             You can submit multiple budget requests, but only one pending request is allowed at a time. Each submission will create a new request record.
+                                                         </div>
+                                                    </div>
+                                                    <div class="d-grid">
+                                                        <button type="submit" class="btn btn-primary" id="submitBudgetBtn">
+                                                            <i class="fas fa-paper-plane me-2"></i>Submit Budget Request
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                                
+                                                                                                 <!-- Budget Request Status -->
+                                                 <div class="mt-3" id="budgetStatusSection" style="display: block;">
+                                                     <div class="d-flex justify-content-between align-items-center mb-2">
+                                                         <h6 class="mb-0">Budget Request Status</h6>
+                                                         <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#budgetHistoryModal">
+                                                             <i class="fas fa-history me-1"></i>View History
+                                                         </button>
+                                                     </div>
+                                                     <div class="alert alert-info mb-0">
+                                                         <div class="d-flex align-items-center">
+                                                             <i class="fas fa-info-circle me-2"></i>
+                                                             <span>Total Budget Requests: <strong id="totalBudgetRequests">0</strong></span>
+                                                         </div>
+                                                     </div>
+                                                 </div>
                                             </div>
                                         </div>
-                                        <button class="btn btn-outline-primary ms-3" onclick="window.location.href='all_payments.php'">
-                                            <i class="fas fa-list"></i> View All Payments
-                                        </button>
-                                        </div>
                                     </div>
-                                    </div>
-                                    <!-- Request Downpayment Card -->
+                                    
+                                    <!-- Proof of Payment Viewing Card -->
                                     <div class="col-md-6">
-                                    <div class="card mb-4 shadow-sm">
-                                        <div class="card-body">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <i class="fas fa-money-check-alt fa-2x text-primary me-3"></i>
-                                            <h5 class="mb-0">Request Downpayment</h5>
-                                        </div>
-                                        <p class="mb-2 text-muted">Need funds to start the project? Request a downpayment here.</p>
-                                        <button class="btn btn-success" onclick="showDownpaymentModal()">
-                                            <i class="fas fa-paper-plane"></i> Request Downpayment
-                                        </button>
+                                        <div class="card mb-4 shadow-sm">
+                                            <div class="card-header bg-success text-white">
+                                                <h5 class="card-title mb-0"><i class="fas fa-file-invoice-dollar me-2"></i>Client Proof of Payments</h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="proofOfPaymentsList">
+                                                    <div class="text-center py-3">
+                                                        <i class="fas fa-spinner fa-spin fa-2x text-muted mb-2"></i>
+                                                        <p class="text-muted">Loading proof of payments...</p>
+                                                    </div>
+                                                </div>
+                                                
+
+                                            </div>
                                         </div>
                                     </div>
-                                    </div>
                                 </div>
-                                <button type="button" class="btn btn-secondary prev-step" data-prev="7">Previous</button>
+                                
+                                <div class="d-flex justify-content-between mt-4">
+                                    <button type="button" class="btn btn-secondary prev-step" data-prev="7">
+                                        <i class="fas fa-arrow-left me-1"></i> Previous
+                                    </button>
+                                    
                                 </div>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -1361,7 +1358,94 @@ if ($project_id > 0) {
         </div>
     </div>
 
-   <?php include 'project_processv2_modal.php'; ?>
+       <?php include 'project_processv2_modal.php'; ?>
+    
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="successModalLabel">
+                        <i class="fas fa-check-circle me-2"></i>Success!
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="successMessage">Operation completed successfully!</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+         <!-- Error Modal -->
+     <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+         <div class="modal-dialog modal-dialog-centered">
+             <div class="modal-content">
+                 <div class="modal-header bg-danger text-white">
+                     <h5 class="modal-title" id="errorModalLabel">
+                         <i class="fas fa-exclamation-triangle me-2"></i>Error!
+                     </h5>
+                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                 </div>
+                 <div class="modal-body">
+                     <p id="errorMessage">An error occurred. Please try again.</p>
+                 </div>
+                 <div class="modal-footer">
+                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal">OK</button>
+                 </div>
+             </div>
+         </div>
+     </div>
+     
+     <!-- Budget History Modal -->
+     <div class="modal fade" id="budgetHistoryModal" tabindex="-1" aria-labelledby="budgetHistoryModalLabel" aria-hidden="true">
+         <div class="modal-dialog modal-lg modal-dialog-centered">
+             <div class="modal-content">
+                 <div class="modal-header bg-primary text-white">
+                     <h5 class="modal-title" id="budgetHistoryModalLabel">
+                         <i class="fas fa-history me-2"></i>Budget Request History
+                     </h5>
+                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                 </div>
+                 <div class="modal-body">
+                     <div class="row mb-3">
+                         <div class="col-md-6">
+                             <div class="card border-primary">
+                                 <div class="card-body text-center py-3">
+                                     <h6 class="mb-1 text-primary">Total Budget Requests</h6>
+                                     <div class="display-6 fw-bold text-primary">
+                                         <span id="modalTotalBudgetRequests">0</span>
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                         <div class="col-md-6">
+                             <div class="card border-info">
+                                 <div class="card-body text-center py-3">
+                                     <h6 class="mb-1 text-info">Latest Request</h6>
+                                     <div class="h4 fw-bold text-info" id="modalLatestAmount">₱0</div>
+                                     <small class="text-muted" id="modalLatestDate">No requests</small>
+                                 </div>
+                             </div>
+                         </div>
+                     </div>
+                     
+                     <div class="budget-requests-container" style="max-height: 400px; overflow-y: auto;">
+                         <div id="modalBudgetRequestsList">
+                             <!-- Budget requests will be loaded here -->
+                         </div>
+                     </div>
+                 </div>
+                 <div class="modal-footer">
+                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                 </div>
+             </div>
+         </div>
+     </div>
+    
     <!-- Load Bootstrap first -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Then load our custom scripts -->
@@ -1453,7 +1537,6 @@ if ($project_id > 0) {
     <script src="js/permits_uploads.js" type="module"></script>
     <script src="js/project_blueprint.js"></script>
     <script src="js/project_budget.js"></script>
-    <script src="js/project_budget_docs.js"></script>
     <script src="js/project_estimation.js"></script>
     <script src="js/schedule_management.js"></script>
     <style>
@@ -1495,6 +1578,44 @@ if ($project_id > 0) {
             border: none;
             padding: 4px;
         }
+        
+        /* Permit validation styles */
+        #lguDropZone.border-danger {
+            animation: shake 0.5s ease-in-out;
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+                 .badge.bg-danger {
+             font-size: 0.6rem;
+             padding: 0.2rem 0.4rem;
+         }
+         
+         /* Forecasted Cost Card Styles */
+         .bg-gradient-primary {
+             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+         }
+         
+         .bg-gradient-primary:hover {
+             transform: translateY(-2px);
+             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+             transition: all 0.3s ease;
+         }
+         
+         .display-6 {
+             font-size: 2.5rem;
+             font-weight: 700;
+         }
+         
+         .opacity-75 {
+             opacity: 0.75;
+         }
     </style>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -1568,8 +1689,11 @@ if ($project_id > 0) {
                 }
                 
                 // Skip validation for step 6 (schedule) to allow navigation without filling the form
-                if (currentStep !== 6 && !validateStep(currentStep)) {
-                    return;
+                if (currentStep !== 6) {
+                    const validationResult = await validateStep(currentStep);
+                    if (!validationResult) {
+                        return;
+                    }
                 }
 
                 btn.disabled = true;
@@ -1590,6 +1714,13 @@ if ($project_id > 0) {
                                 window.currentStep = currentStep; // Update global variable
                                 showStep(currentStep);
                                 updateProgress(currentStep);
+                                
+                                // If navigating to step 3, refresh budget button state
+                                if (currentStep === 3 && typeof window.refreshBudgetButtonState === 'function') {
+                                    setTimeout(() => {
+                                        window.refreshBudgetButtonState();
+                                    }, 200);
+                                }
                             }
                             btn.disabled = false;
                         });
@@ -1636,6 +1767,13 @@ if ($project_id > 0) {
                                 window.currentStep = currentStep; // Update global variable
                                 showStep(currentStep);
                                 updateProgress(currentStep);
+                                
+                                // If navigating to step 3, refresh budget button state
+                                if (currentStep === 3 && typeof window.refreshBudgetButtonState === 'function') {
+                                    setTimeout(() => {
+                                        window.refreshBudgetButtonState();
+                                    }, 200);
+                                }
                             }
                             btn.disabled = false;
                         });
@@ -1659,6 +1797,13 @@ if ($project_id > 0) {
             });
             var stepDiv = document.getElementById('step' + stepNumber);
             if (stepDiv) stepDiv.classList.remove('d-none');
+            
+            // If showing step 3, refresh the budget button state
+            if (stepNumber === 3 && typeof window.refreshBudgetButtonState === 'function') {
+                setTimeout(() => {
+                    window.refreshBudgetButtonState();
+                }, 100);
+            }
         }
 
         // Update progress bar and step indicators
@@ -1686,6 +1831,12 @@ if ($project_id > 0) {
         function validateStep(step) {
             const currentStepEl = document.getElementById('step' + step);
             if (!currentStepEl) return true;
+            
+            // Special validation for step 5 (permits)
+            if (step === 5) {
+                return validatePermitsStep();
+            }
+            
             const inputs = currentStepEl.querySelectorAll('[required]');
             let isValid = true;
 
@@ -1699,6 +1850,48 @@ if ($project_id > 0) {
             });
 
             return isValid;
+        }
+        
+        // Validate permits step - require at least LGU permit
+        async function validatePermitsStep() {
+            const projectId = new URLSearchParams(window.location.search).get('project_id');
+            if (!projectId) {
+                alert('Project ID not found. Please refresh the page.');
+                return false;
+            }
+            
+            try {
+                const response = await fetch(`get_permits.php?project_id=${projectId}`);
+                const result = await response.json();
+                
+                if (result.success && Array.isArray(result.permits)) {
+                    // Check if LGU permit exists
+                    const lguPermit = result.permits.find(permit => permit.permit_type === 'lgu');
+                    
+                    if (!lguPermit || !lguPermit.file_path) {
+                        // Show alert and highlight LGU drop zone
+                        const lguDropZone = document.getElementById('lguDropZone');
+                        if (lguDropZone) {
+                            lguDropZone.classList.add('border-danger');
+                            setTimeout(() => {
+                                lguDropZone.classList.remove('border-danger');
+                            }, 3000);
+                        }
+                        
+                        alert('Please upload the LGU Clearance permit before proceeding to the next step.');
+                        return false;
+                    }
+                    
+                    return true;
+                } else {
+                    alert('Please upload the LGU Clearance permit before proceeding to the next step.');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error validating permits:', error);
+                alert('Error checking permits. Please try again.');
+                return false;
+            }
         }
 
 
@@ -1754,6 +1947,392 @@ if ($project_id > 0) {
             });
         }
         });
+    </script>
+    
+    <!-- Step 8: Budget Request and Proof of Payment JavaScript -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Budget Request Form
+        const budgetRequestForm = document.getElementById('budgetRequestForm');
+        const submitBudgetBtn = document.getElementById('submitBudgetBtn');
+        const budgetStatusSection = document.getElementById('budgetStatusSection');
+        
+        // Debug: Check if elements are found
+        console.log('budgetRequestForm:', budgetRequestForm);
+        console.log('submitBudgetBtn:', submitBudgetBtn);
+        console.log('budgetStatusSection:', budgetStatusSection);
+        
+        if (budgetRequestForm) {
+            budgetRequestForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const projectId = formData.get('project_id');
+                const budgetAmount = formData.get('budget_amount');
+                
+                if (!projectId || !budgetAmount) {
+                    showErrorModal('Please fill in all fields');
+                    return;
+                }
+                
+                // Validate budget amount (6-9 digits only)
+                const amountStr = budgetAmount.toString();
+                if (amountStr.length < 6 || amountStr.length > 9) {
+                    showErrorModal('Budget amount must be between 6-9 digits (₱100,000 to ₱999,999,999)');
+                    return;
+                }
+                
+                // Disable submit button
+                submitBudgetBtn.disabled = true;
+                submitBudgetBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
+                
+                // Submit budget request
+                fetch('submit_budget_request.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showSuccessModal('Budget request submitted successfully!');
+                        budgetRequestForm.reset();
+                        // Refresh budget status to show the new pending request
+                        setTimeout(() => {
+                            loadBudgetStatus(projectId);
+                        }, 500);
+                    } else {
+                        showErrorModal('Error: ' + (data.message || 'Failed to submit budget request'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showErrorModal('An error occurred while submitting the budget request');
+                })
+                .finally(() => {
+                    submitBudgetBtn.disabled = false;
+                    submitBudgetBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Submit Budget Request';
+                });
+            });
+        }
+        
+                 // Load budget status
+         function loadBudgetStatus(projectId) {
+             console.log('loadBudgetStatus called with projectId:', projectId);
+             if (!projectId) {
+                 console.log('No projectId provided, returning');
+                 return;
+             }
+             
+             console.log('Fetching budget status from get_budget_status.php...');
+             fetch(`get_budget_status.php?project_id=${projectId}`)
+                 .then(response => {
+                     console.log('Response received:', response);
+                     return response.json();
+                 })
+                 .then(data => {
+                     console.log('Budget status data:', data);
+                     if (data.success && data.data && data.data.length > 0) {
+                         const totalRequestsSpan = document.getElementById('totalBudgetRequests');
+                         const submitBudgetBtn = document.getElementById('submitBudgetBtn');
+                         
+                         console.log('Found budget requests, updating UI...');
+                         
+                         // Update total count
+                         totalRequestsSpan.textContent = data.total_requests;
+                         
+                         // Check if there's a pending request and update button state
+                         if (data.has_pending_request) {
+                             submitBudgetBtn.disabled = true;
+                             submitBudgetBtn.innerHTML = '<i class="fas fa-clock me-2"></i>Pending Request Exists';
+                             submitBudgetBtn.className = 'btn btn-warning';
+                             
+                             // Add warning message
+                             if (!document.getElementById('pendingWarning')) {
+                                 const warningDiv = document.createElement('div');
+                                 warningDiv.id = 'pendingWarning';
+                                 warningDiv.className = 'alert alert-warning mt-3';
+                                 warningDiv.innerHTML = `
+                                     <i class="fas fa-exclamation-triangle me-2"></i>
+                                     <strong>Note:</strong> You cannot submit a new budget request while there is already a pending request for this project.
+                                 `;
+                                 budgetRequestForm.appendChild(warningDiv);
+                             }
+                         } else {
+                             submitBudgetBtn.disabled = false;
+                             submitBudgetBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Submit Budget Request';
+                             submitBudgetBtn.className = 'btn btn-primary';
+                             
+                             // Remove warning message if it exists
+                             const warningDiv = document.getElementById('pendingWarning');
+                             if (warningDiv) {
+                                 warningDiv.remove();
+                             }
+                         }
+                         
+                         console.log('Showing budget status section');
+                         budgetStatusSection.style.display = 'block';
+                     } else {
+                         // No budget requests found
+                         console.log('No budget requests found, showing empty state');
+                         document.getElementById('totalBudgetRequests').textContent = '0';
+                         budgetStatusSection.style.display = 'block';
+                         
+                         // Enable submit button if no requests exist
+                         const submitBudgetBtn = document.getElementById('submitBudgetBtn');
+                         submitBudgetBtn.disabled = false;
+                         submitBudgetBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Submit Budget Request';
+                         submitBudgetBtn.className = 'btn btn-primary';
+                         
+                         // Remove warning message if it exists
+                         const warningDiv = document.getElementById('pendingWarning');
+                         if (warningDiv) {
+                             warningDiv.remove();
+                         }
+                     }
+                 })
+                 .catch(error => {
+                     console.error('Error loading budget status:', error);
+                     budgetStatusSection.style.display = 'block';
+                 });
+         }
+         
+         // Load budget history for modal
+         function loadBudgetHistory(projectId) {
+             if (!projectId) return;
+             
+             fetch(`get_budget_status.php?project_id=${projectId}`)
+                 .then(response => response.json())
+                 .then(data => {
+                     if (data.success && data.data && data.data.length > 0) {
+                         const modalTotalRequests = document.getElementById('modalTotalBudgetRequests');
+                         const modalLatestAmount = document.getElementById('modalLatestAmount');
+                         const modalLatestDate = document.getElementById('modalLatestDate');
+                         const modalBudgetRequestsList = document.getElementById('modalBudgetRequestsList');
+                         
+                         // Update modal summary cards
+                         modalTotalRequests.textContent = data.total_requests;
+                         
+                         if (data.data.length > 0) {
+                             const latestRequest = data.data[0];
+                             modalLatestAmount.textContent = '₱' + number_format(latestRequest.requested_amount);
+                             modalLatestDate.textContent = formatDate(latestRequest.request_date);
+                         }
+                         
+                         // Build HTML for modal budget requests list
+                         let html = '';
+                         data.data.forEach((request, index) => {
+                             const isLatest = index === 0;
+                             const badgeClass = getStatusBadgeClass(request.status);
+                             const latestBadge = isLatest ? '<span class="badge bg-primary ms-2">Latest</span>' : '';
+                             
+                             html += `
+                                 <div class="card mb-3 ${isLatest ? 'border-primary' : 'border-light'}">
+                                     <div class="card-body p-3">
+                                         <div class="d-flex justify-content-between align-items-start">
+                                             <div class="flex-grow-1">
+                                                 <div class="d-flex align-items-center mb-2">
+                                                     <h6 class="mb-0 me-2">₱${number_format(request.requested_amount)}</h6>
+                                                     ${latestBadge}
+                                                 </div>
+                                                 <p class="mb-1">
+                                                     <strong>Status:</strong> <span class="badge ${badgeClass}">${request.status}</span>
+                                                 </p>
+                                                 <p class="mb-0 small text-muted">
+                                                     <i class="fas fa-calendar me-1"></i>${formatDate(request.request_date)}
+                                                 </p>
+                                             </div>
+                                         </div>
+                                     </div>
+                                 </div>
+                             `;
+                         });
+                         
+                         modalBudgetRequestsList.innerHTML = html;
+                     } else {
+                         // No budget requests found
+                         document.getElementById('modalTotalBudgetRequests').textContent = '0';
+                         document.getElementById('modalLatestAmount').textContent = '₱0';
+                         document.getElementById('modalLatestDate').textContent = 'No requests';
+                         document.getElementById('modalBudgetRequestsList').innerHTML = '<p class="text-muted text-center mb-0">No budget requests found</p>';
+                     }
+                 })
+                 .catch(error => {
+                     console.error('Error loading budget history:', error);
+                     document.getElementById('modalBudgetRequestsList').innerHTML = '<p class="text-danger text-center mb-0">Error loading budget requests</p>';
+                 });
+         }
+        
+        // Load proof of payments
+        function loadProofOfPayments(projectId) {
+            if (!projectId) return;
+            
+            const proofList = document.getElementById('proofOfPaymentsList');
+            
+            fetch(`get_project_proof_payments.php?project_id=${projectId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data && data.data.length > 0) {
+                        let html = '';
+                        data.data.forEach((payment, index) => {
+                            html += `
+                                <div class="card mb-2 border-0 bg-light">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1">${payment.file_name}</h6>
+                                                <p class="mb-1 small text-muted">
+                                                    <i class="fas fa-calendar me-1"></i>${formatDate(payment.upload_date)}
+                                                </p>
+                                                <p class="mb-0 small text-muted">
+                                                    <i class="fas fa-user me-1"></i>Client ID: ${payment.user_id}
+                                                </p>
+                                            </div>
+                                            <div class="ms-2">
+                                                <button class="btn btn-sm btn-outline-primary" onclick="viewProofFile('${payment.file_path}', '${payment.file_name}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        proofList.innerHTML = html;
+                    } else {
+                        proofList.innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No proof of payments found for this project</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading proof of payments:', error);
+                    proofList.innerHTML = `
+                        <div class="text-center py-4">
+                            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                            <p class="text-danger">Error loading proof of payments</p>
+                        </div>
+                    `;
+                });
+        }
+        
+
+        
+        // Complete project button
+        const completeProjectBtn = document.getElementById('completeProjectBtn');
+        if (completeProjectBtn) {
+            completeProjectBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to mark this project as complete?')) {
+                    const projectId = new URLSearchParams(window.location.search).get('project_id');
+                    if (projectId) {
+                        // Update project status to completed
+                        fetch('update_project_status.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: `project_id=${projectId}&status=Completed`
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showSuccessModal('Project marked as completed successfully!');
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 2000);
+                            } else {
+                                showErrorModal('Error: ' + (data.message || 'Failed to complete project'));
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            showErrorModal('An error occurred while completing the project');
+                        });
+                    }
+                }
+            });
+        }
+        
+        // Helper functions
+        function number_format(number) {
+            return new Intl.NumberFormat('en-PH').format(number);
+        }
+        
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('en-PH', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function getStatusBadgeClass(status) {
+            switch(status.toLowerCase()) {
+                case 'approved': return 'bg-success';
+                case 'rejected': return 'bg-danger';
+                case 'pending': return 'bg-warning';
+                default: return 'bg-secondary';
+            }
+        }
+        
+        // Load data when step 8 is shown
+        if (window.currentStep === 8) {
+            const projectId = new URLSearchParams(window.location.search).get('project_id');
+            if (projectId) {
+                loadBudgetStatus(projectId);
+                loadProofOfPayments(projectId);
+            }
+        }
+        
+        // Always load budget status if we have a project ID (for debugging)
+        const projectId = new URLSearchParams(window.location.search).get('project_id');
+        if (projectId) {
+            console.log('Project ID found:', projectId);
+            console.log('Current step:', window.currentStep);
+            
+            // Load budget status immediately
+            loadBudgetStatus(projectId);
+        }
+        
+        // Add modal event listeners
+        const budgetHistoryModal = document.getElementById('budgetHistoryModal');
+        if (budgetHistoryModal) {
+            budgetHistoryModal.addEventListener('show.bs.modal', function() {
+                const projectId = new URLSearchParams(window.location.search).get('project_id');
+                if (projectId) {
+                    loadBudgetHistory(projectId);
+                }
+            });
+        }
+        
+        
+        
+                 // Global function for viewing proof files
+         window.viewProofFile = function(filePath, fileName) {
+             // Debug logging
+             console.log('Viewing file:', filePath, fileName);
+             
+             // Use the proper backend route to view files
+             const viewUrl = `view_proof_file.php?file_path=${encodeURIComponent(filePath)}&file_name=${encodeURIComponent(fileName)}`;
+             console.log('View URL:', viewUrl);
+             window.open(viewUrl, '_blank');
+         };
+         
+         // Helper functions for modals
+         function showSuccessModal(message) {
+             document.getElementById('successMessage').textContent = message;
+             const modal = new bootstrap.Modal(document.getElementById('successModal'));
+             modal.show();
+         }
+         
+         function showErrorModal(message) {
+             document.getElementById('errorMessage').textContent = message;
+             const modal = new bootstrap.Modal(document.getElementById('errorModal'));
+             modal.show();
+         }
+    });
     </script>
   </body>
 </html>

@@ -261,19 +261,20 @@ if ($userid) {
                     </div>
                     <div class="d-flex justify-content-between mt-2">
                         <?php 
-                        $stepTitles = [
-                            1 => 'Blue Print Approval',
-                            2 => 'Budget Approval',
-                            3 => 'Contract Signing',
-                            4 => 'Schedule',
-                            5 => 'Billing Approval'
-                        ];
-                        for($i = 1; $i <= 5; $i++): ?>
-                            <div class="text-center" style="flex: 1; min-width: 80px;">
-                                <div class="step-number d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white" style="width: 30px; height: 30px; font-weight: bold;"><?php echo $i; ?></div>
-                                <div class="step-label small mt-1" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo $stepTitles[$i]; ?></div>
-                            </div>
-                        <?php endfor; ?>
+                                                 $stepTitles = [
+                             1 => 'Blue Print Approval',
+                             2 => 'Budget Approval',
+                             3 => 'Contract Signing',
+                             4 => 'Permits Viewing',
+                             5 => 'Schedule',
+                             6 => 'Billing Approval'
+                         ];
+                         for($i = 1; $i <= 6; $i++): ?>
+                             <div class="text-center" style="flex: 1; min-width: 80px;">
+                                 <div class="step-number d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white" style="width: 30px; height: 30px; font-weight: bold;"><?php echo $i; ?></div>
+                                 <div class="step-label small mt-1" style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo $stepTitles[$i]; ?></div>
+                             </div>
+                         <?php endfor; ?>
                     </div>
                 </div>
             </div>
@@ -350,9 +351,14 @@ if ($userid) {
                                 </h5>
                             </div>
                             
-                            <div class="row g-4">
+                            <?php
+                                // Keep the project_id variable for other functionality
+                                $project_id = isset($_GET['project_id']) ? intval($_GET['project_id']) : 0;
+                            ?>
+                            
+                            <div class="row justify-content-center">
                                 <!-- Budget Card -->
-                                <div class="col-md-6">
+                                <div class="col-md-8 col-lg-6">
                                     <div class="card h-100 shadow" style="min-height: 500px;">
                                         <div class="card-header bg-light py-3">
                                             <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Request Budget</h6>
@@ -374,62 +380,12 @@ if ($userid) {
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <!-- PDF Viewer Card -->
-                                <?php
-                                    $project_id = isset($_GET['project_id']) ? intval($_GET['project_id']) : 0;
-                                    $sql = "SELECT * FROM project_pdf_approval WHERE project_id = $project_id LIMIT 1";
-                                    $result = $con->query($sql);
-
-                                    if ($result && $row = $result->fetch_assoc()):
-                                        $status = $row['status'];
-                                        $pdfPath = $row['estimation_pdf'];
-                                ?>
-
-                                <div class="col-md-6">
-                                    <div class="card h-100 shadow" style="min-height: 500px;">
-                                        <div class="card-header bg-light py-3">
-                                            <h6 class="mb-0">
-                                                <i class="fas fa-file-pdf me-2 text-danger"></i> Project Budget PDF
-                                            </h6>
-                                        </div>
-                                        <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
-
-                                            <?php if (strtolower($status) === 'show'): ?>
-                                                <!-- PDF Viewer -->
-                                                <div class="w-100 mb-3" style="height: 500px;">
-                                                    <iframe src="<?php echo htmlspecialchars($pdfPath); ?>" 
-                                                            style="width:100%; height:100%;" 
-                                                            frameborder="0">
-                                                    </iframe>
-                                                </div>
-                                            <?php else: ?>
-                                                <!-- Contact on Messenger (Not Clickable) -->
-                                                <div class="text-center mb-3">
-                                                    <i class="fas fa-file-pdf text-danger" style="font-size:80px;"></i>
-                                                    <p class="mt-3 fw-bold">PDF not available for direct viewing</p>
-                                                </div>
-                                                <div class="alert alert-info small w-100 mb-0">
-                                                    <i class="fab fa-facebook-messenger me-1"></i>
-                                                    If you want to view the complete file, please contact us via Messenger through the built-in messaging feature of the system.
-                                                </div>
-                                            <?php endif; ?>
-
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <?php
-                                    else:
-                                        echo "<div class='col-md-6'><div class='alert alert-warning w-100'>No PDF found for this project.</div></div>";
-                                    endif;
-                                ?>
-
-                                <script>
-                                    // Set the current project ID for the budget viewer
-                                    window.currentProjectId = <?php echo isset($_GET['project_id']) ? intval($_GET['project_id']) : 'null'; ?>;
-                                </script>
                             </div>
+
+                            <script>
+                                // Set the current project ID for the budget viewer
+                                window.currentProjectId = <?php echo isset($_GET['project_id']) ? intval($_GET['project_id']) : 'null'; ?>;
+                            </script>
 
                             <div class="d-flex justify-content-between mt-4">
                                 <button type="button" class="btn btn-outline-secondary prev-step" data-prev="1">
@@ -547,16 +503,55 @@ if ($userid) {
                                     Next <i class="fas fa-arrow-right"></i>
                                 </button>
                             </div>
-                        </div>
-
-                        <!-- Step 4: Schedule -->
-                        <div class="step-content d-none" id="step4">
-                            <div class="d-flex align-items-center mb-3">
-                                <span class="badge rounded-pill bg-primary me-2">4</span>
-                                <h5 class="mb-0 text-primary fw-bold">
-                                    <i class="fas fa-calendar-alt me-2"></i>Schedule
-                                </h5>
-                            </div>
+                                                 </div>
+ 
+                         <!-- Step 4: Permits Viewing -->
+                         <div class="step-content d-none" id="step4">
+                             <div class="d-flex align-items-center mb-3">
+                                 <span class="badge rounded-pill bg-primary me-2">4</span>
+                                 <h5 class="mb-0 text-primary fw-bold">
+                                     <i class="fas fa-file-alt me-2"></i>Permits Viewing
+                                 </h5>
+                             </div>
+                             
+                             <div class="alert alert-info mb-4">
+                                 <i class="fas fa-info-circle me-2"></i>
+                                 View and download project permits. All permits will be displayed here once uploaded by the project manager.
+                             </div>
+                             
+                             <!-- Hidden input for project ID -->
+                             <input type="hidden" id="projectIdInputPermits" value="<?php echo isset($_GET['project_id']) ? intval($_GET['project_id']) : ''; ?>">
+                             
+                             <!-- Permits Container -->
+                             <div class="row" id="permitsContainer">
+                                 <!-- Permit cards will be dynamically generated here -->
+                             </div>
+                             
+                             <!-- No Permits Message -->
+                             <div class="text-center py-5 d-none" id="noPermitsMessage">
+                                 <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                                 <h5>No permits available</h5>
+                                 <p class="text-muted">Please wait for the project manager to upload the required permits.</p>
+                             </div>
+                             
+                    <div class="d-flex justify-content-between mt-4">
+                                  <button type="button" class="btn btn-outline-secondary prev-step" data-prev="3">
+                                      <i class="fas fa-arrow-left me-1"></i> Previous
+                                  </button>
+                                  <button type="button" class="btn btn-primary next-step" data-next="5">
+                                      Next <i class="fas fa-arrow-right"></i>
+                                  </button>
+                              </div>
+                         </div>
+ 
+                         <!-- Step 5: Schedule -->
+                         <div class="step-content d-none" id="step5">
+                                                         <div class="d-flex align-items-center mb-3">
+                                 <span class="badge rounded-pill bg-primary me-2">5</span>
+                                 <h5 class="mb-0 text-primary fw-bold">
+                                     <i class="fas fa-calendar-alt me-2"></i>Schedule
+                                 </h5>
+                             </div>
                             <?php
                                 $timeline = [];
 
@@ -741,36 +736,145 @@ if ($userid) {
                                         </div>
                                     </div>
                             <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary prev-step" data-prev="3">
+                                <button type="button" class="btn btn-outline-secondary prev-step" data-prev="4">
                                     <i class="fas fa-arrow-left me-1"></i> Previous
                                 </button>
-                                <button type="button" class="btn btn-primary next-step" data-next="5">
+                                <button type="button" class="btn btn-primary next-step" data-next="6">
                                     Next <i class="fas fa-arrow-right"></i>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Step 5: Billing Approval -->
-                        <div class="step-content d-none" id="step5">
-                            <div class="d-flex align-items-center mb-3">
-                                <span class="badge rounded-pill bg-primary me-2">5</span>
-                                <h5 class="mb-0 text-primary fw-bold">
-                                    <i class="fas fa-money-bill-wave me-2"></i>Billing Approval
-                                </h5>
-                            </div>
-                            <div class="alert alert-success mb-4">
-                                <i class="fas fa-check-circle me-2"></i>
-                                Final review for billing approval. Please confirm all previous steps before submitting.
-                            </div>
-                            <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary prev-step" data-prev="4">
-                                    <i class="fas fa-arrow-left me-1"></i> Previous
-                                </button>
-                                <button type="submit" class="btn btn-success">
-                                    Finish <i class="fas fa-check ms-1"></i>
-                                </button>
-                            </div>
-                        </div>
+                                                                          <!-- Step 6: Billing Approval -->
+                         <div class="step-content d-none" id="step6">
+                             <div class="d-flex align-items-center mb-3">
+                                 <span class="badge rounded-pill bg-primary me-2">6</span>
+                                 <h5 class="mb-0 text-primary fw-bold">
+                                     <i class="fas fa-money-bill-wave me-2"></i>Billing Approval
+                                 </h5>
+                             </div>
+                             
+                                                           <!-- Task Progress Chart Card (Full Width at Top) -->
+                              <div class="card shadow-sm mb-4">
+                                  <div class="card-header bg-primary text-white">
+                                      <h6 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Task Progress Overview</h6>
+                                  </div>
+                                  <div class="card-body">
+                                      <div class="mb-3" style="height: 300px;">
+                                          <canvas id="taskProgressChartStep6"></canvas>
+                                      </div>
+                                      <div class="text-center">
+                                          <small class="text-muted">
+                                              <i class="fas fa-info-circle me-1"></i>
+                                              Progress of all tasks and subtasks from project timeline
+                                          </small>
+                                      </div>
+                                  </div>
+                              </div>
+                              
+                              <!-- Two Cards Side by Side Below -->
+                              <div class="row g-4">
+                                  <!-- Billing Request Card -->
+                                  <div class="col-md-6">
+                                    <!-- Expose userId for JS -->
+                                    
+                                      <div class="card shadow-sm h-100">
+                                          <div class="card-header bg-primary text-white">
+                                              <h6 class="mb-0"><i class="fas fa-file-invoice-dollar me-2"></i>Billing Request</h6>
+                                          </div>
+                                          <div class="card-body">
+                                              <!-- Project Manager Amount Request -->
+                                              <div class="mb-4">
+                                                  <h6 class="text-primary mb-3">
+                                                      <i class="fas fa-user-tie me-2"></i>Project Manager Request
+                                                  </h6>
+                                                  <div class="bg-light p-3 rounded mb-3">
+                                                      <div class="d-flex justify-content-between align-items-center mb-2">
+                                                          <span class="text-muted">Requested Amount:</span>
+                                                          <span class="fw-bold text-primary" id="requestedAmount">₱0.00</span>
+                                                      </div>
+                                                      <div class="d-flex justify-content-between align-items-center mb-2">
+                                                          <span class="text-muted">Request Date:</span>
+                                                          <span id="requestDate">Not yet requested</span>
+                                                      </div>
+                                                      <div class="d-flex justify-content-between align-items-center">
+                                                          <span class="text-muted">Status:</span>
+                                                          <span class="badge bg-primary" id="requestStatus">Pending</span>
+                                                      </div>
+                                                  </div>
+                                                  <div class="alert alert-primary">
+                                                      <i class="fas fa-info-circle me-2"></i>
+                                                      The project manager will submit the billing amount request here.
+                                                  </div>
+                                                  
+                                                  <!-- Action Buttons for Billing Request -->
+                                                  <div class="d-flex gap-2 mt-3">
+                                                      <button type="button" class="btn btn-success flex-fill" id="approveBillingBtn">
+                                                          <i class="fas fa-check me-1"></i> Approve
+                                                      </button>
+                                                      <button type="button" class="btn btn-outline-danger flex-fill" id="rejectBillingBtn">
+                                                          <i class="fas fa-times me-1"></i> Reject
+                                                      </button>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                                  
+                                  <!-- Proof of Payment Upload Card -->
+                                  <div class="col-md-6">
+                                      <div class="card shadow-sm h-100">
+                                          <div class="card-header bg-primary text-white">
+                                              <h6 class="mb-0"><i class="fas fa-upload me-2"></i>Proof of Payment</h6>
+                                          </div>
+                                          <div class="card-body">
+                                              <div class="border-2 border-dashed border-primary rounded p-4 text-center" id="paymentDropZone">
+                                                  <i class="fas fa-file-pdf fa-3x text-primary mb-3"></i>
+                                                  <h6 class="mb-2">Upload Proof of Payment</h6>
+                                                  <p class="small text-muted mb-3">Drag & drop your payment receipt here</p>
+                                                  <p class="small text-muted mb-0">or</p>
+                                                  <button type="button" class="btn btn-outline-primary mt-2" id="browsePaymentBtn">
+                                                      <i class="fas fa-folder-open me-1"></i> Browse Files
+                                                  </button>
+                                                  <input type="file" class="d-none" id="proofOfPayment" name="proof_of_payment" accept=".pdf,.jpg,.jpeg,.png">
+                                                  <div class="mt-3">
+                                                      <small class="text-muted payment-status">No file uploaded</small>
+                                                  </div>
+                                              </div>
+                                              <div class="mt-3">
+                                                  <small class="text-muted file-info" id="paymentFileInfo">No file selected</small>
+                                              </div>
+                                              
+                                                                                             <!-- Upload and View Buttons for Proof of Payment -->
+                                               <div class="mt-3 d-none" id="paymentActionSection">
+                                                   <div class="d-flex gap-2">
+                                                       <button type="button" class="btn btn-success flex-fill" id="uploadPaymentBtn">
+                                                           <i class="fas fa-upload me-1"></i> Upload
+                                                       </button>
+                                                       <button type="button" class="btn btn-info flex-fill" id="viewPaymentBtn">
+                                                           <i class="fas fa-eye me-1"></i> View
+                                                       </button>
+                                                   </div>
+                                               </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                             
+                                                           <div class="alert alert-primary mt-4">
+                                  <i class="fas fa-info-circle me-2"></i>
+                                  Final review for billing approval. Please confirm all previous steps and upload proof of payment before submitting.
+                              </div>
+                             
+                             <div class="d-flex justify-content-between mt-4">
+                                 <button type="button" class="btn btn-outline-secondary prev-step" data-prev="5">
+                                     <i class="fas fa-arrow-left me-1"></i> Previous
+                                 </button>
+                                 <button type="submit" class="btn btn-success">
+                                     Finish <i class="fas fa-check ms-1"></i>
+                                 </button>
+                             </div>
+                         </div>
                     </form>
                 </div>
             </div>
@@ -851,6 +955,29 @@ if ($userid) {
         </div>
     </div>
     
+    <!-- Permit Viewer Modal -->
+    <div class="modal fade" id="permitViewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="permitModalTitle">Permit Viewer</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="height: 80vh;">
+                    <iframe id="permitViewer" class="w-100 h-100" frameborder="0"></iframe>
+                </div>
+                <div class="modal-footer">
+                    <div>
+                        <a id="permitDownload" href="#" class="btn btn-primary" download>
+                            <i class="fas fa-download me-1"></i> Download
+                        </a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
 
     <!-- Logout Confirmation Modal -->
     <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
@@ -904,14 +1031,23 @@ if ($userid) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="js/blueprint_handler.js"></script>
-    <script src="js/budget_handler.js"></script>
-    <script src="js/contract_handler.js"></script>
+      <script src="js/blueprint_handler.js"></script>
+      <script src="js/budget_handler.js"></script>
+      <script src="js/contract_handler.js"></script>
+      <script src="js/client_viewpermits.js"></script>
+      <script src="js/proof_of_payment.js"></script>
+      <script src="js/billing_handler.js"></script>
+
+            <script>
+                window.currentUserId = <?php echo isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 'null'; ?>;
+            </script>
 
     <script>
     // Make currentProjectId globally available
     window.currentProjectId = <?php echo isset($_GET['project_id']) ? (int)$_GET['project_id'] : 'null'; ?>;
     console.log('Current Project ID:', window.currentProjectId);
+    
+
     
     document.addEventListener('DOMContentLoaded', function() {
         // Get the current step from the server when the page loads
@@ -981,8 +1117,9 @@ if ($userid) {
         
         // Update the step indicators
         function updateStepIndicator() {
-            // Update the progress bar
+            // Update the progress bar - Fixed calculation for 6 steps
             const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            console.log('Current step:', currentStep, 'Total steps:', totalSteps, 'Progress:', progress + '%');
             document.querySelector('.progress-bar').style.width = progress + '%';
             
             // Update active step indicators
@@ -1024,6 +1161,7 @@ if ($userid) {
         
         // Function to show a specific step
         function showStep(stepNumber) {
+            console.log('Showing step:', stepNumber);
             // Hide all steps
             document.querySelectorAll('.step-content').forEach(step => {
                 step.classList.add('d-none');
@@ -1033,6 +1171,9 @@ if ($userid) {
             const stepElement = document.getElementById('step' + stepNumber);
             if (stepElement) {
                 stepElement.classList.remove('d-none');
+                console.log('Step element found and shown:', stepElement.id);
+            } else {
+                console.error('Step element not found for step:', stepNumber);
             }
             
             // Update the UI
@@ -1046,12 +1187,14 @@ if ($userid) {
                 
                 // Get the next step from data attribute
                 const nextStep = parseInt(this.getAttribute('data-next') || (currentStep + 1));
+                console.log('Next button clicked. Current step:', currentStep, 'Next step:', nextStep);
                 
                 // Validate current step before proceeding
                 if (validateStep(currentStep)) {
                     // Save the step first, then update UI
                     saveCurrentStep(nextStep).then(() => {
                         currentStep = nextStep;
+                        console.log('Moving to step:', currentStep);
                         showStep(currentStep);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                     });
@@ -1083,28 +1226,155 @@ if ($userid) {
             return true; // For now, always return true
         }
         
-        // Initialize the form to show the saved step or first step
-        fetchCurrentStep().then(savedStep => {
-            currentStep = savedStep;
-            showStep(currentStep);
-            updateStepIndicator();
-            
-            // If we're on step 1, load the blueprints
-            if (currentStep === 1) {
-                console.log('Initial load of step 1, loading blueprints...');
-                loadBlueprints();
-            }
-            
-            // Also add event listener for when step changes to 1
-            document.addEventListener('stepChanged', function(e) {
-                if (e.detail.step === 1) {
-                    console.log('Step changed to 1, loading blueprints...');
-                    loadBlueprints();
-                }
-            });
-        });
-    });
-    </script>
+                 // Initialize the form to show the saved step or first step
+         fetchCurrentStep().then(savedStep => {
+             currentStep = savedStep;
+             showStep(currentStep);
+             updateStepIndicator();
+             
+             // If we're on step 1, load the blueprints
+             if (currentStep === 1) {
+                 console.log('Initial load of step 1, loading blueprints...');
+                 loadBlueprints();
+             }
+             
+             // Also add event listener for when step changes to 1
+             document.addEventListener('stepChanged', function(e) {
+                 if (e.detail.step === 1) {
+                     console.log('Step changed to 1, loading blueprints...');
+                     loadBlueprints();
+                 }
+             });
+             
+             // If we're on step 6, initialize the task progress chart
+             if (currentStep === 6) {
+                 console.log('Initial load of step 6, initializing task progress chart...');
+                 initializeTaskProgressChart();
+             }
+         });
+         
+         // Function to initialize task progress chart for step 6
+         function initializeTaskProgressChart() {
+             const ctx = document.getElementById('taskProgressChartStep6');
+             if (!ctx) return;
+             
+             // Fetch task data from project_timeline
+             const projectId = window.currentProjectId;
+             if (!projectId) return;
+             
+             fetch(`get_project_tasks.php?project_id=${projectId}`)
+                 .then(response => response.json())
+                 .then(data => {
+                     if (data.success && data.tasks) {
+                         createTaskProgressChart(ctx, data.tasks);
+                     } else {
+                         // Show no data message
+                         ctx.parentElement.innerHTML = `
+                             <div class="text-center py-5">
+                                 <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                                 <h6 class="text-muted">No tasks found</h6>
+                                 <p class="small text-muted">No tasks have been added to the project timeline yet.</p>
+                             </div>
+                         `;
+                     }
+                 })
+                 .catch(error => {
+                     console.error('Error fetching task data:', error);
+                     ctx.parentElement.innerHTML = `
+                         <div class="text-center py-5">
+                             <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                             <h6 class="text-warning">Error loading tasks</h6>
+                             <p class="small text-muted">Failed to load task data. Please try again.</p>
+                         </div>
+                     `;
+                 });
+         }
+         
+         // Function to create the task progress chart
+         function createTaskProgressChart(ctx, tasks) {
+             const taskNames = tasks.map(task => task.task_name);
+             const taskProgress = tasks.map(task => parseInt(task.progress) || 0);
+             const taskStatus = tasks.map(task => task.status || 'Not Started');
+             
+             // Color coding based on status
+             const backgroundColor = taskStatus.map(status => {
+                 switch(status.toLowerCase()) {
+                     case 'completed': return 'rgba(40, 167, 69, 0.7)'; // Green
+                     case 'in progress': return 'rgba(255, 193, 7, 0.7)'; // Yellow
+                     case 'not started': return 'rgba(108, 117, 125, 0.7)'; // Gray
+                     default: return 'rgba(13, 110, 253, 0.7)'; // Blue
+                 }
+             });
+             
+             const borderColor = taskStatus.map(status => {
+                 switch(status.toLowerCase()) {
+                     case 'completed': return 'rgba(40, 167, 69, 1)';
+                     case 'in progress': return 'rgba(255, 193, 7, 1)';
+                     case 'not started': return 'rgba(108, 117, 125, 1)';
+                     default: return 'rgba(13, 110, 253, 1)';
+                 }
+             });
+             
+             new Chart(ctx, {
+                 type: 'bar',
+                 data: {
+                     labels: taskNames,
+                     datasets: [{
+                         label: 'Task Progress (%)',
+                         data: taskProgress,
+                         backgroundColor: backgroundColor,
+                         borderColor: borderColor,
+                         borderWidth: 1,
+                         borderRadius: 4
+                     }]
+                 },
+                 options: {
+                     indexAxis: 'y',
+                     responsive: true,
+                     maintainAspectRatio: false,
+                     scales: {
+                         x: {
+                             beginAtZero: true,
+                             max: 100,
+                             title: {
+                                 display: true,
+                                 text: 'Progress (%)',
+                                 font: { weight: 'bold' }
+                             },
+                             grid: { display: false }
+                         },
+                         y: {
+                             grid: { display: false },
+                             ticks: { autoSkip: false }
+                         }
+                     },
+                     plugins: {
+                         legend: { display: false },
+                         tooltip: {
+                             callbacks: {
+                                 label: function(context) {
+                                     const taskIndex = context.dataIndex;
+                                     const status = taskStatus[taskIndex];
+                                     return `${context.raw}% (${status})`;
+                                 }
+                             }
+                         }
+                     }
+                 }
+             });
+         }
+         
+                  // Event listener for when step changes to 6
+         document.addEventListener('stepChanged', function(e) {
+             if (e.detail.step === 6) {
+                 console.log('Step changed to 6, initializing task progress chart...');
+                 setTimeout(initializeTaskProgressChart, 100); // Small delay to ensure DOM is ready
+             }
+         });
+     });
+     </script>
+     
+           <!-- JavaScript files are now loaded separately for better organization -->
     <script>
         var el = document.getElementById("wrapper");
         var toggleButton = document.getElementById("menu-toggle");

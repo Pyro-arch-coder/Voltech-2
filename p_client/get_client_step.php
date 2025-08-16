@@ -48,8 +48,8 @@ try {
         $row = $result->fetch_assoc();
         $current_step = intval($row['client_step_progress']);
         
-        // Validate step number (1-5)
-        if ($current_step < 1 || $current_step > 5) {
+        // Validate step number (1-6)
+        if ($current_step < 1 || $current_step > 6) {
             $current_step = $default_step;
         }
     } else {

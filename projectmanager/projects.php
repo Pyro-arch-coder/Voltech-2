@@ -110,6 +110,22 @@ addForecastStyles();
         exit();
     }
     
+    // Handle AJAX project name check
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] === 'check_project_name') {
+        header('Content-Type: application/json');
+        $project_name = mysqli_real_escape_string($con, $_POST['project_name']);
+        $user_id = $_SESSION['user_id'];
+        
+        $query = mysqli_query($con, "SELECT project_id FROM projects WHERE user_id = '$user_id' AND project = '$project_name' AND (archived IS NULL OR archived = 0) LIMIT 1");
+        
+        if (mysqli_num_rows($query) > 0) {
+            echo json_encode(['exists' => true]);
+        } else {
+            echo json_encode(['exists' => false]);
+        }
+        exit();
+    }
+    
    
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['project_name'])) {
         mysqli_begin_transaction($con);
@@ -204,6 +220,20 @@ addForecastStyles();
             // Project info
             $project_name = mysqli_real_escape_string($con, $_POST['project_name']);
             $size = floatval($_POST['size']);
+            $forecasted_cost = floatval($_POST['forecasted_cost'] ?? 0);
+            
+            // Check for duplicate project name for the same user
+            $logged_in_user_id = $_SESSION['user_id'];
+            $duplicate_check = "SELECT project_id, project FROM projects WHERE user_id = ? AND project = ? AND (archived IS NULL OR archived = 0) LIMIT 1";
+            $stmt = mysqli_prepare($con, $duplicate_check);
+            mysqli_stmt_bind_param($stmt, 'is', $logged_in_user_id, $project_name);
+            mysqli_stmt_execute($stmt);
+            $duplicate_result = mysqli_stmt_get_result($stmt);
+            
+            if (mysqli_num_rows($duplicate_result) > 0) {
+                $duplicate_row = mysqli_fetch_assoc($duplicate_result);
+                throw new Exception("A project with the name '$project_name' already exists. Please use a different project name.");
+            }
     
             $barangay = mysqli_real_escape_string($con, $_POST['barangay'] ?? '');
             $municipality = mysqli_real_escape_string($con, $_POST['municipality'] ?? '');
@@ -246,10 +276,10 @@ addForecastStyles();
             // If no conflicts, insert the new project
             // Use the logged-in user's ID (from session) as the project owner
             $logged_in_user_id = $_SESSION['user_id'];
-            $project_query = "INSERT INTO projects (project, location, size, user_id, client_email, start_date, deadline, category, created_at, updated_at) 
-                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+            $project_query = "INSERT INTO projects (project, location, size, user_id, client_email, start_date, deadline, category, forecasted_cost, created_at, updated_at) 
+                              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
             $stmt = mysqli_prepare($con, $project_query);
-            mysqli_stmt_bind_param($stmt, 'ssdissss', $project_name, $location, $size, $logged_in_user_id, $client_email, $start_date, $end_date, $category);
+            mysqli_stmt_bind_param($stmt, 'ssdissssd', $project_name, $location, $size, $logged_in_user_id, $client_email, $start_date, $end_date, $category, $forecasted_cost);
             
             if (!mysqli_stmt_execute($stmt)) {
                 throw new Exception('Error creating project: ' . mysqli_error($con));
@@ -268,17 +298,17 @@ addForecastStyles();
             }
             exit();
     
-        } catch (Exception $e) {
-            mysqli_rollback($con);
-            if ($isAjax) {
-                http_response_code(400);
-                echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-            } else {
-                $_SESSION['error_message'] = $e->getMessage();
-                header("Location: projects.php?error=1");
-            }
-            exit();
-        }
+                 } catch (Exception $e) {
+             mysqli_rollback($con);
+             if ($isAjax) {
+                 http_response_code(400);
+                 echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+             } else {
+                 $_SESSION['error_message'] = $e->getMessage();
+                 header("Location: projects.php?error=" . urlencode($e->getMessage()));
+             }
+             exit();
+         }
     }
     
 
@@ -710,20 +740,50 @@ addForecastStyles();
             </div>
         </div>
 
-    <!-- Feedback Modal -->
-    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content text-center">
-          <div class="modal-body py-4">
-            <span id="feedbackIcon" style="font-size: 3rem;"></span>
-            <h4 id="feedbackMessage" class="mt-3"></h4>
-          </div>
-          <div class="modal-footer justify-content-center border-0">
-            <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">OK</button>
-          </div>
-        </div>
-      </div>
-    </div>
+         <!-- Feedback Modal -->
+     <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
+       <div class="modal-dialog modal-dialog-centered">
+         <div class="modal-content text-center">
+           <div class="modal-body py-4">
+             <span id="feedbackIcon" style="font-size: 3rem;"></span>
+             <h4 id="feedbackMessage" class="mt-3"></h4>
+           </div>
+           <div class="modal-footer justify-content-center border-0">
+             <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">OK</button>
+           </div>
+         </div>
+       </div>
+     </div>
+
+     <!-- Success Modal -->
+     <div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+       <div class="modal-dialog modal-dialog-centered">
+         <div class="modal-content text-center">
+           <div class="modal-body py-4">
+             <i class="fas fa-check-circle text-success" style="font-size: 3rem;"></i>
+             <h4 id="successMessage" class="mt-3">Success!</h4>
+           </div>
+           <div class="modal-footer justify-content-center border-0">
+             <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">OK</button>
+           </div>
+         </div>
+       </div>
+     </div>
+
+     <!-- Error Modal -->
+     <div class="modal fade" id="errorModal" tabindex="-1" aria-hidden="true">
+       <div class="modal-dialog modal-dialog-centered">
+         <div class="modal-content text-center">
+           <div class="modal-body py-4">
+             <i class="fas fa-times-circle text-danger" style="font-size: 3rem;"></i>
+             <h4 id="errorMessage" class="mt-3">Error!</h4>
+           </div>
+           <div class="modal-footer justify-content-center border-0">
+             <button type="button" class="btn btn-danger px-4" data-bs-dismiss="modal">OK</button>
+           </div>
+         </div>
+       </div>
+     </div>
 
     
     <div class="modal fade" id="addProjectModal" tabindex="-1" aria-labelledby="addProjectModalLabel" aria-hidden="true">
@@ -814,7 +874,10 @@ addForecastStyles();
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="projectName" class="form-label">Project Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="projectName" name="project_name" required>
+                                    <input type="text" class="form-control" id="projectName" name="project_name" required oninput="checkProjectNameExists(this.value)">
+                                    <div id="projectNameFeedback" class="invalid-feedback">
+                                        A project with this name already exists. Please use a different name.
+                                    </div>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="size" class="form-label">Size (sqm) <span class="text-danger">*</span></label>
@@ -944,6 +1007,8 @@ addForecastStyles();
                                 </div>
                                 <!-- Hidden location input -->
                                 <input type="hidden" id="location" name="location" required>
+                                <!-- Hidden forecasted cost input -->
+                                <input type="hidden" id="forecasted_cost" name="forecasted_cost" value="0">
                             </div>
                         </div>
                     </div>
@@ -1198,6 +1263,31 @@ addForecastStyles();
             
             // Initialize the form state
             toggleClientFields();
+            
+            // Add project name validation event listener
+            const projectNameInput = document.getElementById('projectName');
+            if (projectNameInput) {
+                let projectNameTimeout;
+                projectNameInput.addEventListener('input', function() {
+                    clearTimeout(projectNameTimeout);
+                    const projectName = this.value.trim();
+                    
+                    // Only check if project name is at least 3 characters
+                    if (projectName.length >= 3) {
+                        projectNameTimeout = setTimeout(() => {
+                            checkProjectNameExists(projectName);
+                        }, 500); // Debounce for 500ms
+                    } else {
+                        // Clear validation state if name is too short
+                        this.classList.remove('is-invalid');
+                        const feedback = document.getElementById('projectNameFeedback');
+                        if (feedback) {
+                            feedback.classList.remove('d-block');
+                        }
+                    }
+                });
+            }
+            
             // Form validation
             function validateStep(step) {
                 let isValid = true;
@@ -1235,6 +1325,15 @@ addForecastStyles();
                     if (clientSelect && clientSelect.required && (!clientSelect.value || clientSelect.value === '')) {
                         console.log('Client selection is required');
                         clientSelect.classList.add('is-invalid');
+                        isValid = false;
+                    }
+                }
+                
+                // Special validation for project name (step 2)
+                if (step === 2) {
+                    const projectNameInput = document.getElementById('projectName');
+                    if (projectNameInput && projectNameInput.classList.contains('is-invalid')) {
+                        console.log('Project name is duplicate');
                         isValid = false;
                     }
                 }
@@ -1448,6 +1547,12 @@ addForecastStyles();
                 updateForm();
                 // Reset any error states
                 document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+                
+                // Clear project name validation feedback
+                const projectNameFeedback = document.getElementById('projectNameFeedback');
+                if (projectNameFeedback) {
+                    projectNameFeedback.classList.remove('d-block');
+                }
             });
 
             document.addEventListener('DOMContentLoaded', function() {
@@ -1474,10 +1579,38 @@ addForecastStyles();
                             }
                         }
                         
-                        // Additional validation for project dates
-                        if (allValid && !validateProjectDates()) {
-                            allValid = false;
-                        }
+                                                 // Additional validation for project dates
+                         if (allValid && !validateProjectDates()) {
+                             allValid = false;
+                         }
+                         
+                         // Function to validate project dates
+                         function validateProjectDates() {
+                             const finalStartDate = document.getElementById('final_start_date').value;
+                             const finalEndDate = document.getElementById('final_end_date').value;
+                             
+                             if (!finalStartDate || !finalEndDate) {
+                                 alert('Please select both start and end dates.');
+                                 return false;
+                             }
+                             
+                             const startDate = new Date(finalStartDate);
+                             const endDate = new Date(finalEndDate);
+                             const today = new Date();
+                             today.setHours(0, 0, 0, 0);
+                             
+                             if (startDate < today) {
+                                 alert('Start date cannot be in the past.');
+                                 return false;
+                             }
+                             
+                             if (endDate <= startDate) {
+                                 alert('End date must be after start date.');
+                                 return false;
+                             }
+                             
+                             return true;
+                         }
                         
                         if (allValid) {
                             // Submit form via AJAX
@@ -1575,8 +1708,45 @@ addForecastStyles();
         });
     </script>
     <script>
-        // Email validation function
-        function checkEmailExists(email) {
+            // Project name validation function
+    function checkProjectNameExists(projectName) {
+        if (!projectName || projectName.trim().length < 3) {
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('action', 'check_project_name');
+        formData.append('project_name', projectName.trim());
+        
+        fetch('projects.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            const projectNameInput = document.getElementById('projectName');
+            const projectNameFeedback = document.getElementById('projectNameFeedback');
+            
+            if (data.exists) {
+                projectNameInput.classList.add('is-invalid');
+                if (projectNameFeedback) {
+                    projectNameFeedback.textContent = 'A project with this name already exists. Please use a different name.';
+                    projectNameFeedback.classList.add('d-block');
+                }
+            } else {
+                projectNameInput.classList.remove('is-invalid');
+                if (projectNameFeedback) {
+                    projectNameFeedback.classList.remove('d-block');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error checking project name:', error);
+        });
+    }
+    
+    // Email validation function
+    function checkEmailExists(email) {
             const emailInput = document.getElementById('email');
             const emailFeedback = document.getElementById('emailFeedback');
             const emailChecking = document.getElementById('emailChecking');
