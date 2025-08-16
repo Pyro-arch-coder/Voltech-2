@@ -860,6 +860,10 @@ if ($userid) {
                                 </span>
                               </div>
                               <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Total Employee Cost:</span>
+                                <span class="fw-bold text-primary">₱<?php echo number_format($emp_total, 2); ?></span>
+                </div>            
+                              <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Labor Budget:</span>
                                 <span class="fw-bold text-primary">₱<?php echo number_format($final_labor_cost, 2); ?></span>
                 </div>            
