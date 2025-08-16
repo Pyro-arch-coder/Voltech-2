@@ -510,3 +510,22 @@
     </div>
 </div>
 
+<div class="modal fade" id="downpaymentModal" tabindex="-1" aria-labelledby="downpaymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form id="downpaymentForm" class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="downpaymentModalLabel"><i class="fas fa-money-check-alt me-2"></i>Request Downpayment</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <label for="downAmount" class="form-label">Downpayment Amount</label>
+        <input type="number" class="form-control mb-3" id="downAmount" name="down_amount" min="1" required placeholder="Enter amount">
+        <label for="downFile" class="form-label">Upload Supporting Document (optional)</label>
+        <input type="file" class="form-control" id="downFile" name="down_file" accept="application/pdf,image/*">
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">Send Request</button>
+      </div>
+    </form>
+  </div>
+</div>

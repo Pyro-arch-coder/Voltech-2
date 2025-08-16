@@ -80,7 +80,7 @@ $filter_sql = '';
 if ($search !== '') {
     $filter_sql = "AND (firstname LIKE '%$search%' OR lastname LIKE '%$search%' OR email LIKE '%$search%')";
 }
-$count_query = "SELECT COUNT(*) as total FROM users WHERE user_level IN (3,4) $filter_sql";
+$count_query = "SELECT COUNT(*) as total FROM users WHERE user_level IN (3,4,5,6) $filter_sql";
 $count_result = mysqli_query($con, $count_query);
 $total_users = mysqli_fetch_assoc($count_result)['total'];
 $total_pages = ceil($total_users / $limit);
@@ -333,6 +333,8 @@ $total_pages = ceil($total_users / $limit);
                             <select class="form-control" name="user_level" id="edit_user_level" required>
                                 <option value="3">Project Manager</option>
                                 <option value="4">Procurement Officer</option>
+                                <option value="5">Supplier</option>
+                                <option value="6">Client</option>
                                 <option value="2">Admin</option>
                             </select>
                         </div>

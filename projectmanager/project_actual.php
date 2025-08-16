@@ -447,28 +447,106 @@ while ($row = mysqli_fetch_assoc($emp_query)) {
     $proj_emps[] = $row;
     $emp_total += floatval($row['total']);
 }
-// Fetch project materials
+// Fetch project materials with pagination
 $proj_mats = [];
 $mat_total = 0;
 $material_labor_total = 0;
-$mat_query = mysqli_query($con, "SELECT pam.*, m.supplier_name, m.material_price, m.labor_other, m.unit, m.material_name FROM project_add_materials pam LEFT JOIN materials m ON pam.material_id = m.id WHERE pam.project_id = '$project_id'");
+
+// Pagination settings for materials
+$mats_per_page = 10; // Number of materials per page
+$mat_page = isset($_GET['mat_page']) ? (int)$_GET['mat_page'] : 1;
+$mat_offset = ($mat_page - 1) * $mats_per_page;
+
+// Get total count of materials for this project
+$mat_count_query = mysqli_query($con, "SELECT COUNT(*) as total FROM project_add_materials WHERE project_id = '$project_id'");
+$mat_count_result = mysqli_fetch_assoc($mat_count_query);
+$total_mats = $mat_count_result['total'];
+$total_mat_pages = ceil($total_mats / $mats_per_page);
+
+// Fetch paginated materials
+$mat_query = mysqli_query($con, "
+    SELECT pam.*, m.supplier_name, m.material_price, m.labor_other, m.unit, m.material_name 
+    FROM project_add_materials pam 
+    LEFT JOIN materials m ON pam.material_id = m.id 
+    WHERE pam.project_id = '$project_id'
+    ORDER BY pam.id DESC
+    LIMIT $mat_offset, $mats_per_page
+");
+
+// Calculate totals from all materials (not just current page)
+$all_mats_query = mysqli_query($con, "
+    SELECT (m.labor_other + m.material_price) * pam.quantity + pam.additional_cost as row_total,
+           m.labor_other * pam.quantity as labor_cost
+    FROM project_add_materials pam
+    LEFT JOIN materials m ON pam.material_id = m.id 
+    WHERE pam.project_id = '$project_id'
+");
+
 while ($row = mysqli_fetch_assoc($mat_query)) {
-    // The total already includes the additional_cost in the database
     $proj_mats[] = $row;
-    $mat_total += ($row['labor_other'] + $row['material_price']) * $row['quantity'] + $row['additional_cost'];
-    $material_labor_total += $row['labor_other'] * $row['quantity'];
 }
-// Fetch project equipments
+
+// Calculate total from all materials
+$mat_total = 0;
+$material_labor_total = 0;
+$all_mats_result = mysqli_query($con, "
+    SELECT (m.labor_other + m.material_price) * pam.quantity + pam.additional_cost as row_total,
+           m.labor_other * pam.quantity as labor_cost
+    FROM project_add_materials pam
+    LEFT JOIN materials m ON pam.material_id = m.id 
+    WHERE pam.project_id = '$project_id'
+");
+
+while ($row = mysqli_fetch_assoc($all_mats_result)) {
+    $mat_total += $row['row_total'];
+    $material_labor_total += $row['labor_cost'];
+}
+// Fetch project equipments with pagination
 $proj_equipments = [];
 $equip_total = 0;
-$equip_query = mysqli_query($con, "SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.status as equipment_status FROM project_add_equipment pae LEFT JOIN equipment e ON pae.equipment_id = e.id WHERE pae.project_id = '$project_id'");
+
+// Pagination settings for equipment
+$equip_per_page = 10; // Number of equipment per page
+$equip_page = isset($_GET['eq_page']) ? (int)$_GET['eq_page'] : 1;
+$equip_offset = ($equip_page - 1) * $equip_per_page;
+
+// Get total count of equipment for this project
+$equip_count_query = mysqli_query($con, "SELECT COUNT(*) as total FROM project_add_equipment WHERE project_id = '$project_id'");
+$equip_count_result = mysqli_fetch_assoc($equip_count_query);
+$total_equip = $equip_count_result['total'];
+$total_equip_pages = ceil($total_equip / $equip_per_page);
+
+// Fetch paginated equipment
+$equip_query = mysqli_query($con, "
+    SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.status as equipment_status 
+    FROM project_add_equipment pae 
+    LEFT JOIN equipment e ON pae.equipment_id = e.id 
+    WHERE pae.project_id = '$project_id'
+    ORDER BY pae.id DESC
+    LIMIT $equip_offset, $equip_per_page
+");
+
+// Calculate total from all equipment (not just current page)
+$all_equip_query = mysqli_query($con, "
+    SELECT pae.*, e.equipment_name, e.location, e.equipment_price AS price, e.depreciation, e.status as equipment_status 
+    FROM project_add_equipment pae 
+    LEFT JOIN equipment e ON pae.equipment_id = e.id 
+    WHERE pae.project_id = '$project_id' AND 
+          LOWER(COALESCE(pae.status, e.status, '')) NOT IN ('damaged', 'damage')
+");
+
+// Process current page equipment
 while ($row = mysqli_fetch_assoc($equip_query)) {
-    // Only add to total if equipment is not damaged
+    $proj_equipments[] = $row;
+}
+
+// Calculate total from all equipment
+$equip_total = 0;
+while ($row = mysqli_fetch_assoc($all_equip_query)) {
     $status = strtolower(($row['status'] ?? $row['equipment_status'] ?? ''));
     if ($status !== 'damaged' && $status !== 'damage') {
         $equip_total += floatval($row['total']);
     }
-    $proj_equipments[] = $row;
 }
 $final_labor_cost = $material_labor_total- $emp_total;
 $grand_total =  $mat_total + $equip_total;
@@ -782,7 +860,7 @@ if ($userid) {
                                 </span>
                               </div>
                               <div class="d-flex justify-content-between mb-2">
-                                <span class="text-muted">Labor Cost:</span>
+                                <span class="text-muted">Labor Budget:</span>
                                 <span class="fw-bold text-primary">₱<?php echo number_format($final_labor_cost, 2); ?></span>
                 </div>            
                               <div class="d-flex justify-content-between mt-5">
@@ -1068,13 +1146,25 @@ if ($userid) {
                                             $interval = $start->diff($end);
                                             $project_days = $interval->days + 1;
                                             
-                                            // Fetch project employees
+                                            // Pagination settings
+                                            $records_per_page = 10;
+                                            $page = isset($_GET['emp_page']) ? (int)$_GET['emp_page'] : 1;
+                                            $offset = ($page - 1) * $records_per_page;
+                                            
+                                            // Get total number of employees for this project
+                                            $total_emps_query = mysqli_query($con, "SELECT COUNT(*) as total FROM project_add_employee WHERE project_id = '$project_id'");
+                                            $total_emps = mysqli_fetch_assoc($total_emps_query)['total'];
+                                            $total_pages = ceil($total_emps / $records_per_page);
+                                            
+                                            // Fetch project employees with pagination
                                             $proj_emps = [];
                                             $emp_query = mysqli_query($con, "SELECT pae.*, e.first_name, e.last_name, e.contact_number, e.company_type, e.position_id, p.title as position_title, p.daily_rate 
                                                                         FROM project_add_employee pae 
                                                                         JOIN employees e ON pae.employee_id = e.employee_id 
                                                                         LEFT JOIN positions p ON e.position_id = p.position_id 
-                                                                        WHERE pae.project_id = '$project_id'");
+                                                                        WHERE pae.project_id = '$project_id'
+                                                                        ORDER BY e.last_name, e.first_name
+                                                                        LIMIT $records_per_page OFFSET $offset");
                                             while ($row = mysqli_fetch_assoc($emp_query)) {
                                                 $proj_emps[] = $row;
                                             }
@@ -1120,6 +1210,59 @@ if ($userid) {
                                             </tr>
                                         </tfoot>
                                     </table>
+                                    
+                                    <!-- Pagination -->
+                                    <?php if ($total_pages > 1): ?>
+                                    <nav aria-label="Employee pagination" class="mt-3">
+                                        <ul class="pagination justify-content-center">
+                                            <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
+                                                <a class="page-link" href="?id=<?= $project_id ?>&emp_page=<?= $page - 1 ?>#employees" aria-label="Previous" <?= $page <= 1 ? 'tabindex="-1"' : '' ?>>
+                                                    <span aria-hidden="true">&laquo; Previous</span>
+                                                </a>
+                                            </li>
+                                            
+                                            <?php 
+                                            $start_page = max(1, $page - 2);
+                                            $end_page = min($total_pages, $page + 2);
+                                            
+                                            // Show first page if not in initial range
+                                            if ($start_page > 1) {
+                                                echo '<li class="page-item"><a class="page-link" href="?id=' . $project_id . '&emp_page=1#employees">1</a></li>';
+                                                if ($start_page > 2) echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                                            }
+                                            
+                                            // Show page numbers
+                                            for ($i = $start_page; $i <= $end_page; $i++): 
+                                                $active = $i == $page ? 'active' : '';
+                                            ?>
+                                                <li class="page-item <?= $active ?>">
+                                                    <a class="page-link" href="?id=<?= $project_id ?>&emp_page=<?= $i ?>#employees">
+                                                        <?= $i ?>
+                                                    </a>
+                                                </li>
+                                            <?php endfor; ?>
+                                            
+                                            <!-- Show last page if not in range -->
+                                            <?php if ($end_page < $total_pages): ?>
+                                                <?php if ($end_page < $total_pages - 1) echo '<li class="page-item disabled"><span class="page-link">...</span></li>'; ?>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?id=<?= $project_id ?>&emp_page=<?= $total_pages ?>#employees">
+                                                        <?= $total_pages ?>
+                                                    </a>
+                                                </li>
+                                            <?php endif; ?>
+                                            
+                                            <li class="page-item <?= $page >= $total_pages ? 'disabled' : '' ?>">
+                                                <a class="page-link" href="?id=<?= $project_id ?>&emp_page=<?= $page + 1 ?>#employees" aria-label="Next" <?= $page >= $total_pages ? 'tabindex="-1"' : '' ?>>
+                                                    <span aria-hidden="true">Next &raquo;</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                        <div class="text-center text-muted small mt-1">
+                                            Page <?= $page ?> of <?= $total_pages ?> | <?= $total_emps ?> total employees
+                                        </div>
+                                    </nav>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -1232,6 +1375,46 @@ if ($userid) {
                                             </tr>
                                         </tfoot>
                                     </table>
+                                    
+                                    <!-- Materials Pagination -->
+                                    <?php if ($total_mat_pages > 1): ?>
+                                    <nav aria-label="Materials pagination" class="mt-3">
+                                        <ul class="pagination justify-content-center">
+                                            <li class="page-item <?= $mat_page <= 1 ? 'disabled' : '' ?>">
+                                                <a class="page-link" href="?id=<?php echo $project_id; ?>&mat_page=<?php echo max(1, $mat_page - 1); ?>&tab=materials#materials" tabindex="-1">Previous</a>
+                                            </li>
+                                            
+                                            <?php 
+                                            // Show page numbers (limit to 5 pages around current page)
+                                            $start_page = max(1, $mat_page - 2);
+                                            $end_page = min($total_mat_pages, $mat_page + 2);
+                                            
+                                            if ($start_page > 1) {
+                                                echo '<li class="page-item"><a class="page-link" href="?id='.$project_id.'&mat_page=1&tab=materials#materials">1</a></li>';
+                                                if ($start_page > 2) echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                                            }
+                                            
+                                            for ($i = $start_page; $i <= $end_page; $i++): ?>
+                                                <li class="page-item <?= $i == $mat_page ? 'active' : '' ?>">
+                                                    <a class="page-link" href="?id=<?php echo $project_id; ?>&mat_page=<?php echo $i; ?>&tab=materials#materials"><?php echo $i; ?></a>
+                                                </li>
+                                            <?php endfor; 
+                                            
+                                            if ($end_page < $total_mat_pages) {
+                                                if ($end_page < $total_mat_pages - 1) echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                                                echo '<li class="page-item"><a class="page-link" href="?id='.$project_id.'&mat_page='.$total_mat_pages.'&tab=materials#materials">'.$total_mat_pages.'</a></li>';
+                                            }
+                                            ?>
+                                            
+                                            <li class="page-item <?= $mat_page >= $total_mat_pages ? 'disabled' : '' ?>">
+                                                <a class="page-link" href="?id=<?php echo $project_id; ?>&mat_page=<?php echo min($total_mat_pages, $mat_page + 1); ?>&tab=materials#materials">Next</a>
+                                            </li>
+                                        </ul>
+                                        <div class="text-center text-muted">
+                                            Page <?php echo $mat_page; ?> of <?php echo $total_mat_pages; ?> | <?php echo $total_mats; ?> total materials
+                                        </div>
+                                    </nav>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -1272,8 +1455,13 @@ if ($userid) {
                                 $end = new DateTime($end_date);
                                 $interval = $start->diff($end);
                                 $project_days = $interval->days + 1;
+                                
+                                // Initialize equipment total
+                                $eq_total = 0;
                               ?>
-                              <?php if (count($proj_equipments) > 0): $i = 1; foreach ($proj_equipments as $eq): ?>
+                              <?php if (count($proj_equipments) > 0): $i = 1; foreach ($proj_equipments as $eq): 
+                                $eq_total += floatval($eq['total']);
+                              ?>
                               <tr>
                                 <td><?php echo $i++; ?></td>
                                 <td><?php echo htmlspecialchars($eq['equipment_name']); ?></td>
@@ -1330,25 +1518,68 @@ if ($userid) {
                             </tbody>
                             <tfoot>
                               <tr>
-                                <th colspan="6" class="text-right">Total</th>
-                                <th colspan="2" style="font-weight:bold;color:#222;">₱<?php
-                                  $equip_total = 0;
-                                  foreach ($proj_equipments as $eq) {
-                                    // Skip damaged equipment (check both status and equipment_status for compatibility)
-                                    $status = strtolower(($eq['status'] ?? $eq['equipment_status'] ?? ''));
-                                    if ($status !== 'damaged' && $status !== 'damage') {
-                                        $equip_total += floatval($eq['total']);
+                                <th colspan="6" class="text-right">Page Total</th>
+                                <th colspan="2" style="font-weight:bold;color:#222;">₱<?php 
+                                    $page_equip_total = 0;
+                                    foreach ($proj_equipments as $eq) {
+                                        $status = strtolower(($eq['status'] ?? $eq['equipment_status'] ?? ''));
+                                        if ($status !== 'damaged' && $status !== 'damage') {
+                                            $page_equip_total += floatval($eq['total']);
+                                        }
                                     }
-                                  }
-                                  echo number_format($equip_total, 2);
+                                    echo number_format($page_equip_total, 2); 
                                 ?></th>
+                              </tr>
+                              <tr>
+                                <th colspan="6" class="text-right">Grand Total</th>
+                                <th colspan="2" style="font-weight:bold;color:#222;">₱<?php echo number_format($equip_total, 2); ?></th>
                               </tr>
                             </tfoot>
                           </table>
                         </div>
+                        
+                        <!-- Equipment Pagination -->
+                        <?php if ($total_equip_pages > 1): ?>
+                        <nav aria-label="Equipment pagination" class="mt-3">
+                            <ul class="pagination justify-content-center">
+                                <li class="page-item <?= $equip_page <= 1 ? 'disabled' : '' ?>">
+                                    <a class="page-link" href="?id=<?php echo $project_id; ?>&eq_page=<?php echo max(1, $equip_page - 1); ?>&tab=equipment#equipment" tabindex="-1">Previous</a>
+                                </li>
+                                
+                                <?php 
+                                // Show page numbers (limit to 5 pages around current page)
+                                $start_page = max(1, $equip_page - 2);
+                                $end_page = min($total_equip_pages, $equip_page + 2);
+                                
+                                if ($start_page > 1) {
+                                    echo '<li class="page-item"><a class="page-link" href="?id='.$project_id.'&eq_page=1&tab=equipment#equipment">1</a></li>';
+                                    if ($start_page > 2) echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                                }
+                                
+                                for ($i = $start_page; $i <= $end_page; $i++): ?>
+                                    <li class="page-item <?= $i == $equip_page ? 'active' : '' ?>">
+                                        <a class="page-link" href="?id=<?php echo $project_id; ?>&eq_page=<?php echo $i; ?>&tab=equipment#equipment"><?php echo $i; ?></a>
+                                    </li>
+                                <?php endfor; 
+                                
+                                if ($end_page < $total_equip_pages) {
+                                    if ($end_page < $total_equip_pages - 1) echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                                    echo '<li class="page-item"><a class="page-link" href="?id='.$project_id.'&eq_page='.$total_equip_pages.'&tab=equipment#equipment">'.$total_equip_pages.'</a></li>';
+                                }
+                                ?>
+                                
+                                <li class="page-item <?= $equip_page >= $total_equip_pages ? 'disabled' : '' ?>">
+                                    <a class="page-link" href="?id=<?php echo $project_id; ?>&eq_page=<?php echo min($total_equip_pages, $equip_page + 1); ?>&tab=equipment#equipment">Next</a>
+                                </li>
+                            </ul>
+                            <div class="text-center text-muted">
+                                Page <?php echo $equip_page; ?> of <?php echo $total_equip_pages; ?> | <?php echo $total_equip; ?> total equipment
+                            </div>
+                        </nav>
+                        <?php endif; ?>
                       </div>
-                        </div>
                     </div>
+                </div>
            
 
                 </div>
@@ -1481,45 +1712,45 @@ if ($userid) {
     var materialName = document.getElementById('materialName');
     var materialUnit = document.getElementById('materialUnit');
     var materialPrice = document.getElementById('materialPrice');
-    var laborOther = document.getElementById('laborOther');
-    var materialNameText = document.getElementById('materialNameText');
-    var materialQty = document.getElementById('materialQty');
-    var materialTotal = document.getElementById('materialTotal');
-    var addMaterialForm = document.getElementById('addMaterialForm');
+  var laborOther = document.getElementById('laborOther');
+  var materialNameText = document.getElementById('materialNameText');
+  var materialQty = document.getElementById('materialQty');
+  var materialTotal = document.getElementById('materialTotal');
+  var addMaterialForm = document.getElementById('addMaterialForm');
 
-    // Initialize values if empty
-    if (materialPrice && materialPrice.value === '') materialPrice.value = '0';
-    if (laborOther && laborOther.value === '') laborOther.value = '0';
+  // Initialize values if empty
+  if (materialPrice && materialPrice.value === '') materialPrice.value = '0';
+  if (laborOther && laborOther.value === '') laborOther.value = '0';
 
-    function updateMaterialTotal() {
-      if (!materialQty || !materialPrice || !laborOther || !materialTotal) return;
+  function updateMaterialTotal() {
+    if (!materialQty || !materialPrice || !laborOther || !materialTotal) return;
+    
+    var qty = parseFloat(materialQty.value) || 0;
+    var price = parseFloat(materialPrice.value) || 0;
+    var labor = parseFloat(laborOther.value) || 0;
+    var total = (price + labor) * qty;
+    materialTotal.value = total > 0 ? total.toFixed(2) : '0.00';
+  }
+
+  // Handle form submission
+  if (addMaterialForm) {
+    addMaterialForm.addEventListener('submit', function(e) {
+      // Make sure all required fields have values
+      if (!materialName.value || !materialQty.value) {
+        e.preventDefault();
+        alert('Please fill in all required fields');
+        return false;
+      }
       
-      var qty = parseFloat(materialQty.value) || 0;
-      var price = parseFloat(materialPrice.value) || 0;
-      var labor = parseFloat(laborOther.value) || 0;
-      var total = (price + labor) * qty;
-      materialTotal.value = total > 0 ? total.toFixed(2) : '0.00';
-    }
-
-    // Handle form submission
-    if (addMaterialForm) {
-      addMaterialForm.addEventListener('submit', function(e) {
-        // Make sure all required fields have values
-        if (!materialName.value || !materialQty.value) {
-          e.preventDefault();
-          alert('Please fill in all required fields');
-          return false;
-        }
-        
-        // Make sure materialNameText is set
-        if (materialName && materialName.options[materialName.selectedIndex]) {
-          var selected = materialName.options[materialName.selectedIndex];
-          materialNameText.value = selected.getAttribute('data-name') || '';
-        }
-        
-        return true;
-      });
-    }
+      // Make sure materialNameText is set
+      if (materialName && materialName.options[materialName.selectedIndex]) {
+        var selected = materialName.options[materialName.selectedIndex];
+        materialNameText.value = selected.getAttribute('data-name') || '';
+      }
+      
+      return true;
+    });
+  }
 
   if (materialName) {
     materialName.addEventListener('change', function() {
@@ -1695,6 +1926,45 @@ function showFeedbackModal(success, message, error_code = '', query_param = '') 
   window.history.replaceState({}, document.title, window.location.pathname + window.location.search.replace(/([&?](addmat|removemat|returnmat|error)=[^&]*)/, ''));
 }
 document.addEventListener('DOMContentLoaded', function() {
+  // Handle tab persistence from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const activeTab = urlParams.get('tab');
+  
+  // Activate the tab from URL if specified
+  if (activeTab) {
+    const tabTrigger = document.querySelector(`[data-bs-target="#${activeTab}"]`);
+    if (tabTrigger) {
+      const tab = new bootstrap.Tab(tabTrigger);
+      tab.show();
+    }
+  }
+  
+  // Update URL when a tab is clicked
+  document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+    tab.addEventListener('click', function(e) {
+      const tabId = e.target.getAttribute('data-bs-target').substring(1);
+      const url = new URL(window.location);
+      url.searchParams.set('tab', tabId);
+      // Remove page parameters when switching tabs
+      url.searchParams.delete('page');
+      url.searchParams.delete('mat_page');
+      window.history.pushState({}, '', url);
+    });
+  });
+  
+  // Handle browser back/forward buttons
+  window.addEventListener('popstate', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeTab = urlParams.get('tab');
+    if (activeTab) {
+      const tabTrigger = document.querySelector(`[data-bs-target="#${activeTab}"]`);
+      if (tabTrigger) {
+        const tab = new bootstrap.Tab(tabTrigger);
+        tab.show();
+      }
+    }
+  });
+  
   var params = new URLSearchParams(window.location.search);
   
   // Show success/error message for material return

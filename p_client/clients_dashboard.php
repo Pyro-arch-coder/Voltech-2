@@ -277,7 +277,9 @@ if ($userid) {
                         'total' => 0,
                         'in_progress' => 0,
                         'completed' => 0,
-                        'pending' => 0
+                        'pending' => 0,
+                        'ongoing' => 0,
+                        'finished' => 0
                     ];
                     
                     // Get projects where client_email matches the logged-in user's email

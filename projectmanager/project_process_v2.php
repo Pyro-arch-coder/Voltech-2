@@ -502,7 +502,7 @@ if ($project_id > 0) {
                                                 </tbody>
                                                 <tfoot>
                                                     <tr>
-                                                        <th colspan="7" class="text-end">Grand Total (All Materials)</th>
+                                                        <th colspan="7" class="text-end">Grand Total (Material Price + Labor/Other * Quantity)</th>
                                                         <th colspan="2" style="font-weight:bold; color:#222;" id="materialsTotal">₱<?= number_format($grand_total, 2) ?></th>
                                                     </tr>
                                                 </tfoot>
@@ -605,21 +605,54 @@ if ($project_id > 0) {
                                                         <div class="input-group mb-2">
                                                             <span class="input-group-text">₱</span>
                                                             <input type="text" class="form-control form-control-lg" name="budget"
+                                                                id="budgetAmount"
                                                                 placeholder="100000"
                                                                 pattern="1\d{5}" inputmode="numeric"
                                                                 aria-describedby="budgetMessage"
-                                                                oninput="this.value=this.value.replace(/[^0-9]/g,'').replace(/^[^1]/, '1').slice(0,6);">
+                                                                oninput="validateBudgetInput(this)">
                                                         </div>
                                                         <div class="form-text text-muted" id="budgetMessage">
-                                                            Enter 6 digits starting with 1 (e.g., <strong>100000</strong>)
+                                                            Enter 6-9 digits starting with 1 (e.g., <strong>100000</strong>)
                                                         </div>
                                                     </div>
                                                     <div class="text-center mt-4">
-                                                        <button type="button" id="requestBudgetBtn" class="btn btn-success w-100" tabindex="0">
+                                                        <button type="button" id="requestBudgetBtn" class="btn btn-success w-100" disabled>
                                                             <i class="fas fa-paper-plane me-1"></i>
                                                             Request Budget Approval
                                                         </button>
                                                     </div>
+                                                    <script>
+                                                    function validateBudgetInput(input) {
+                                                        // Only allow numbers and limit to 9 digits starting with 1
+                                                        input.value = input.value.replace(/[^0-9]/g,'').replace(/^[^1]/, '1').slice(0,9);
+                                                        
+                                                        // Get the request button
+                                                        const requestBtn = document.getElementById('requestBudgetBtn');
+                                                        const budgetMessage = document.getElementById('budgetMessage');
+                                                        
+                                                        // Check if input is between 6 and 9 digits and starts with 1
+                                                        const isValid = /^1\d{5,8}$/.test(input.value) || /^1\d{8}$/.test(input.value);
+                                                        
+                                                        // Update help text based on input length
+                                                        if (input.value.length > 0 && input.value.length < 6) {
+                                                            budgetMessage.innerHTML = 'Minimum 6 digits required (e.g., <strong>100000</strong>)';
+                                                            budgetMessage.className = 'form-text text-danger';
+                                                            requestBtn.disabled = true;
+                                                        } else if (input.value.length > 9) {
+                                                            budgetMessage.innerHTML = 'Maximum 9 digits allowed (e.g., <strong>199999999</strong>)';
+                                                            budgetMessage.className = 'form-text text-danger';
+                                                            requestBtn.disabled = true;
+                                                        } else if (!input.value.startsWith('1')) {
+                                                            budgetMessage.innerHTML = 'Must start with 1 (e.g., <strong>100000</strong>)';
+                                                            budgetMessage.className = 'form-text text-danger';
+                                                            requestBtn.disabled = true;
+                                                        } else {
+                                                            budgetMessage.innerHTML = 'Enter 6-9 digits starting with 1 (e.g., <strong>100000</strong>)';
+                                                            budgetMessage.className = 'form-text text-muted';
+                                                            requestBtn.disabled = !isValid;
+                                                        }
+                                                    }
+                                                    </script>
                                                 </div>
                                             </div>
                                         </div>
@@ -1228,18 +1261,51 @@ if ($project_id > 0) {
                                 </div>
                             </div>
                             <div class="step-content d-none" id="step8">
-                            <h4 class="mb-4 fw-bold text-success">Step 8: Proof of Approval</h4>
-
-                                    <div class="alert alert-info d-flex align-items-center mb-4">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        <span>Please upload the budget documents and specify the budget amount below. The next button will be enabled only after the budget is approved.</span>
+                                <h4 class="mb-4 fw-bold text-success">Step 8: Proof of Approval</h4>
+                                <div class="row g-4">
+                                    <!-- Proof of Payment Card -->
+                                    <div class="col-md-6">
+                                    <div class="card mb-4 shadow-sm">
+                                        <div class="card-body d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-file-invoice-dollar fa-2x text-success me-3"></i>
+                                            <div>
+                                            <h5 class="card-title mb-1">Proof of Payment</h5>
+                                            <p class="mb-0 text-muted small">
+                                                Uploaded: <span id="proofDate">2025-08-15</span>
+                                            </p>
+                                            <p class="mb-0 text-muted small">
+                                                Amount: <span id="proofAmount">₱50,000.00</span>
+                                            </p>
+                                            <button class="btn btn-link p-0 mt-2" onclick="showProofModal('uploads/proof_of_payment1.pdf','application/pdf')">
+                                                <i class="fas fa-eye"></i> View File
+                                            </button>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-outline-primary ms-3" onclick="window.location.href='all_payments.php'">
+                                            <i class="fas fa-list"></i> View All Payments
+                                        </button>
+                                        </div>
                                     </div>
-
-                                   
-
-                                    <button type="button" class="btn btn-secondary prev-step" data-prev="7">Previous</button>
+                                    </div>
+                                    <!-- Request Downpayment Card -->
+                                    <div class="col-md-6">
+                                    <div class="card mb-4 shadow-sm">
+                                        <div class="card-body">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fas fa-money-check-alt fa-2x text-primary me-3"></i>
+                                            <h5 class="mb-0">Request Downpayment</h5>
+                                        </div>
+                                        <p class="mb-2 text-muted">Need funds to start the project? Request a downpayment here.</p>
+                                        <button class="btn btn-success" onclick="showDownpaymentModal()">
+                                            <i class="fas fa-paper-plane"></i> Request Downpayment
+                                        </button>
+                                        </div>
+                                    </div>
+                                    </div>
                                 </div>
-                            </div>
+                                <button type="button" class="btn btn-secondary prev-step" data-prev="7">Previous</button>
+                                </div>
                         </form>
                     </div>
                 </div>

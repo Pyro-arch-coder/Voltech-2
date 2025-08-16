@@ -40,6 +40,34 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
+        <!-- Filter Controls -->
+        <div class="row mb-3 g-2">
+          <div class="col-md-3">
+            <label for="supplierFilter" class="form-label small text-muted mb-1">Supplier</label>
+            <select class="form-select form-select-sm" id="supplierFilter">
+              <option value="">All Suppliers</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="brandFilter" class="form-label small text-muted mb-1">Brand</label>
+            <select class="form-select form-select-sm" id="brandFilter">
+              <option value="">All Brands</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="specFilter" class="form-label small text-muted mb-1">Specification</label>
+            <input type="text" class="form-control form-control-sm" id="specFilter" placeholder="Filter by spec...">
+          </div>
+          <div class="col-md-3">
+            <label for="priceSort" class="form-label small text-muted mb-1">Price</label>
+            <select class="form-select form-select-sm" id="priceSort">
+              <option value="">Default</option>
+              <option value="asc">Price: Low to High</option>
+              <option value="desc">Price: High to Low</option>
+            </select>
+          </div>
+        </div>
+        
         <div class="table-responsive">
           <table class="table table-hover table-bordered">
             <thead class="table-light">
@@ -908,6 +936,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Global variable to store all materials
+    let allMaterials = [];
+    
+    // Function to reset all filters
+    function resetFilters() {
+        document.getElementById('supplierFilter').value = '';
+        document.getElementById('brandFilter').value = '';
+        document.getElementById('specFilter').value = '';
+        document.getElementById('priceSort').value = '';
+        applyFilters();
+    }
+    
     // Function to load materials for the modal
     function loadMaterialsForModal() {
         const tbody = document.getElementById('materialsTableBody');
@@ -917,27 +957,113 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.materials) {
-                    renderMaterialsInModal(data.materials);
+                    allMaterials = data.materials;
+                    updateFilters(allMaterials);
+                    applyFilters();
                 } else {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="9" class="text-center text-danger py-4">
-                                <i class="fas fa-exclamation-circle me-2"></i>
-                                Failed to load materials. Please try again.
-                            </td>
-                        </tr>`;
+                    showError('Failed to load materials. Please try again.');
                 }
             })
             .catch(error => {
                 console.error('Error loading materials:', error);
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="text-center text-danger py-4">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Error loading materials. Please check your connection.
-                        </td>
-                    </tr>`;
+                showError('Error loading materials. Please check your connection.');
             });
+    }
+    
+    // Function to update filter dropdowns
+    function updateFilters(materials) {
+        // Get unique suppliers
+        const suppliers = [...new Set(materials.map(m => m.supplier_name).filter(Boolean))];
+        const supplierSelect = document.getElementById('supplierFilter');
+        updateSelectOptions(supplierSelect, suppliers);
+        
+        // Get unique brands
+        const brands = [...new Set(materials.map(m => m.brand).filter(Boolean))];
+        const brandSelect = document.getElementById('brandFilter');
+        updateSelectOptions(brandSelect, brands);
+        
+        // Add event listeners for filters
+        document.getElementById('supplierFilter').addEventListener('change', applyFilters);
+        document.getElementById('brandFilter').addEventListener('change', applyFilters);
+        document.getElementById('specFilter').addEventListener('input', applyFilters);
+        document.getElementById('priceSort').addEventListener('change', applyFilters);
+    }
+    
+    // Helper function to update select options
+    function updateSelectOptions(selectElement, options) {
+        // Save current value
+        const currentValue = selectElement.value;
+        
+        // Clear existing options except the first one (All)
+        while (selectElement.options.length > 1) {
+            selectElement.remove(1);
+        }
+        
+        // Add new options
+        options.sort().forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option;
+            opt.textContent = option;
+            selectElement.appendChild(opt);
+        });
+        
+        // Restore selection if it still exists
+        if (options.includes(currentValue)) {
+            selectElement.value = currentValue;
+        }
+    }
+    
+    // Function to apply all filters and sorting
+    function applyFilters() {
+        if (!allMaterials || allMaterials.length === 0) return;
+        
+        // Get filter values
+        const supplier = document.getElementById('supplierFilter').value;
+        const brand = document.getElementById('brandFilter').value;
+        const spec = document.getElementById('specFilter').value.toLowerCase();
+        const priceSort = document.getElementById('priceSort').value;
+        
+        // Apply filters
+        let filtered = [...allMaterials];
+        
+        if (supplier) {
+            filtered = filtered.filter(m => m.supplier_name === supplier);
+        }
+        
+        if (brand) {
+            filtered = filtered.filter(m => m.brand === brand);
+        }
+        
+        if (spec) {
+            filtered = filtered.filter(m => 
+                (m.specification && m.specification.toLowerCase().includes(spec)) ||
+                (m.material_name && m.material_name.toLowerCase().includes(spec))
+            );
+        }
+        
+        // Apply sorting
+        if (priceSort === 'asc') {
+            filtered.sort((a, b) => (parseFloat(a.material_price) || 0) - (parseFloat(b.material_price) || 0));
+        } else if (priceSort === 'desc') {
+            filtered.sort((a, b) => (parseFloat(b.material_price) || 0) - (parseFloat(a.material_price) || 0));
+        }
+        
+        // Render filtered and sorted materials
+        renderMaterialsInModal(filtered);
+    }
+    
+    // Helper function to show error message
+    function showError(message) {
+        const tbody = document.getElementById('materialsTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="9" class="text-center text-danger py-4">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    ${message}
+                </td>
+            </tr>`;
     }
     
     // Function to render materials in the modal table
@@ -950,7 +1076,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <tr>
                     <td colspan="9" class="text-center py-4">
                         <i class="fas fa-box-open fa-2x text-muted mb-2"></i>
-                        <p class="mb-0">No materials available</p>
+                        <p class="mb-0">No materials match the selected filters</p>
+                        <button class="btn btn-sm btn-outline-secondary mt-2" onclick="resetFilters()">
+                            <i class="fas fa-undo me-1"></i> Reset Filters
+                        </button>
                     </td>
                 </tr>`;
             return;
