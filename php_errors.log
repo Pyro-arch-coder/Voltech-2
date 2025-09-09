@@ -1,0 +1,20 @@
+[09-Sep-2025 04:06:48 Europe/Berlin] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php:234
+Stack trace:
+#0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(234): mysqli_stmt->bind_param('iisss', 217, 88, 'proof_payment_2...', 'uploads/proof_o...')
+#1 {main}
+  thrown in C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php on line 234
+[09-Sep-2025 04:06:48 Europe/Berlin] PHP Fatal error:  Uncaught ArgumentCountError: The number of elements in the type definition string must match the number of bind variables in C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php:234
+Stack trace:
+#0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(234): mysqli_stmt->bind_param('iisss', 217, 88, 'proof_payment_2...', 'uploads/proof_o...')
+#1 {main}
+  thrown in C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php on line 234
+[09-Sep-2025 04:10:09 Europe/Berlin] Error in save_payment_method.php: There are no pending payments to process for this project.
+[09-Sep-2025 04:10:09 Europe/Berlin] Stack trace: #0 {main}
+[09-Sep-2025 04:10:09 Europe/Berlin] Error in save_payment_method.php: There are no pending payments to process for this project.
+[09-Sep-2025 04:10:09 Europe/Berlin] Stack trace: #0 {main}
+[09-Sep-2025 04:17:04 Europe/Berlin] Error in save_payment_method.php: Unknown column 'billing_request_id' in 'field list'
+[09-Sep-2025 04:17:04 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(183): mysqli->prepare('\n            IN...')
+#1 {main}
+[09-Sep-2025 04:17:04 Europe/Berlin] Error in save_payment_method.php: Unknown column 'billing_request_id' in 'field list'
+[09-Sep-2025 04:17:04 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(183): mysqli->prepare('\n            IN...')
+#1 {main}

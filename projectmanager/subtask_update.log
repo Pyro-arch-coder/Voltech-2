@@ -1,0 +1,279 @@
+[2025-07-27 18:21:43] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 2/2 tasks = 100% (50% per task)
+Updated division 211 progress to 100% (2/2 tasks completed)
+[2025-07-27 18:21:43] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-07-27 18:26:20] {"subtask_id":"5","is_completed":"0"}
+Updating subtask 5 to status: 0
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/3 tasks = 33% (33.333333333333% per task)
+Updated division 211 progress to 33% (1/3 tasks completed)
+[2025-07-27 18:26:20] {"subtask_id":"5","is_completed":"0"}
+Updating subtask 5 to status: 0
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-07-27 18:26:23] {"subtask_id":"6","is_completed":"1"}
+Updating subtask 6 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 2/3 tasks = 67% (33.333333333333% per task)
+Updated division 211 progress to 67% (2/3 tasks completed)
+[2025-07-27 18:26:23] {"subtask_id":"6","is_completed":"1"}
+Updating subtask 6 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-07-27 18:26:26] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 3/3 tasks = 100% (33.333333333333% per task)
+Updated division 211 progress to 100% (3/3 tasks completed)
+[2025-07-27 18:26:26] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-07-27 18:26:52] {"subtask_id":"7","is_completed":"1"}
+Updating subtask 7 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/2 tasks = 50% (50% per task)
+Updated division 212 progress to 50% (1/2 tasks completed)
+[2025-07-27 18:26:52] {"subtask_id":"7","is_completed":"1"}
+Updating subtask 7 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-07-27 18:26:54] {"subtask_id":"8","is_completed":"1"}
+Updating subtask 8 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 2/2 tasks = 100% (50% per task)
+Updated division 212 progress to 100% (2/2 tasks completed)
+[2025-07-27 18:26:54] {"subtask_id":"8","is_completed":"1"}
+Updating subtask 8 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-07-27 18:28:31] {"subtask_id":"9","is_completed":"1"}
+Updating subtask 9 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/3 tasks = 33% (33.333333333333% per task)
+Updated division 213 progress to 33% (1/3 tasks completed)
+[2025-07-27 18:28:31] {"subtask_id":"9","is_completed":"1"}
+Updating subtask 9 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:14:25] {"subtask_id":"1","is_completed":"1"}
+Updating subtask 1 to status: 1
+Error: Unknown column 'is_completed' in 'field list'
+[2025-08-12 03:14:25] {"subtask_id":"1","is_completed":"1"}
+Updating subtask 1 to status: 1
+Error: Unknown column 'is_completed' in 'field list'
+[2025-08-12 03:16:55] {"subtask_id":"1","is_completed":"1"}
+Updating subtask 1 to status: 1
+Update successful. Rows affected: 1
+Error: Unknown column 'division_id' in 'field list'
+[2025-08-12 03:16:55] {"subtask_id":"1","is_completed":"1"}
+Updating subtask 1 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:17:04] {"subtask_id":"1","is_completed":"0"}
+Updating subtask 1 to status: 0
+Update successful. Rows affected: 1
+Error: Unknown column 'division_id' in 'field list'
+[2025-08-12 03:17:04] {"subtask_id":"1","is_completed":"0"}
+Updating subtask 1 to status: 0
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:18:27] {"subtask_id":"1","is_completed":"1"}
+Updating subtask 1 to status: 1
+Update successful. Rows affected: 1
+Error: Unknown column 'division_id' in 'field list'
+[2025-08-12 03:18:27] {"subtask_id":"1","is_completed":"1"}
+Updating subtask 1 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:18:33] {"subtask_id":"1","is_completed":"0"}
+Updating subtask 1 to status: 0
+Update successful. Rows affected: 1
+Error: Unknown column 'division_id' in 'field list'
+[2025-08-12 03:18:33] {"subtask_id":"1","is_completed":"0"}
+Updating subtask 1 to status: 0
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:21:03] {"subtask_id":"1","is_completed":"1"}
+Updating subtask 1 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/3 subtasks = 33% (33.333333333333% per subtask)
+Updated task 48 progress to 33% and status to 'In Progress' (1/3 subtasks completed)
+[2025-08-12 03:21:04] {"subtask_id":"1","is_completed":"1"}
+Updating subtask 1 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:21:08] {"subtask_id":"2","is_completed":"1"}
+Updating subtask 2 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 2/3 subtasks = 67% (33.333333333333% per subtask)
+Updated task 48 progress to 67% and status to 'In Progress' (2/3 subtasks completed)
+[2025-08-12 03:21:08] {"subtask_id":"2","is_completed":"1"}
+Updating subtask 2 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:21:12] {"subtask_id":"3","is_completed":"1"}
+Updating subtask 3 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 3/3 subtasks = 100% (33.333333333333% per subtask)
+Updated task 48 progress to 100% and status to 'Completed' (3/3 subtasks completed)
+[2025-08-12 03:21:12] {"subtask_id":"3","is_completed":"1"}
+Updating subtask 3 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:24:33] {"subtask_id":"4","is_completed":"1"}
+Updating subtask 4 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/1 subtasks = 100% (100% per subtask)
+Updated task 44 progress to 100% and status to 'Completed' (1/1 subtasks completed)
+[2025-08-12 03:24:33] {"subtask_id":"4","is_completed":"1"}
+Updating subtask 4 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:25:47] {"subtask_id":"4","is_completed":"0"}
+Updating subtask 4 to status: 0
+Update successful. Rows affected: 1
+Fixed percentage calculation: 0/1 subtasks = 0% (100% per subtask)
+Updated task 44 progress to 0% and status to 'Not Started' (0/1 subtasks completed)
+[2025-08-12 03:25:47] {"subtask_id":"4","is_completed":"0"}
+Updating subtask 4 to status: 0
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:25:52] {"subtask_id":"4","is_completed":"1"}
+Updating subtask 4 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/1 subtasks = 100% (100% per subtask)
+Updated task 44 progress to 100% and status to 'Completed' (1/1 subtasks completed)
+[2025-08-12 03:25:52] {"subtask_id":"4","is_completed":"1"}
+Updating subtask 4 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:26:38] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/1 subtasks = 100% (100% per subtask)
+Updated task 43 progress to 100% and status to 'Completed' (1/1 subtasks completed)
+[2025-08-12 03:26:38] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:26:57] {"subtask_id":"5","is_completed":"0"}
+Updating subtask 5 to status: 0
+Update successful. Rows affected: 1
+Fixed percentage calculation: 0/2 subtasks = 0% (50% per subtask)
+Updated task 43 progress to 0% and status to 'Not Started' (0/2 subtasks completed)
+[2025-08-12 03:26:57] {"subtask_id":"5","is_completed":"0"}
+Updating subtask 5 to status: 0
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:27:11] {"subtask_id":"1","is_completed":"0"}
+Updating subtask 1 to status: 0
+Update successful. Rows affected: 1
+Fixed percentage calculation: 2/3 subtasks = 67% (33.333333333333% per subtask)
+Updated task 48 progress to 67% and status to 'In Progress' (2/3 subtasks completed)
+[2025-08-12 03:27:11] {"subtask_id":"1","is_completed":"0"}
+Updating subtask 1 to status: 0
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:27:14] {"subtask_id":"6","is_completed":"1"}
+Updating subtask 6 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/2 subtasks = 50% (50% per subtask)
+Updated task 43 progress to 50% and status to 'In Progress' (1/2 subtasks completed)
+[2025-08-12 03:27:14] {"subtask_id":"6","is_completed":"1"}
+Updating subtask 6 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+[2025-08-12 03:28:37] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 2/2 subtasks = 100% (50% per subtask)
+Updated task 43 progress to 100% and status to 'Completed' (2/2 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":5,"is_completed":1,"new_progress":100}
+[2025-08-12 03:28:37] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":5,"is_completed":1}
+[2025-08-12 03:28:40] {"subtask_id":"5","is_completed":"0"}
+Updating subtask 5 to status: 0
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/2 subtasks = 50% (50% per subtask)
+Updated task 43 progress to 50% and status to 'In Progress' (1/2 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":5,"is_completed":0,"new_progress":50}
+[2025-08-12 03:28:41] {"subtask_id":"5","is_completed":"0"}
+Updating subtask 5 to status: 0
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":5,"is_completed":0}
+[2025-08-12 03:28:43] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 2/2 subtasks = 100% (50% per subtask)
+Updated task 43 progress to 100% and status to 'Completed' (2/2 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":5,"is_completed":1,"new_progress":100}
+[2025-08-12 03:28:43] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":5,"is_completed":1}
+[2025-08-12 03:44:37] {"subtask_id":"7","is_completed":"1"}
+Updating subtask 7 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/1 subtasks = 100% (100% per subtask)
+Updated task 45 progress to 100% and status to 'Completed' (1/1 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":7,"is_completed":1,"new_progress":100}
+[2025-08-12 03:44:37] {"subtask_id":"7","is_completed":"1"}
+Updating subtask 7 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":7,"is_completed":1}
+[2025-08-12 08:52:18] {"subtask_id":"5","is_completed":"0"}
+Updating subtask 5 to status: 0
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/2 subtasks = 50% (50% per subtask)
+Updated task 43 progress to 50% and status to 'In Progress' (1/2 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":5,"is_completed":0,"new_progress":50}
+[2025-08-12 08:52:18] {"subtask_id":"5","is_completed":"0"}
+Updating subtask 5 to status: 0
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":5,"is_completed":0}
+[2025-08-12 08:52:22] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 2/2 subtasks = 100% (50% per subtask)
+Updated task 43 progress to 100% and status to 'Completed' (2/2 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":5,"is_completed":1,"new_progress":100}
+[2025-08-12 08:52:22] {"subtask_id":"5","is_completed":"1"}
+Updating subtask 5 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":5,"is_completed":1}
+[2025-08-12 08:52:59] {"subtask_id":"8","is_completed":"1"}
+Updating subtask 8 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 3/4 subtasks = 75% (25% per subtask)
+Updated task 48 progress to 75% and status to 'In Progress' (3/4 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":8,"is_completed":1,"new_progress":75}
+[2025-08-12 08:52:59] {"subtask_id":"8","is_completed":"1"}
+Updating subtask 8 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":8,"is_completed":1}
+[2025-08-13 10:25:45] {"subtask_id":"9","is_completed":"1"}
+Updating subtask 9 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/1 subtasks = 100% (100% per subtask)
+Updated task 61 progress to 100% and status to 'Completed' (1/1 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":9,"is_completed":1,"new_progress":100}
+[2025-08-13 10:25:45] {"subtask_id":"9","is_completed":"1"}
+Updating subtask 9 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":9,"is_completed":1}

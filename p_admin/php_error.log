@@ -1,0 +1,9 @@
+[17-Aug-2025 23:45:51 Europe/Berlin] PHP Deprecated:  Constant FILTER_SANITIZE_STRING is deprecated in C:\xampp\htdocs\Voltech-2\p_admin\send_message.php on line 37
+[17-Aug-2025 23:45:51 Europe/Berlin] PHP Deprecated:  Constant FILTER_SANITIZE_STRING is deprecated in C:\xampp\htdocs\Voltech-2\p_admin\send_message.php on line 38
+[17-Aug-2025 23:45:51 Europe/Berlin] Message send error: Failed to retrieve sent message details in C:\xampp\htdocs\Voltech-2\p_admin\send_message.php on line 87
+[17-Aug-2025 23:47:05 Europe/Berlin] PHP Deprecated:  Constant FILTER_SANITIZE_STRING is deprecated in C:\xampp\htdocs\Voltech-2\p_admin\send_message.php on line 37
+[17-Aug-2025 23:47:05 Europe/Berlin] PHP Deprecated:  Constant FILTER_SANITIZE_STRING is deprecated in C:\xampp\htdocs\Voltech-2\p_admin\send_message.php on line 38
+[17-Aug-2025 23:47:05 Europe/Berlin] Message send error: Failed to retrieve sent message details in C:\xampp\htdocs\Voltech-2\p_admin\send_message.php on line 87
+[17-Aug-2025 23:47:55 Europe/Berlin] PHP Deprecated:  Constant FILTER_SANITIZE_STRING is deprecated in C:\xampp\htdocs\Voltech-2\p_admin\send_message.php on line 37
+[17-Aug-2025 23:47:55 Europe/Berlin] PHP Deprecated:  Constant FILTER_SANITIZE_STRING is deprecated in C:\xampp\htdocs\Voltech-2\p_admin\send_message.php on line 38
+[17-Aug-2025 23:47:55 Europe/Berlin] Message send error: Failed to retrieve sent message details in C:\xampp\htdocs\Voltech-2\p_admin\send_message.php on line 87

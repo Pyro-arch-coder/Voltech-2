@@ -1,0 +1,5751 @@
+[2025-08-17 07:57:29] Database connection not established
+[2025-08-17 07:58:47] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 07:58:47] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 30
+)
+
+[2025-08-17 07:58:47] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpA880.tmp
+)
+
+[2025-08-17 07:58:59] === New Request ===
+[2025-08-17 07:58:59] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 30
+)
+
+[2025-08-17 07:58:59] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpD5FA.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 07:58:59] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 07:58:59] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 07:58:59] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 30
+)
+
+[2025-08-17 07:58:59] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpD5FA.tmp
+)
+
+[2025-08-17 07:58:59] Error: Unknown column 'initial_budget_percentage' in 'field list' in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 153
+[2025-08-17 07:58:59] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php(153): mysqli->prepare('\n              ...')
+#1 {main}
+[2025-08-17 07:59:26] === New Request ===
+[2025-08-17 07:59:26] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 30
+)
+
+[2025-08-17 07:59:26] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php40DA.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 07:59:26] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 07:59:26] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 07:59:26] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 30
+)
+
+[2025-08-17 07:59:26] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php40DA.tmp
+)
+
+[2025-08-17 07:59:26] Error: Unknown column 'initial_budget_percentage' in 'field list' in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 153
+[2025-08-17 07:59:26] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php(153): mysqli->prepare('\n              ...')
+#1 {main}
+[2025-08-17 08:00:57] === New Request ===
+[2025-08-17 08:00:57] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 30
+)
+
+[2025-08-17 08:00:57] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpA369.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 08:00:57] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 08:00:57] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 08:00:57] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 30
+)
+
+[2025-08-17 08:00:57] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpA369.tmp
+)
+
+[2025-08-17 08:00:57] Error: Unknown column 'project_cost' in 'field list' in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 153
+[2025-08-17 08:00:57] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php(153): mysqli->prepare('\n              ...')
+#1 {main}
+[2025-08-17 08:01:03] === New Request ===
+[2025-08-17 08:01:03] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 40
+)
+
+[2025-08-17 08:01:03] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpBD8A.tmp
+            [error] => 0
+            [size] => 47383
+        )
+
+)
+
+[2025-08-17 08:01:03] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 08:01:03] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 08:01:03] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 40
+)
+
+[2025-08-17 08:01:03] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+    [size] => 47383
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpBD8A.tmp
+)
+
+[2025-08-17 08:01:03] Error: Unknown column 'project_cost' in 'field list' in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 153
+[2025-08-17 08:01:03] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php(153): mysqli->prepare('\n              ...')
+#1 {main}
+[2025-08-17 08:01:24] === New Request ===
+[2025-08-17 08:01:24] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 40
+)
+
+[2025-08-17 08:01:24] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpE4A.tmp
+            [error] => 0
+            [size] => 47383
+        )
+
+)
+
+[2025-08-17 08:01:24] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 08:01:24] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 08:01:24] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 40
+)
+
+[2025-08-17 08:01:24] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+    [size] => 47383
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpE4A.tmp
+)
+
+[2025-08-17 08:01:24] Error: Unknown column 'project_cost' in 'field list' in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 153
+[2025-08-17 08:01:24] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php(153): mysqli->prepare('\n              ...')
+#1 {main}
+[2025-08-17 08:03:15] === New Request ===
+[2025-08-17 08:03:15] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 30
+)
+
+[2025-08-17 08:03:15] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpBFE4.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 08:03:15] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 08:03:15] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 08:03:15] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 30
+)
+
+[2025-08-17 08:03:15] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpBFE4.tmp
+)
+
+[2025-08-17 08:03:15] Error: Table 'voltech.project_logs' doesn't exist in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 172
+[2025-08-17 08:03:15] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php(172): mysqli->prepare('INSERT INTO pro...')
+#1 {main}
+[2025-08-17 08:05:20] === New Request ===
+[2025-08-17 08:05:20] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 100
+)
+
+[2025-08-17 08:05:20] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpA743.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 08:05:20] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 08:05:20] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 100
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 08:05:20] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 100
+)
+
+[2025-08-17 08:05:20] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpA743.tmp
+)
+
+[2025-08-17 10:19:36] === New Request ===
+[2025-08-17 10:19:36] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 10:19:36] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php9378.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 10:19:36] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 10:19:36] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 10:19:36] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 10:19:36] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php9378.tmp
+)
+
+[2025-08-17 10:19:37] === New Request ===
+[2025-08-17 10:19:37] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 10:19:37] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php986A.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 10:19:37] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 10:19:37] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 10:19:37] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 10:19:37] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php986A.tmp
+)
+
+[2025-08-17 10:19:37] Error: Project not found or you do not have permission to update it in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 165
+[2025-08-17 10:19:37] Stack trace: #0 {main}
+[2025-08-17 10:25:36] === New Request ===
+[2025-08-17 10:25:36] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 10:25:36] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php11BA.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 10:25:36] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 10:25:36] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 10:25:36] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 10:25:36] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php11BA.tmp
+)
+
+[2025-08-17 10:25:36] Error: Project not found or you do not have permission to update it in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 165
+[2025-08-17 10:25:36] Stack trace: #0 {main}
+[2025-08-17 10:28:36] === New Request ===
+[2025-08-17 10:28:36] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 10:28:36] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpD252.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 10:28:36] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 10:28:36] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 10:28:36] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 10:28:36] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpD252.tmp
+)
+
+[2025-08-17 10:28:36] Error: Project not found or you do not have permission to update it in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 165
+[2025-08-17 10:28:36] Stack trace: #0 {main}
+[2025-08-17 10:33:50] === New Request ===
+[2025-08-17 10:33:50] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 10:33:50] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php9B6C.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 10:33:50] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 10:33:50] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 10:33:50] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 10:33:50] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php9B6C.tmp
+)
+
+[2025-08-17 10:33:50] Error: Project not found or you do not have permission to update it in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 168
+[2025-08-17 10:33:50] Stack trace: #0 {main}
+[2025-08-17 10:34:21] === New Request ===
+[2025-08-17 10:34:21] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 10:34:21] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php15CD.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 10:34:21] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 10:34:21] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 10:34:21] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 10:34:21] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php15CD.tmp
+)
+
+[2025-08-17 10:34:21] Error: Project not found or you do not have permission to update it in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 165
+[2025-08-17 10:34:21] Stack trace: #0 {main}
+[2025-08-17 10:34:39] === New Request ===
+[2025-08-17 10:34:39] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 100
+)
+
+[2025-08-17 10:34:39] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php5D08.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 10:34:39] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 10:34:39] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 100
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 10:34:39] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 100
+)
+
+[2025-08-17 10:34:39] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php5D08.tmp
+)
+
+[2025-08-17 10:38:15] === New Request ===
+[2025-08-17 10:38:15] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 40
+)
+
+[2025-08-17 10:38:15] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpA86B.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 10:38:15] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 10:38:15] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 10:38:15] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 40
+)
+
+[2025-08-17 10:38:15] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpA86B.tmp
+)
+
+[2025-08-17 10:56:38] === New Request ===
+[2025-08-17 10:56:38] POST data: Array
+(
+    [project_id] => 121
+    [amount] => 3000.00
+)
+
+[2025-08-17 10:56:38] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (3).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php7AF1.tmp
+            [error] => 0
+            [size] => 47127
+        )
+
+)
+
+[2025-08-17 10:56:38] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 10:56:38] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [amount] => 3000.00
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 10:56:38] POST data: Array
+(
+    [project_id] => 121
+    [amount] => 3000.00
+)
+
+[2025-08-17 10:56:38] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (3).pdf
+    [size] => 47127
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php7AF1.tmp
+)
+
+[2025-08-17 10:56:38] Error [2] Undefined variable $percentage in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 198
+[2025-08-17 10:56:38] Error: Undefined variable $percentage in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 198
+[2025-08-17 10:56:38] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php(198): {closure}(2, 'Undefined varia...', 'C:\\xampp\\htdocs...', 198)
+#1 {main}
+[2025-08-17 11:13:22] === New Request ===
+[2025-08-17 11:13:22] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 40
+)
+
+[2025-08-17 11:13:22] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpCDA3.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 11:13:22] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:13:22] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 11:13:22] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 40
+)
+
+[2025-08-17 11:13:22] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpCDA3.tmp
+)
+
+[2025-08-17 11:13:22] Error: Project not found or you do not have permission to update it in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 168
+[2025-08-17 11:13:22] Stack trace: #0 {main}
+[2025-08-17 11:17:44] === New Request ===
+[2025-08-17 11:17:44] POST data: Array
+(
+    [project_id] => 121
+    [payment_type] => percentage
+    [amount] => 30
+)
+
+[2025-08-17 11:17:44] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpCD54.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 11:17:44] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:17:44] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [payment_type] => percentage
+            [amount] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 11:17:44] POST data: Array
+(
+    [project_id] => 121
+    [payment_type] => percentage
+    [amount] => 30
+)
+
+[2025-08-17 11:17:44] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpCD54.tmp
+)
+
+[2025-08-17 11:17:44] Payment details - Type: percentage, Amount: 30
+[2025-08-17 11:17:44] Error [2] Undefined variable $percentage in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 222
+[2025-08-17 11:17:44] Error: Undefined variable $percentage in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 222
+[2025-08-17 11:17:44] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php(222): {closure}(2, 'Undefined varia...', 'C:\\xampp\\htdocs...', 222)
+#1 {main}
+[2025-08-17 11:18:25] === New Request ===
+[2025-08-17 11:18:25] POST data: Array
+(
+    [project_id] => 121
+    [payment_type] => fixed
+    [amount] => 3232
+)
+
+[2025-08-17 11:18:25] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php6E67.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 11:18:25] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:18:25] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [payment_type] => fixed
+            [amount] => 3232
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 11:18:25] POST data: Array
+(
+    [project_id] => 121
+    [payment_type] => fixed
+    [amount] => 3232
+)
+
+[2025-08-17 11:18:25] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php6E67.tmp
+)
+
+[2025-08-17 11:18:25] Payment details - Type: fixed, Amount: 3232
+[2025-08-17 11:18:25] Error [2] Undefined variable $percentage in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 222
+[2025-08-17 11:18:25] Error: Undefined variable $percentage in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 222
+[2025-08-17 11:18:25] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php(222): {closure}(2, 'Undefined varia...', 'C:\\xampp\\htdocs...', 222)
+#1 {main}
+[2025-08-17 11:21:23] === New Request ===
+[2025-08-17 11:21:23] POST data: Array
+(
+    [project_id] => 121
+    [payment_type] => percentage
+    [amount] => 30
+)
+
+[2025-08-17 11:21:23] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php252B.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 11:21:23] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:21:23] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [payment_type] => percentage
+            [amount] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 11:21:23] POST data: Array
+(
+    [project_id] => 121
+    [payment_type] => percentage
+    [amount] => 30
+)
+
+[2025-08-17 11:21:23] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php252B.tmp
+)
+
+[2025-08-17 11:21:23] Payment details - Type: percentage, Amount: 30
+[2025-08-17 11:21:23] Error [2] Undefined variable $percentage in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 247
+[2025-08-17 11:21:23] Error: Undefined variable $percentage in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 247
+[2025-08-17 11:21:23] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php(247): {closure}(2, 'Undefined varia...', 'C:\\xampp\\htdocs...', 247)
+#1 {main}
+[2025-08-17 11:24:39] === New Request ===
+[2025-08-17 11:24:39] POST data: Array
+(
+    [project_id] => 121
+    [payment_type] => percentage
+    [amount] => 40
+)
+
+[2025-08-17 11:24:39] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php2424.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 11:24:39] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:24:39] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [payment_type] => percentage
+            [amount] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 11:24:39] === NEW REQUEST ===
+[2025-08-17 11:24:39] POST data: Array
+(
+    [project_id] => 121
+    [payment_type] => percentage
+    [amount] => 40
+)
+
+[2025-08-17 11:24:39] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php2424.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 11:24:39] POST data: Array
+(
+    [project_id] => 121
+    [payment_type] => percentage
+    [amount] => 40
+)
+
+[2025-08-17 11:24:39] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php2424.tmp
+)
+
+[2025-08-17 11:24:39] Payment details - Type: percentage, Amount: 40
+[2025-08-17 11:24:39] Error [2] Undefined variable $percentage in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 271
+[2025-08-17 11:26:03] === New Request ===
+[2025-08-17 11:26:03] POST data: Array
+(
+    [project_id] => 121
+    [payment_type] => percentage
+    [amount] => 50
+)
+
+[2025-08-17 11:26:03] FILES data: Array
+(
+    [file] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php6BC8.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 11:26:03] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:26:03] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [payment_type] => percentage
+            [amount] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => file
+        )
+
+)
+
+[2025-08-17 11:26:03] === NEW REQUEST ===
+[2025-08-17 11:26:03] POST data: Array
+(
+    [project_id] => 121
+    [payment_type] => percentage
+    [amount] => 50
+)
+
+[2025-08-17 11:26:03] FILES data: Array
+(
+    [file] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php6BC8.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 11:26:03] POST data: Array
+(
+    [project_id] => 121
+    [payment_type] => percentage
+    [amount] => 50
+)
+
+[2025-08-17 11:26:03] Payment details - Type: percentage, Amount: 50
+[2025-08-17 11:26:03] Error [2] Undefined variable $percentage in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 271
+[2025-08-17 11:35:44] === New Request ===
+[2025-08-17 11:35:44] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 11:35:44] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php4922.tmp
+            [error] => 0
+            [size] => 47383
+        )
+
+)
+
+[2025-08-17 11:35:44] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:35:44] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 11:35:44] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 11:35:44] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+    [size] => 47383
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php4922.tmp
+)
+
+[2025-08-17 11:35:44] Error: Project not found or you do not have permission to update it in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 168
+[2025-08-17 11:35:44] Stack trace: #0 {main}
+[2025-08-17 11:35:56] === New Request ===
+[2025-08-17 11:35:56] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 40
+)
+
+[2025-08-17 11:35:56] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php78A0.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 11:35:56] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:35:56] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 11:35:56] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 40
+)
+
+[2025-08-17 11:35:56] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php78A0.tmp
+)
+
+[2025-08-17 11:36:12] === New Request ===
+[2025-08-17 11:36:12] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 11:36:12] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (3).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpB76F.tmp
+            [error] => 0
+            [size] => 47127
+        )
+
+)
+
+[2025-08-17 11:36:12] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:36:12] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 11:36:12] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 11:36:12] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (3).pdf
+    [size] => 47127
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpB76F.tmp
+)
+
+[2025-08-17 11:53:12] === New Request ===
+[2025-08-17 11:53:12] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 11:53:12] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php47B1.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 11:53:12] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:53:12] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 11:53:12] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 11:53:12] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php47B1.tmp
+)
+
+[2025-08-17 11:53:12] Error: Project not found or you do not have permission to update it in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 168
+[2025-08-17 11:53:12] Stack trace: #0 {main}
+[2025-08-17 11:54:48] === New Request ===
+[2025-08-17 11:54:48] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 11:54:48] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpBF6E.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 11:54:48] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:54:48] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 11:54:48] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 11:54:48] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpBF6E.tmp
+)
+
+[2025-08-17 11:54:48] Error: Project not found or you do not have permission to update it in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 168
+[2025-08-17 11:54:48] Stack trace: #0 {main}
+[2025-08-17 11:55:37] === New Request ===
+[2025-08-17 11:55:37] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 40
+)
+
+[2025-08-17 11:55:37] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php7B4D.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 11:55:37] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:55:37] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 11:55:37] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 40
+)
+
+[2025-08-17 11:55:37] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php7B4D.tmp
+)
+
+[2025-08-17 11:56:42] === New Request ===
+[2025-08-17 11:56:42] POST data: Array
+(
+    [project_id] => 121
+    [fixed_amount] => 323232
+)
+
+[2025-08-17 11:56:42] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php7C43.tmp
+            [error] => 0
+            [size] => 47383
+        )
+
+)
+
+[2025-08-17 11:56:42] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 11:56:42] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [fixed_amount] => 323232
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 11:56:42] POST data: Array
+(
+    [project_id] => 121
+    [fixed_amount] => 323232
+)
+
+[2025-08-17 11:56:42] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+    [size] => 47383
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php7C43.tmp
+)
+
+[2025-08-17 12:01:45] === New Request ===
+[2025-08-17 12:01:45] POST data: Array
+(
+    [project_id] => 121
+    [fixed_amount] => 3232
+)
+
+[2025-08-17 12:01:45] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php1A36.tmp
+            [error] => 0
+            [size] => 47383
+        )
+
+)
+
+[2025-08-17 12:01:45] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 12:01:45] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [fixed_amount] => 3232
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 12:01:45] POST data: Array
+(
+    [project_id] => 121
+    [fixed_amount] => 3232
+)
+
+[2025-08-17 12:01:45] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+    [size] => 47383
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php1A36.tmp
+)
+
+[2025-08-17 12:01:45] Error: Table 'voltech.project_list' doesn't exist in C:\xampp\htdocs\Voltech-2\p_client\fixed_budget_handler.php on line 159
+[2025-08-17 12:01:45] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\fixed_budget_handler.php(159): mysqli->prepare('\n              ...')
+#1 {main}
+[2025-08-17 12:02:35] === New Request ===
+[2025-08-17 12:02:35] POST data: Array
+(
+    [project_id] => 121
+    [fixed_amount] => 3232
+)
+
+[2025-08-17 12:02:35] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpDE14.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 12:02:35] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 12:02:35] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [fixed_amount] => 3232
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 12:02:35] POST data: Array
+(
+    [project_id] => 121
+    [fixed_amount] => 3232
+)
+
+[2025-08-17 12:02:35] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpDE14.tmp
+)
+
+[2025-08-17 12:02:35] Error: Table 'voltech.payment_proofs' doesn't exist in C:\xampp\htdocs\Voltech-2\p_client\fixed_budget_handler.php on line 147
+[2025-08-17 12:02:35] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\fixed_budget_handler.php(147): mysqli->prepare('INSERT INTO pay...')
+#1 {main}
+[2025-08-17 12:06:27] === New Request ===
+[2025-08-17 12:06:27] POST data: Array
+(
+    [project_id] => 121
+    [fixed_amount] => 32332
+)
+
+[2025-08-17 12:06:27] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php694F.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 12:06:27] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 12:06:27] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [fixed_amount] => 32332
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 12:06:27] POST data: Array
+(
+    [project_id] => 121
+    [fixed_amount] => 32332
+)
+
+[2025-08-17 12:06:27] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php694F.tmp
+)
+
+[2025-08-17 12:06:27] Error [2] Undefined variable $percentage in C:\xampp\htdocs\Voltech-2\p_client\fixed_budget_handler.php on line 210
+[2025-08-17 12:06:27] Error: Undefined variable $percentage in C:\xampp\htdocs\Voltech-2\p_client\fixed_budget_handler.php on line 210
+[2025-08-17 12:06:27] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\fixed_budget_handler.php(210): {closure}(2, 'Undefined varia...', 'C:\\xampp\\htdocs...', 210)
+#1 {main}
+[2025-08-17 12:08:20] === New Request ===
+[2025-08-17 12:08:20] POST data: Array
+(
+    [project_id] => 121
+    [fixed_amount] => 32322
+)
+
+[2025-08-17 12:08:20] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php20E3.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 12:08:20] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 12:08:20] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [fixed_amount] => 32322
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 12:08:20] POST data: Array
+(
+    [project_id] => 121
+    [fixed_amount] => 32322
+)
+
+[2025-08-17 12:08:20] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php20E3.tmp
+)
+
+[2025-08-17 12:08:35] === New Request ===
+[2025-08-17 12:08:35] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 60
+)
+
+[2025-08-17 12:08:35] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php5C09.tmp
+            [error] => 0
+            [size] => 47129
+        )
+
+)
+
+[2025-08-17 12:08:35] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 12:08:35] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 60
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 12:08:35] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 60
+)
+
+[2025-08-17 12:08:35] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (2).pdf
+    [size] => 47129
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php5C09.tmp
+)
+
+[2025-08-17 12:22:32] === New Request ===
+[2025-08-17 12:22:32] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 12:22:32] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php202A.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 12:22:32] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 12:22:32] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 121
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 12:22:32] POST data: Array
+(
+    [project_id] => 121
+    [percentage] => 50
+)
+
+[2025-08-17 12:22:32] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php202A.tmp
+)
+
+[2025-08-17 12:32:09] === New Request ===
+[2025-08-17 12:32:09] POST data: Array
+(
+    [project_id] => 209
+    [fixed_amount] => 1000000
+)
+
+[2025-08-17 12:32:09] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpEEEE.tmp
+            [error] => 0
+            [size] => 47383
+        )
+
+)
+
+[2025-08-17 12:32:09] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 12:32:09] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 209
+            [fixed_amount] => 1000000
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 12:32:09] POST data: Array
+(
+    [project_id] => 209
+    [fixed_amount] => 1000000
+)
+
+[2025-08-17 12:32:09] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28.pdf
+    [size] => 47383
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpEEEE.tmp
+)
+
+[2025-08-17 12:49:32] === New Request ===
+[2025-08-17 12:49:32] POST data: Array
+(
+    [project_id] => 209
+    [fixed_amount] => 3232232232
+)
+
+[2025-08-17 12:49:32] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpD8E8.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 12:49:32] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 12:49:32] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 209
+            [fixed_amount] => 3232232232
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 12:49:32] POST data: Array
+(
+    [project_id] => 209
+    [fixed_amount] => 3232232232
+)
+
+[2025-08-17 12:49:32] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpD8E8.tmp
+)
+
+[2025-08-17 12:52:12] === New Request ===
+[2025-08-17 12:52:12] POST data: Array
+(
+    [project_id] => 209
+    [fixed_amount] => 1000
+)
+
+[2025-08-17 12:52:12] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php4C3B.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 12:52:12] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 12:52:12] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 209
+            [fixed_amount] => 1000
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 12:52:12] POST data: Array
+(
+    [project_id] => 209
+    [fixed_amount] => 1000
+)
+
+[2025-08-17 12:52:12] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php4C3B.tmp
+)
+
+[2025-08-17 12:55:19] === New Request ===
+[2025-08-17 12:55:19] POST data: Array
+(
+    [project_id] => 209
+    [fixed_amount] => 10000
+)
+
+[2025-08-17 12:55:19] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [full_path] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php26C4.tmp
+            [error] => 0
+            [size] => 47391
+        )
+
+)
+
+[2025-08-17 12:55:19] SESSION data: Array
+(
+    [csrf_token] => 3a6d4051da9bac71bdf03bea87a4fb1fa010d25cccaa9244af60c635138279c6
+    [last_activity] => 1755399107
+    [email] => pogicarlos123@gmail.com
+    [user_id] => 77
+    [user_level] => 6
+    [firstname] => dadasda
+    [lastname] => dadasdsa
+    [name] => dadasda dadasdsa
+    [logged_in] => 1
+)
+
+[2025-08-17 12:55:19] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 209
+            [fixed_amount] => 10000
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-08-17 12:55:19] POST data: Array
+(
+    [project_id] => 209
+    [fixed_amount] => 10000
+)
+
+[2025-08-17 12:55:19] File upload details: Array
+(
+    [name] => Supplier_Order_Report_2025-08-13_to_2025-08-28 (1).pdf
+    [size] => 47391
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php26C4.tmp
+)
+
+[2025-09-08 18:50:47] === New Request ===
+[2025-09-08 18:50:47] POST data: Array
+(
+    [project_id] => 217
+    [percentage] => 50
+)
+
+[2025-09-08 18:50:47] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (3).pdf
+            [full_path] => project_materials_estimation210 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpB42B.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 18:50:47] SESSION data: Array
+(
+    [csrf_token] => f133be045d11732cd94ffdaaa150a30f21b7980569df4fe444dae6e39246321b
+    [last_activity] => 1757349943
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 18:50:47] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 18:50:47] POST data: Array
+(
+    [project_id] => 217
+    [percentage] => 50
+)
+
+[2025-09-08 18:50:47] File upload details: Array
+(
+    [name] => project_materials_estimation210 (3).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpB42B.tmp
+)
+
+[2025-09-08 19:04:12] === New Request ===
+[2025-09-08 19:04:12] POST data: Array
+(
+    [project_id] => 217
+    [percentage] => 60
+)
+
+[2025-09-08 19:04:12] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpFC86.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 19:04:12] SESSION data: Array
+(
+    [csrf_token] => f133be045d11732cd94ffdaaa150a30f21b7980569df4fe444dae6e39246321b
+    [last_activity] => 1757349943
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 19:04:12] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [percentage] => 60
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 19:04:12] POST data: Array
+(
+    [project_id] => 217
+    [percentage] => 60
+)
+
+[2025-09-08 19:04:12] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpFC86.tmp
+)
+
+[2025-09-08 19:04:12] Error: Table 'voltech.initial_b_proof_of_payments' doesn't exist in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 144
+[2025-09-08 19:04:12] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php(144): mysqli->prepare('INSERT INTO ini...')
+#1 {main}
+[2025-09-08 19:04:44] === New Request ===
+[2025-09-08 19:04:44] POST data: Array
+(
+    [project_id] => 217
+    [percentage] => 60
+)
+
+[2025-09-08 19:04:44] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php77E1.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 19:04:44] SESSION data: Array
+(
+    [csrf_token] => f133be045d11732cd94ffdaaa150a30f21b7980569df4fe444dae6e39246321b
+    [last_activity] => 1757349943
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 19:04:44] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [percentage] => 60
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 19:04:44] POST data: Array
+(
+    [project_id] => 217
+    [percentage] => 60
+)
+
+[2025-09-08 19:04:44] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php77E1.tmp
+)
+
+[2025-09-08 19:08:28] === New Request ===
+[2025-09-08 19:08:28] POST data: Array
+(
+    [project_id] => 217
+    [percentage] => 50
+)
+
+[2025-09-08 19:08:28] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (3).pdf
+            [full_path] => project_materials_estimation210 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpE2E2.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 19:08:28] SESSION data: Array
+(
+    [csrf_token] => f133be045d11732cd94ffdaaa150a30f21b7980569df4fe444dae6e39246321b
+    [last_activity] => 1757349943
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 19:08:28] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 19:08:28] POST data: Array
+(
+    [project_id] => 217
+    [percentage] => 50
+)
+
+[2025-09-08 19:08:28] File upload details: Array
+(
+    [name] => project_materials_estimation210 (3).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpE2E2.tmp
+)
+
+[2025-09-08 19:55:41] === New Request ===
+[2025-09-08 19:55:41] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 60
+)
+
+[2025-09-08 19:55:41] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php1D1C.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 19:55:41] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 19:55:41] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => gcash
+            [percentage] => 60
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 19:55:41] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 60
+)
+
+[2025-09-08 19:55:41] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php1D1C.tmp
+)
+
+[2025-09-08 19:55:41] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 19:55:41] Stack trace: #0 {main}
+[2025-09-08 19:57:24] === New Request ===
+[2025-09-08 19:57:24] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cheque
+    [percentage] => 50
+)
+
+[2025-09-08 19:57:24] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (3).pdf
+            [full_path] => project_materials_estimation210 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpB169.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 19:57:24] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 19:57:24] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cheque
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 19:57:24] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cheque
+    [percentage] => 50
+)
+
+[2025-09-08 19:57:24] File upload details: Array
+(
+    [name] => project_materials_estimation210 (3).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpB169.tmp
+)
+
+[2025-09-08 19:57:53] === New Request ===
+[2025-09-08 19:57:53] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 50
+)
+
+[2025-09-08 19:57:53] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (3).pdf
+            [full_path] => project_materials_estimation210 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php1F18.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 19:57:53] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 19:57:53] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => gcash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 19:57:53] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 50
+)
+
+[2025-09-08 19:57:53] File upload details: Array
+(
+    [name] => project_materials_estimation210 (3).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php1F18.tmp
+)
+
+[2025-09-08 19:57:53] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 19:57:53] Stack trace: #0 {main}
+[2025-09-08 19:58:13] === New Request ===
+[2025-09-08 19:58:13] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 50
+)
+
+[2025-09-08 19:58:13] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php70A4.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 19:58:13] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 19:58:13] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => bank_transfer
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 19:58:13] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 50
+)
+
+[2025-09-08 19:58:13] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php70A4.tmp
+)
+
+[2025-09-08 19:58:13] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 19:58:13] Stack trace: #0 {main}
+[2025-09-08 19:58:40] === New Request ===
+[2025-09-08 19:58:40] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cheque
+    [percentage] => 40
+)
+
+[2025-09-08 19:58:40] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpD942.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 19:58:40] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 19:58:40] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cheque
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 19:58:40] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cheque
+    [percentage] => 40
+)
+
+[2025-09-08 19:58:40] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpD942.tmp
+)
+
+[2025-09-08 19:59:04] === New Request ===
+[2025-09-08 19:59:04] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-09-08 19:59:04] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php3609.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 19:59:04] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 19:59:04] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 19:59:04] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-09-08 19:59:04] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php3609.tmp
+)
+
+[2025-09-08 19:59:39] === New Request ===
+[2025-09-08 19:59:39] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 50
+)
+
+[2025-09-08 19:59:39] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpC0B6.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 19:59:39] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 19:59:39] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => gcash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 19:59:39] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 50
+)
+
+[2025-09-08 19:59:39] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpC0B6.tmp
+)
+
+[2025-09-08 19:59:39] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 19:59:39] Stack trace: #0 {main}
+[2025-09-08 20:01:54] === New Request ===
+[2025-09-08 20:01:54] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-09-08 20:01:54] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpCD31.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:01:54] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:01:54] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:01:54] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-09-08 20:01:54] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpCD31.tmp
+)
+
+[2025-09-08 20:01:54] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 20:01:54] Stack trace: #0 {main}
+[2025-09-08 20:02:10] === New Request ===
+[2025-09-08 20:02:10] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 50
+)
+
+[2025-09-08 20:02:10] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpB25.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:02:10] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:02:10] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => gcash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:02:10] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 50
+)
+
+[2025-09-08 20:02:10] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpB25.tmp
+)
+
+[2025-09-08 20:02:10] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 20:02:10] Stack trace: #0 {main}
+[2025-09-08 20:02:33] === New Request ===
+[2025-09-08 20:02:33] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 30
+)
+
+[2025-09-08 20:02:33] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php650E.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:02:33] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:02:33] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cash
+            [percentage] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:02:33] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 30
+)
+
+[2025-09-08 20:02:33] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php650E.tmp
+)
+
+[2025-09-08 20:03:01] === New Request ===
+[2025-09-08 20:03:01] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 40
+)
+
+[2025-09-08 20:03:01] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpD3C7.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:03:01] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:03:01] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => bank_transfer
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:03:01] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 40
+)
+
+[2025-09-08 20:03:01] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpD3C7.tmp
+)
+
+[2025-09-08 20:03:28] === New Request ===
+[2025-09-08 20:03:28] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 40
+)
+
+[2025-09-08 20:03:28] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php3D9D.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:03:28] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:03:28] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => gcash
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:03:28] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 40
+)
+
+[2025-09-08 20:03:28] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php3D9D.tmp
+)
+
+[2025-09-08 20:03:28] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 20:03:28] Stack trace: #0 {main}
+[2025-09-08 20:03:40] === New Request ===
+[2025-09-08 20:03:40] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 40
+)
+
+[2025-09-08 20:03:40] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php6CEC.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:03:40] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:03:40] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => bank_transfer
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:03:40] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 40
+)
+
+[2025-09-08 20:03:40] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php6CEC.tmp
+)
+
+[2025-09-08 20:03:40] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 20:03:40] Stack trace: #0 {main}
+[2025-09-08 20:03:52] === New Request ===
+[2025-09-08 20:03:52] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 30
+)
+
+[2025-09-08 20:03:52] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (3).pdf
+            [full_path] => project_materials_estimation210 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php9B7F.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:03:52] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:03:52] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cash
+            [percentage] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:03:52] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 30
+)
+
+[2025-09-08 20:03:52] File upload details: Array
+(
+    [name] => project_materials_estimation210 (3).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php9B7F.tmp
+)
+
+[2025-09-08 20:04:11] === New Request ===
+[2025-09-08 20:04:11] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cheque
+    [percentage] => 40
+)
+
+[2025-09-08 20:04:11] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpE3D3.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:04:11] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:04:11] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cheque
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:04:11] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cheque
+    [percentage] => 40
+)
+
+[2025-09-08 20:04:11] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpE3D3.tmp
+)
+
+[2025-09-08 20:04:25] === New Request ===
+[2025-09-08 20:04:25] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 60
+)
+
+[2025-09-08 20:04:25] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php1CF5.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:04:25] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:04:25] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => bank_transfer
+            [percentage] => 60
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:04:25] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 60
+)
+
+[2025-09-08 20:04:25] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php1CF5.tmp
+)
+
+[2025-09-08 20:04:44] === New Request ===
+[2025-09-08 20:04:44] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 30
+)
+
+[2025-09-08 20:04:44] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (3).pdf
+            [full_path] => project_materials_estimation210 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php66E0.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:04:44] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:04:44] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => gcash
+            [percentage] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:04:44] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 30
+)
+
+[2025-09-08 20:04:44] File upload details: Array
+(
+    [name] => project_materials_estimation210 (3).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php66E0.tmp
+)
+
+[2025-09-08 20:05:07] === New Request ===
+[2025-09-08 20:05:07] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 40
+)
+
+[2025-09-08 20:05:07] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpBEF4.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:05:07] SESSION data: Array
+(
+    [csrf_token] => 41fbf8a64a51528af0db55d116e4a15ab3e9fc193971d9cb2f36c7a0f4ce84c3
+    [last_activity] => 1757353687
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:05:07] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => gcash
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:05:07] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 40
+)
+
+[2025-09-08 20:05:07] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpBEF4.tmp
+)
+
+[2025-09-08 20:30:06] === New Request ===
+[2025-09-08 20:30:06] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 40
+)
+
+[2025-09-08 20:30:06] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpA0AF.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:30:06] SESSION data: Array
+(
+    [csrf_token] => 6dc2d1bc91098f9971692b11e5ee6a06da573a25a8f37da1b82cbb1ba50ea7e2
+    [last_activity] => 1757355585
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:30:06] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => bank_transfer
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:30:06] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 40
+)
+
+[2025-09-08 20:30:06] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpA0AF.tmp
+)
+
+[2025-09-08 20:30:06] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 20:30:06] Stack trace: #0 {main}
+[2025-09-08 20:30:52] === New Request ===
+[2025-09-08 20:30:52] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 40
+)
+
+[2025-09-08 20:30:52] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php521E.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:30:52] SESSION data: Array
+(
+    [csrf_token] => 6dc2d1bc91098f9971692b11e5ee6a06da573a25a8f37da1b82cbb1ba50ea7e2
+    [last_activity] => 1757355585
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:30:52] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => gcash
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:30:52] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 40
+)
+
+[2025-09-08 20:30:52] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php521E.tmp
+)
+
+[2025-09-08 20:30:52] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 20:30:52] Stack trace: #0 {main}
+[2025-09-08 20:31:00] === New Request ===
+[2025-09-08 20:31:00] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 20
+)
+
+[2025-09-08 20:31:00] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php72E6.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:31:00] SESSION data: Array
+(
+    [csrf_token] => 6dc2d1bc91098f9971692b11e5ee6a06da573a25a8f37da1b82cbb1ba50ea7e2
+    [last_activity] => 1757355585
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:31:00] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cash
+            [percentage] => 20
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:31:00] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 20
+)
+
+[2025-09-08 20:31:00] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php72E6.tmp
+)
+
+[2025-09-08 20:31:20] === New Request ===
+[2025-09-08 20:31:20] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cheque
+    [percentage] => 30
+)
+
+[2025-09-08 20:31:20] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpBFFD.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:31:20] SESSION data: Array
+(
+    [csrf_token] => 6dc2d1bc91098f9971692b11e5ee6a06da573a25a8f37da1b82cbb1ba50ea7e2
+    [last_activity] => 1757355585
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:31:20] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cheque
+            [percentage] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:31:20] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cheque
+    [percentage] => 30
+)
+
+[2025-09-08 20:31:20] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpBFFD.tmp
+)
+
+[2025-09-08 20:31:32] === New Request ===
+[2025-09-08 20:31:32] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 50
+)
+
+[2025-09-08 20:31:32] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (3).pdf
+            [full_path] => project_materials_estimation210 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpF13F.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:31:32] SESSION data: Array
+(
+    [csrf_token] => 6dc2d1bc91098f9971692b11e5ee6a06da573a25a8f37da1b82cbb1ba50ea7e2
+    [last_activity] => 1757355585
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:31:32] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => gcash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:31:32] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 50
+)
+
+[2025-09-08 20:31:32] File upload details: Array
+(
+    [name] => project_materials_estimation210 (3).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpF13F.tmp
+)
+
+[2025-09-08 20:32:01] === New Request ===
+[2025-09-08 20:32:01] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 50
+)
+
+[2025-09-08 20:32:01] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php6094.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:32:01] SESSION data: Array
+(
+    [csrf_token] => 6dc2d1bc91098f9971692b11e5ee6a06da573a25a8f37da1b82cbb1ba50ea7e2
+    [last_activity] => 1757355585
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:32:01] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => bank_transfer
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:32:01] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 50
+)
+
+[2025-09-08 20:32:01] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php6094.tmp
+)
+
+[2025-09-08 20:32:01] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 20:32:01] Stack trace: #0 {main}
+[2025-09-08 20:32:56] === New Request ===
+[2025-09-08 20:32:56] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 40
+)
+
+[2025-09-08 20:32:56] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php3913.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:32:56] SESSION data: Array
+(
+    [csrf_token] => 6dc2d1bc91098f9971692b11e5ee6a06da573a25a8f37da1b82cbb1ba50ea7e2
+    [last_activity] => 1757355585
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:32:56] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => gcash
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:32:56] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => gcash
+    [percentage] => 40
+)
+
+[2025-09-08 20:32:56] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php3913.tmp
+)
+
+[2025-09-08 20:33:16] === New Request ===
+[2025-09-08 20:33:16] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 60
+)
+
+[2025-09-08 20:33:16] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php84B4.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:33:16] SESSION data: Array
+(
+    [csrf_token] => 6dc2d1bc91098f9971692b11e5ee6a06da573a25a8f37da1b82cbb1ba50ea7e2
+    [last_activity] => 1757355585
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:33:16] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => bank_transfer
+            [percentage] => 60
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:33:16] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 60
+)
+
+[2025-09-08 20:33:16] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php84B4.tmp
+)
+
+[2025-09-08 20:33:43] === New Request ===
+[2025-09-08 20:33:43] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 20
+)
+
+[2025-09-08 20:33:43] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpEF17.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:33:43] SESSION data: Array
+(
+    [csrf_token] => 6dc2d1bc91098f9971692b11e5ee6a06da573a25a8f37da1b82cbb1ba50ea7e2
+    [last_activity] => 1757355585
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:33:43] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => bank_transfer
+            [percentage] => 20
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:33:43] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 20
+)
+
+[2025-09-08 20:33:43] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpEF17.tmp
+)
+
+[2025-09-08 20:34:08] === New Request ===
+[2025-09-08 20:34:08] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 30
+)
+
+[2025-09-08 20:34:08] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (3).pdf
+            [full_path] => project_materials_estimation210 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php5227.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:34:08] SESSION data: Array
+(
+    [csrf_token] => 6dc2d1bc91098f9971692b11e5ee6a06da573a25a8f37da1b82cbb1ba50ea7e2
+    [last_activity] => 1757355585
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:34:08] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cash
+            [percentage] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:34:08] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 30
+)
+
+[2025-09-08 20:34:08] File upload details: Array
+(
+    [name] => project_materials_estimation210 (3).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php5227.tmp
+)
+
+[2025-09-08 20:34:58] === New Request ===
+[2025-09-08 20:34:58] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 100
+)
+
+[2025-09-08 20:34:58] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php13E2.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:34:58] SESSION data: Array
+(
+    [csrf_token] => 6dc2d1bc91098f9971692b11e5ee6a06da573a25a8f37da1b82cbb1ba50ea7e2
+    [last_activity] => 1757355585
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:34:58] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => bank_transfer
+            [percentage] => 100
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:34:58] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => bank_transfer
+    [percentage] => 100
+)
+
+[2025-09-08 20:34:58] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php13E2.tmp
+)
+
+[2025-09-08 20:38:42] === New Request ===
+[2025-09-08 20:38:42] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPI
+    [percentage] => 50
+)
+
+[2025-09-08 20:38:42] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php7F31.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 20:38:42] SESSION data: Array
+(
+    [csrf_token] => 6dc2d1bc91098f9971692b11e5ee6a06da573a25a8f37da1b82cbb1ba50ea7e2
+    [last_activity] => 1757355585
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 20:38:42] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => BPI
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 20:38:42] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPI
+    [percentage] => 50
+)
+
+[2025-09-08 20:38:42] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php7F31.tmp
+)
+
+[2025-09-08 21:15:55] === New Request ===
+[2025-09-08 21:15:55] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPO
+    [percentage] => 50
+)
+
+[2025-09-08 21:15:55] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => proof_payment_217_88_1757356722.pdf
+            [full_path] => proof_payment_217_88_1757356722.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php9361.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 21:15:55] SESSION data: Array
+(
+    [csrf_token] => 9ffaf909a4a1b8fbf6202e197f41569b2349edca9eeec6a2529455e4a438f4a0
+    [last_activity] => 1757358942
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 21:15:55] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => BPO
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 21:15:55] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPO
+    [percentage] => 50
+)
+
+[2025-09-08 21:15:55] File upload details: Array
+(
+    [name] => proof_payment_217_88_1757356722.pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php9361.tmp
+)
+
+[2025-09-08 21:15:55] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 21:15:55] Stack trace: #0 {main}
+[2025-09-08 21:16:02] === New Request ===
+[2025-09-08 21:16:02] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPI
+    [percentage] => 50
+)
+
+[2025-09-08 21:16:02] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => proof_payment_217_88_1757356722.pdf
+            [full_path] => proof_payment_217_88_1757356722.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpAC97.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 21:16:02] SESSION data: Array
+(
+    [csrf_token] => 9ffaf909a4a1b8fbf6202e197f41569b2349edca9eeec6a2529455e4a438f4a0
+    [last_activity] => 1757358942
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 21:16:02] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => BPI
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 21:16:02] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPI
+    [percentage] => 50
+)
+
+[2025-09-08 21:16:02] File upload details: Array
+(
+    [name] => proof_payment_217_88_1757356722.pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpAC97.tmp
+)
+
+[2025-09-08 21:16:02] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 21:16:02] Stack trace: #0 {main}
+[2025-09-08 21:16:12] === New Request ===
+[2025-09-08 21:16:12] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cheque
+    [percentage] => 40
+)
+
+[2025-09-08 21:16:12] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => proof_payment_217_88_1757356722.pdf
+            [full_path] => proof_payment_217_88_1757356722.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpD4C1.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 21:16:12] SESSION data: Array
+(
+    [csrf_token] => 9ffaf909a4a1b8fbf6202e197f41569b2349edca9eeec6a2529455e4a438f4a0
+    [last_activity] => 1757358942
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 21:16:12] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cheque
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 21:16:12] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cheque
+    [percentage] => 40
+)
+
+[2025-09-08 21:16:12] File upload details: Array
+(
+    [name] => proof_payment_217_88_1757356722.pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpD4C1.tmp
+)
+
+[2025-09-08 21:16:39] === New Request ===
+[2025-09-08 21:16:39] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPO
+    [percentage] => 40
+)
+
+[2025-09-08 21:16:39] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => proof_payment_217_88_1757356722.pdf
+            [full_path] => proof_payment_217_88_1757356722.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php3E2B.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 21:16:39] SESSION data: Array
+(
+    [csrf_token] => 9ffaf909a4a1b8fbf6202e197f41569b2349edca9eeec6a2529455e4a438f4a0
+    [last_activity] => 1757358942
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 21:16:39] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => BPO
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 21:16:39] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPO
+    [percentage] => 40
+)
+
+[2025-09-08 21:16:39] File upload details: Array
+(
+    [name] => proof_payment_217_88_1757356722.pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php3E2B.tmp
+)
+
+[2025-09-08 21:16:39] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 199
+[2025-09-08 21:16:39] Stack trace: #0 {main}
+[2025-09-08 21:16:54] === New Request ===
+[2025-09-08 21:16:54] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 30
+)
+
+[2025-09-08 21:16:54] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (3).pdf
+            [full_path] => project_materials_estimation210 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php77E9.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 21:16:54] SESSION data: Array
+(
+    [csrf_token] => 9ffaf909a4a1b8fbf6202e197f41569b2349edca9eeec6a2529455e4a438f4a0
+    [last_activity] => 1757358942
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 21:16:54] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cash
+            [percentage] => 30
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 21:16:54] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 30
+)
+
+[2025-09-08 21:16:54] File upload details: Array
+(
+    [name] => project_materials_estimation210 (3).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php77E9.tmp
+)
+
+[2025-09-08 21:17:15] === New Request ===
+[2025-09-08 21:17:15] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPO
+    [percentage] => 50
+)
+
+[2025-09-08 21:17:15] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => proof_payment_217_88_1757356722.pdf
+            [full_path] => proof_payment_217_88_1757356722.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpC9C3.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 21:17:15] SESSION data: Array
+(
+    [csrf_token] => 9ffaf909a4a1b8fbf6202e197f41569b2349edca9eeec6a2529455e4a438f4a0
+    [last_activity] => 1757358942
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 21:17:15] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => BPO
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 21:17:15] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPO
+    [percentage] => 50
+)
+
+[2025-09-08 21:17:15] File upload details: Array
+(
+    [name] => proof_payment_217_88_1757356722.pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpC9C3.tmp
+)
+
+[2025-09-08 21:27:03] === New Request ===
+[2025-09-08 21:27:03] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPO
+    [percentage] => 40
+)
+
+[2025-09-08 21:27:03] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => proof_payment_217_88_1757356722.pdf
+            [full_path] => proof_payment_217_88_1757356722.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpC2B4.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 21:27:03] SESSION data: Array
+(
+    [csrf_token] => 2a488ccd342752151a2b23c108a0e628d61cdaf91198dd7c1adb4a6d69bb840b
+    [last_activity] => 1757359610
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 21:27:03] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => BPO
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 21:27:03] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPO
+    [percentage] => 40
+)
+
+[2025-09-08 21:27:03] File upload details: Array
+(
+    [name] => proof_payment_217_88_1757356722.pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpC2B4.tmp
+)
+
+[2025-09-08 21:30:51] === New Request ===
+[2025-09-08 21:30:51] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPI
+    [percentage] => 40
+)
+
+[2025-09-08 21:30:51] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (3).pdf
+            [full_path] => project_materials_estimation210 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php4014.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 21:30:51] SESSION data: Array
+(
+    [csrf_token] => 3f3cf13efaa2a4cc3743edb52f0f69a8eef0f8dd8057c6b9258325cbe3ca6836
+    [last_activity] => 1757359837
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 21:30:52] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => BPI
+            [percentage] => 40
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 21:30:52] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPI
+    [percentage] => 40
+)
+
+[2025-09-08 21:30:52] File upload details: Array
+(
+    [name] => project_materials_estimation210 (3).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php4014.tmp
+)
+
+[2025-09-08 21:43:27] === New Request ===
+[2025-09-08 21:43:27] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPO
+    [percentage] => 50
+)
+
+[2025-09-08 21:43:27] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (2).pdf
+            [full_path] => project_materials_estimation210 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpC8EA.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 21:43:27] SESSION data: Array
+(
+    [csrf_token] => 6c9d1069232bee021c85a3ea20008c750b98e1998d07c4f7b6e62dbced4a98f0
+    [last_activity] => 1757360123
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 21:43:27] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => BPO
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 21:43:27] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => BPO
+    [percentage] => 50
+)
+
+[2025-09-08 21:43:27] File upload details: Array
+(
+    [name] => project_materials_estimation210 (2).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpC8EA.tmp
+)
+
+[2025-09-08 21:51:33] === New Request ===
+[2025-09-08 21:51:33] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-09-08 21:51:33] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => proof_payment_217_88_1757356722.pdf
+            [full_path] => proof_payment_217_88_1757356722.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php3203.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 21:51:33] SESSION data: Array
+(
+    [csrf_token] => 1ec99cbf837a4dcc4475d2881f75ee1fa3918bd04b81b12a1337c4178a7c66d6
+    [last_activity] => 1757360818
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 21:51:33] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 21:51:33] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-09-08 21:51:33] File upload details: Array
+(
+    [name] => proof_payment_217_88_1757356722.pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php3203.tmp
+)
+
+[2025-09-08 21:54:43] === New Request ===
+[2025-09-08 21:54:43] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-09-08 21:54:43] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => proof_payment_217_88_1757356722.pdf
+            [full_path] => proof_payment_217_88_1757356722.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php16CC.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 21:54:43] SESSION data: Array
+(
+    [csrf_token] => 1ec99cbf837a4dcc4475d2881f75ee1fa3918bd04b81b12a1337c4178a7c66d6
+    [last_activity] => 1757360818
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 21:54:43] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 21:54:43] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-09-08 21:54:43] File upload details: Array
+(
+    [name] => proof_payment_217_88_1757356722.pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php16CC.tmp
+)
+
+[2025-09-08 21:54:43] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 207
+[2025-09-08 21:54:43] Stack trace: #0 {main}
+[2025-09-08 21:55:03] === New Request ===
+[2025-09-08 21:55:03] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-09-08 21:55:03] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation210 (3).pdf
+            [full_path] => project_materials_estimation210 (3).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php674F.tmp
+            [error] => 0
+            [size] => 120653
+        )
+
+)
+
+[2025-09-08 21:55:03] SESSION data: Array
+(
+    [csrf_token] => 1ec99cbf837a4dcc4475d2881f75ee1fa3918bd04b81b12a1337c4178a7c66d6
+    [last_activity] => 1757360818
+    [email] => carlosroibarrettooo@gmail.com
+    [user_id] => 88
+    [user_level] => 6
+    [firstname] => Pyro
+    [lastname] => Mancer
+    [name] => Pyro Mancer
+    [logged_in] => 1
+)
+
+[2025-09-08 21:55:03] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 217
+            [payment_method] => cash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-08 21:55:03] POST data: Array
+(
+    [project_id] => 217
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-09-08 21:55:03] File upload details: Array
+(
+    [name] => project_materials_estimation210 (3).pdf
+    [size] => 120653
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php674F.tmp
+)
+
+[2025-09-08 21:55:03] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 207
+[2025-09-08 21:55:03] Stack trace: #0 {main}

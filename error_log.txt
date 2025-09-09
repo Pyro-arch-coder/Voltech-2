@@ -1,0 +1,60 @@
+[13-Aug-2025 12:32:08 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\Voltech-2\projectmanager\save_project_equipment.php on line 94
+[13-Aug-2025 12:32:08 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\Voltech-2\projectmanager\save_project_equipment.php on line 95
+[13-Aug-2025 12:32:08 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\Voltech-2\projectmanager\save_project_equipment.php on line 96
+[13-Aug-2025 12:32:08 Europe/Berlin] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\Voltech-2\projectmanager\save_project_equipment.php on line 96
+[13-Aug-2025 12:32:08 Europe/Berlin] Executing query: INSERT INTO project_add_equipment (
+                        project_id, 
+                        equipment_id, 
+                        category, 
+                        price, 
+                        total,
+                        depreciation,
+                        status
+                      ) VALUES (
+                        123, 
+                        112, 
+                        'purchase', 
+                        0, 
+                        0,
+                        '0',
+                        'In Use'
+                      )
+[13-Aug-2025 12:32:08 Europe/Berlin] Successfully inserted equipment ID 112
+[13-Aug-2025 12:32:08 Europe/Berlin] Executing update query: UPDATE equipment SET status = 'Not Available', borrow_time = NOW() WHERE id = 112
+[13-Aug-2025 12:32:08 Europe/Berlin] Successfully updated equipment status for ID 112
+[13-Aug-2025 12:32:08 Europe/Berlin] Success response: Array
+(
+    [success] => 1
+    [message] => Successfully added 1 equipment item(s) to the project
+)
+
+[13-Aug-2025 12:36:00 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\Voltech-2\projectmanager\save_project_equipment.php on line 94
+[13-Aug-2025 12:36:00 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\Voltech-2\projectmanager\save_project_equipment.php on line 95
+[13-Aug-2025 12:36:00 Europe/Berlin] PHP Warning:  Trying to access array offset on value of type null in C:\xampp\htdocs\Voltech-2\projectmanager\save_project_equipment.php on line 96
+[13-Aug-2025 12:36:00 Europe/Berlin] PHP Deprecated:  mysqli::real_escape_string(): Passing null to parameter #1 ($string) of type string is deprecated in C:\xampp\htdocs\Voltech-2\projectmanager\save_project_equipment.php on line 96
+[13-Aug-2025 12:36:00 Europe/Berlin] Executing query: INSERT INTO project_add_equipment (
+                        project_id, 
+                        equipment_id, 
+                        category, 
+                        price, 
+                        total,
+                        depreciation,
+                        status
+                      ) VALUES (
+                        123, 
+                        78, 
+                        'purchase', 
+                        0, 
+                        0,
+                        '0',
+                        'In Use'
+                      )
+[13-Aug-2025 12:36:00 Europe/Berlin] Successfully inserted equipment ID 78
+[13-Aug-2025 12:36:00 Europe/Berlin] Executing update query: UPDATE equipment SET status = 'Not Available', borrow_time = NOW() WHERE id = 78
+[13-Aug-2025 12:36:00 Europe/Berlin] Successfully updated equipment status for ID 78
+[13-Aug-2025 12:36:00 Europe/Berlin] Success response: Array
+(
+    [success] => 1
+    [message] => Successfully added 1 equipment item(s) to the project
+)
+
