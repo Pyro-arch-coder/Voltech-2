@@ -741,7 +741,7 @@ function peso($amount) {
                                                             <button type="button" class="btn btn-success" id="verifyPaymentBtn">
                                                                 <i class="fas fa-check-circle me-2"></i>Verify Payment
                                                             </button>
-                                                            <button type="button" class="btn btn-danger d-none" id="rejectPaymentBtn">
+                                                            <button type="button" class="btn btn-danger" id="rejectPaymentBtn">
                                                                 <i class="fas fa-times-circle me-2"></i>Reject
                                                             </button>
                                                         </div>
@@ -1474,62 +1474,67 @@ function peso($amount) {
                                         </div>
                                     </div>
 
-                                    <!-- Proof of Payment Card -->
-                                    <div class="col-md-4">
-                                        <div class="card shadow-sm h-100">
-                                            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center py-2">
-                                                <h6 class="mb-0"><i class="fas fa-file-invoice-dollar me-2"></i>Client Proof of Payments</h6>
-                                            </div>
-                                            <div class="card-body d-flex flex-column">
-                                                <div class="text-center py-4">
-                                                    <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
-                                                    <p class="text-muted">View client-submitted payment proofs</p>
-                                                </div>
-                                                <button type="button" class="btn btn-outline-primary mt-auto" data-bs-toggle="modal" data-bs-target="#paymentProofsModal">
-                                                    <i class="fas fa-eye me-1"></i> View Payment Proofs
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Payment Proofs Modal -->
-                                    <div class="modal fade" id="paymentProofsModal" tabindex="-1" aria-labelledby="paymentProofsModalLabel" aria-hidden="true">
-                                        <div class="modal-dialog modal-xl">
-                                            <div class="modal-content">
-                                                <div class="modal-header bg-success text-white">
-                                                    <h5 class="modal-title" id="paymentProofsModalLabel">
-                                                        <i class="fas fa-file-invoice-dollar me-2"></i>Client Proof of Payments
+                                    <!-- Client Proof of Payment Card -->
+                                    <div class="col-lg-4">
+                                            <div class="card shadow-sm h-100">
+                                                <div class="card-header bg-light">
+                                                    <h5 class="card-title text-success mb-0">
+                                                        <i class="fas fa-money-bill-wave me-2"></i>Payment Verification
                                                     </h5>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                                 </div>
-                                                <div class="modal-body">
-                                                    <div id="proofOfPaymentsList">
-                                                        <div class="text-center py-5">
-                                                            <div class="spinner-border text-success" role="status">
-                                                                <span class="visually-hidden">Loading...</span>
+                                                <div class="card-body d-flex flex-column">
+                                                    <!-- Payment Details -->
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6">
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                <span class="text-muted">Payment Type:</span>
+                                                                <span class="fw-bold payment-type2">Waiting for payment</span>
                                                             </div>
-                                                            <p class="mt-3 text-muted">Loading payment proofs...</p>
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                <span class="text-muted">Status:</span>
+                                                                <span class="badge bg-secondary payment-status2">Waiting for payment</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                <span class="text-muted">Uploaded On:</span>
+                                                                <span class="text-muted upload-date2">Waiting for payment</span>
+                                                            </div>
+                                                            <div class="d-flex justify-content-between">
+                                                                <span class="text-muted">Amount:</span>
+                                                                <span class="fw-bold payment-amount2">Waiting for payment</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Image Viewer Box -->
+                                                    <div class="border rounded p-3 text-center mb-3 flex-grow-1 d-flex align-items-center justify-content-center" style="background-color: #f8f9fa; min-height: 200px;">
+                                                        <div id="paymentImageViewer2" class="w-100">
+                                                            <div class="d-flex flex-column align-items-center justify-content-center h-100">
+                                                                <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                                                                <p class="text-muted mb-0">Waiting for payment</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                                        <div>
+                                                            <span class="fw-bold">Verification</span>
+                                                            <div class="text-muted small mt-1">Paid by: <span class="payer-name">-</span></div>
+                                                        </div>
+                                                        <div id="actionButtons2">
+                                                            <button type="button" class="btn btn-success" id="verifyPaymentBtn2">
+                                                                <i class="fas fa-check-circle me-2"></i>Verify Payment
+                                                            </button>
+                                                            <button type="button" class="btn btn-danger" id="rejectPaymentBtn2">
+                                                                <i class="fas fa-times-circle me-2"></i>Reject
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                                        <i class="fas fa-times me-1"></i> Close
-                                                    </button>
-                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    
-                                    <script>
-                                    // Load payment proofs in the modal when it's shown
-                                    document.getElementById('paymentProofsModal').addEventListener('show.bs.modal', function () {
-                                        const projectId = new URLSearchParams(window.location.search).get('project_id');
-                                        if (projectId) {
-                                            loadProofOfPayments(projectId);
-                                        }
-                                    });
-                                    </script>
+                                    <!-- Payment Proofs Modal has been removed -->
                                 </div>
 
                                 
@@ -1687,6 +1692,8 @@ function peso($amount) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Then load our custom scripts -->
     <script src="js/contract_uploads.js" type="module"></script>
+    <script src="js/payment_verification2.js" type="module"></script>
+   
     
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -2510,62 +2517,7 @@ function peso($amount) {
                  });
          }
         
-        // Load proof of payments
-        function loadProofOfPayments(projectId) {
-            if (!projectId) return;
-            
-            const proofList = document.getElementById('proofOfPaymentsList');
-            
-            fetch(`get_project_proof_payments.php?project_id=${projectId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.data && data.data.length > 0) {
-                        let html = '';
-                        data.data.forEach((payment, index) => {
-                            html += `
-                                <div class="card mb-2 border-0 bg-light">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div class="flex-grow-1">
-                                                <h6 class="mb-1">${payment.file_name}</h6>
-                                                <p class="mb-1 small text-muted">
-                                                    <i class="fas fa-calendar me-1"></i>${formatDate(payment.upload_date)}
-                                                </p>
-                                                <p class="mb-0 small text-muted">
-                                                    <i class="fas fa-user me-1"></i>Client ID: ${payment.user_id}
-                                                </p>
-                                            </div>
-                                            <div class="ms-2">
-                                                <button class="btn btn-sm btn-outline-primary" onclick="viewProofFile('${payment.file_path}', '${payment.file_name}')">
-                                                    <i class="fas fa-eye"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        proofList.innerHTML = html;
-                    } else {
-                        proofList.innerHTML = `
-                            <div class="text-center py-4">
-                                <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">No proof of payments found for this project</p>
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading proof of payments:', error);
-                    proofList.innerHTML = `
-                        <div class="text-center py-4">
-                            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
-                            <p class="text-danger">Error loading proof of payments</p>
-                        </div>
-                    `;
-                });
-        }
-        
+        // Proof of payments functionality removed as per user request
 
         
         // Complete project button
@@ -2630,7 +2582,6 @@ function peso($amount) {
             const projectId = new URLSearchParams(window.location.search).get('project_id');
             if (projectId) {
                 loadBudgetStatus(projectId);
-                loadProofOfPayments(projectId);
             }
         }
         

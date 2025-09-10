@@ -120,6 +120,22 @@ try {
     $payment_type = trim($_POST['payment_type']);
     $amount = floatval($_POST['amount']);
     $user_id = $_SESSION['user_id'];
+    
+    // Check if there are any processing payments for this project
+    $check_processing = $con->prepare("
+        SELECT 1 FROM billing_requests 
+        WHERE project_id = ? 
+        AND (is_paid = 1 OR payment_status = 'processing')
+        LIMIT 1
+    ");
+    $check_processing->bind_param('i', $project_id);
+    $check_processing->execute();
+    $has_processing = $check_processing->get_result()->num_rows > 0;
+    $check_processing->close();
+    
+    if ($has_processing) {
+        sendJsonResponse(false, 'There are payments currently being processed for this project. Please wait for them to be completed before making a new payment.');
+    }
 
     // Start transaction
     $con->begin_transaction();
@@ -244,8 +260,8 @@ try {
         }
         $stmt->close();
 
-        // Update all billing_requests for this project to mark them as paid
-        $updateStmt = $con->prepare("UPDATE billing_requests SET is_paid = 1 WHERE project_id = ? AND is_paid = 0");
+        // Update all billing_requests for this project to mark them as paid and set status to processing
+        $updateStmt = $con->prepare("UPDATE billing_requests SET is_paid = 1, payment_status = 'processing' WHERE project_id = ? AND is_paid = 0");
         $updateStmt->bind_param('i', $project_id);
         if (!$updateStmt->execute()) {
             throw new Exception('Failed to update billing requests: ' . $updateStmt->error);

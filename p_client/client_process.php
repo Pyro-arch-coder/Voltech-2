@@ -122,10 +122,10 @@ $total_paid = 0;
 $total_unpaid = 0;
 $stmt = $con->prepare("
     SELECT 
-        COALESCE(SUM(CASE WHEN is_paid = 1 THEN amount ELSE 0 END), 0) as total_paid,
-        COALESCE(SUM(CASE WHEN is_paid = 0 THEN amount ELSE 0 END), 0) as total_unpaid
+        COALESCE(SUM(CASE WHEN is_paid = 1 OR payment_status = 'processing' THEN amount ELSE 0 END), 0) as total_paid,
+        COALESCE(SUM(CASE WHEN is_paid = 0 AND payment_status = 'pending' THEN amount ELSE 0 END), 0) as total_unpaid
     FROM billing_requests 
-    WHERE project_id = ? AND status = 'approved' AND payment_status = 'pending'
+    WHERE project_id = ? AND status = 'approved'
 ");
 $stmt->bind_param('i', $project_id);
 $stmt->execute();
@@ -1287,21 +1287,13 @@ function peso($amount) {
                                           </div>
                                       </div>
                                   </div>
-                                  <!-- Proof of Payment Upload Card -->
                               
+                               
                             </div>
-                             
-                            <div class="alert alert-primary mt-4">
-                                  <i class="fas fa-info-circle me-2"></i>
-                                  Final review for billing approval. Please confirm all previous steps and upload proof of payment before submitting.
-                              </div>
                              
                              <div class="d-flex justify-content-between mt-4">
                                  <button type="button" class="btn btn-outline-secondary prev-step" data-prev="5">
                                      <i class="fas fa-arrow-left me-1"></i> Previous
-                                 </button>
-                                 <button type="submit" class="btn btn-success">
-                                     Finish <i class="fas fa-check ms-1"></i>
                                  </button>
                              </div>
                         </div>
