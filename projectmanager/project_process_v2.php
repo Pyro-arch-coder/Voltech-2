@@ -1103,7 +1103,6 @@ function peso($amount) {
                                                             <tr>
                                                                 <th>#</th>
                                                                 <th>Task Name</th>
-                                                                <th>Description</th>
                                                                 <th>Start Date</th>
                                                                 <th>End Date</th>
                                                                 <th>Status</th>
@@ -2626,7 +2625,6 @@ function peso($amount) {
              modal.show();
          }
          
-
     });
     </script>
   </body>

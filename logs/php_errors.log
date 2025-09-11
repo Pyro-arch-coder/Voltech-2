@@ -1689,3 +1689,9 @@
 [09-Sep-2025 04:35:57 Europe/Berlin] Sending JSON response: {"success":true,"message":"Bank details retrieved successfully","data":{"projectManager":"Project Manager","bankAccounts":[{"bankName":"BPI","accountName":"HAHAHHA","accountNumber":"0921910481","contactNumber":"0921910481"},{"bankName":"BPO","accountName":"HAHHAH","accountNumber":"09123123123123","contactNumber":"313213131321"}]}}
 [09-Sep-2025 04:35:57 Europe/Berlin] Sending JSON response: {"success":true,"message":"Bank details retrieved successfully","data":{"projectManager":"Project Manager","bankAccounts":[{"bankName":"BPI","accountName":"HAHAHHA","accountNumber":"0921910481","contactNumber":"0921910481"},{"bankName":"BPO","accountName":"HAHHAH","accountNumber":"09123123123123","contactNumber":"313213131321"}]}}
 [09-Sep-2025 04:52:06 Europe/Berlin] Sending JSON response: {"success":true,"message":"Bank details retrieved successfully","data":{"projectManager":"Project Manager","bankAccounts":[{"bankName":"BPI","accountName":"HAHAHHA","accountNumber":"0921910481","contactNumber":"0921910481"},{"bankName":"BPO","accountName":"HAHHAH","accountNumber":"09123123123123","contactNumber":"313213131321"}]}}
+[11-Sep-2025 10:15:50 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'voltech.project_schedule' doesn't exist in C:\xampp\htdocs\Voltech-2\projectmanager\save_schedule.php:86
+Stack trace:
+#0 C:\xampp\htdocs\Voltech-2\projectmanager\save_schedule.php(86): mysqli->prepare('SELECT task_nam...')
+#1 {main}
+  thrown in C:\xampp\htdocs\Voltech-2\projectmanager\save_schedule.php on line 86
+[11-Sep-2025 10:26:33 Europe/Berlin] Schedule Save Error: A task with ID 18 already exists in this project.

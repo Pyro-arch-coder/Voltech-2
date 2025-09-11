@@ -4,14 +4,20 @@ function initializeDatePickers() {
     const endDateInput = document.getElementById('end_date');
     
     if (startDateInput && endDateInput) {
-        // Update end date min when start date changes
+        // Function to add days to a date
+        function addDays(date, days) {
+            const result = new Date(date);
+            result.setDate(result.getDate() + days);
+            return result.toISOString().split('T')[0];
+        }
+
+        // Update end date when start date changes
         startDateInput.addEventListener('change', function() {
             if (this.value) {
+                // Set end date to start date + 3 days
+                const endDate = addDays(this.value, 3);
+                endDateInput.value = endDate;
                 endDateInput.min = this.value;
-                // If current end date is before new start date, update it
-                if (endDateInput.value && new Date(endDateInput.value) < new Date(this.value)) {
-                    endDateInput.value = this.value;
-                }
             } else if (typeof PROJECT_START_DATE !== 'undefined') {
                 endDateInput.min = PROJECT_START_DATE;
             }
@@ -56,7 +62,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (scheduleForm) {
         scheduleForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            saveScheduleItem(projectId);
             return false; // Prevent default form submission
         });
     }
@@ -130,7 +135,6 @@ function renderScheduleTable(items) {
         <tr data-id="${item.id}">
             <td>${index + 1}</td>
             <td>${item.task_name}</td>
-            <td>${item.description || '-'}</td>
             <td>${formatDate(item.start_date)}</td>
             <td>${formatDate(item.end_date)}</td>
             <td>
@@ -152,183 +156,6 @@ function renderScheduleTable(items) {
             </td>
         </tr>
     `).join('');
-}
-
-function saveScheduleItem(projectId) {
-    const form = document.getElementById('addScheduleForm');
-    if (!form) {
-        console.error('Form not found');
-        return;
-    }
-    
-    // Get form data
-    const formData = new FormData(form);
-    const data = {
-        project_id: projectId,
-        task_name: formData.get('task_name')?.trim() || '',
-        description: formData.get('description')?.trim() || '',
-        start_date: formData.get('start_date') || '',
-        end_date: formData.get('end_date') || '',
-        status: formData.get('status') || 'Not Started'
-    };
-    
-    // Basic validation
-    let isValid = true;
-    
-    // Clear previous errors
-    const errorElements = form.querySelectorAll('.invalid-feedback');
-    errorElements.forEach(el => el.remove());
-    
-    const inputs = form.querySelectorAll('input, select');
-    inputs.forEach(input => input.classList.remove('is-invalid'));
-    
-    // Validate required fields
-    if (!data.task_name) {
-        showValidationError('task_name', 'Task name is required');
-        isValid = false;
-    }
-    
-    if (!data.start_date) {
-        showValidationError('start_date', 'Start date is required');
-        isValid = false;
-    } else if (typeof PROJECT_START_DATE !== 'undefined' && new Date(data.start_date) < new Date(PROJECT_START_DATE)) {
-        const formattedDate = typeof PROJECT_START_DISPLAY !== 'undefined' ? PROJECT_START_DISPLAY : new Date(PROJECT_START_DATE).toLocaleDateString();
-        showValidationError('start_date', `Start date cannot be before project start date (${formattedDate})`);
-        isValid = false;
-    }
-    
-    if (!data.end_date) {
-        showValidationError('end_date', 'End date is required');
-        isValid = false;
-    } else if (data.start_date && new Date(data.end_date) < new Date(data.start_date)) {
-        showValidationError('end_date', 'End date must be after start date');
-        isValid = false;
-    } else if (typeof PROJECT_DEADLINE !== 'undefined' && new Date(data.end_date) > new Date(PROJECT_DEADLINE)) {
-        const formattedDate = typeof PROJECT_DEADLINE_DISPLAY !== 'undefined' ? PROJECT_DEADLINE_DISPLAY : new Date(PROJECT_DEADLINE).toLocaleDateString();
-        showValidationError('end_date', `End date cannot be after project deadline (${formattedDate})`);
-        isValid = false;
-    }
-    
-    if (!isValid) {
-        return false;
-    }
-    
-    // Show loading state
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const originalBtnText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
-
-    // Log the data being sent
-    console.log('Sending data to server:', data);
-    
-    // Send the request
-    fetch('save_schedule.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify(data)
-    })
-    .then(async response => {
-        const responseText = await response.text();
-        
-        // Log the raw response for debugging
-        console.log('Response status:', response.status, response.statusText);
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-        console.log('Raw response:', responseText);
-        
-        try {
-            // Try to parse as JSON
-            const responseData = responseText ? JSON.parse(responseText) : {};
-            
-            if (!response.ok) {
-                // Log detailed error information
-                console.error('Server returned error response:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    data: responseData
-                });
-                
-                // Construct a detailed error message
-                let errorMessage = 'Server error';
-                if (responseData && responseData.message) {
-                    errorMessage = responseData.message;
-                } else if (response.status === 500) {
-                    errorMessage = 'Internal server error occurred';
-                } else if (response.status === 401) {
-                    errorMessage = 'Session expired. Please refresh the page and try again.';
-                } else if (response.status === 400) {
-                    errorMessage = 'Invalid request. Please check your input and try again.';
-                }
-                
-                const error = new Error(errorMessage);
-                error.response = response;
-                error.data = responseData;
-                throw error;
-            }
-            
-            return responseData;
-        } catch (e) {
-            // If parsing as JSON fails, it's likely an HTML error page or empty response
-            console.error('Failed to parse JSON response:', e);
-            
-            // Try to extract error message from HTML if possible
-            let errorMessage = 'Server returned an invalid response';
-            if (responseText.includes('<b>Fatal error</b>')) {
-                const fatalErrorMatch = responseText.match(/<b>Fatal error<\/b>:\s*([^<]+)/i);
-                if (fatalErrorMatch && fatalErrorMatch[1]) {
-                    errorMessage = `Server error: ${fatalErrorMatch[1].trim()}`;
-                }
-            } else if (responseText.includes('<b>Warning</b>') || responseText.includes('<b>Notice</b>')) {
-                const warningMatch = responseText.match(/<b>(Warning|Notice)<\/b>:\s*([^<]+)/i);
-                if (warningMatch && warningMatch[2]) {
-                    errorMessage = `Server ${warningMatch[1].toLowerCase()}: ${warningMatch[2].trim()}`;
-                }
-            } else if (responseText.trim() === '') {
-                errorMessage = 'Server returned an empty response (500 Internal Server Error)';
-            }
-            
-            const error = new Error(errorMessage);
-            error.rawResponse = responseText;
-            throw error;
-        }
-    })
-    .then(data => {
-        if (data && data.success) {
-            // Close the modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('addScheduleModal'));
-            if (modal) {
-                modal.hide();
-                // Reset form after successful submission
-                form.reset();
-            }
-            
-            // Show success message
-            showAlert('Schedule item saved successfully! Refreshing page...', 'success');
-            
-            // Reload the schedule items and refresh page after 1.5 seconds
-            loadScheduleItems(projectId);
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-        } else {
-            throw new Error(data?.message || 'Failed to save schedule item');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showAlert('Error: ' + (error.message || 'Failed to save schedule. Please try again.'), 'danger');
-    })
-    .finally(() => {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnText || 'Save Schedule';
-        }
-    });
-    
-    return false; // Prevent form submission
 }
 
 // Helper functions

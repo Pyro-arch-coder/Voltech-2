@@ -86,7 +86,6 @@ try {
         $schedule_items[] = [
             'id' => $row['id'],
             'task_name' => htmlspecialchars($row['task_name'] ?? ''),
-            'description' => htmlspecialchars($row['description'] ?? ''),
             'start_date' => $row['start_date'] ?? null,
             'end_date' => $row['end_date'] ?? null,
             'status' => $row['status'] ?? 'Not Started',

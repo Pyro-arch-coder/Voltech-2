@@ -469,36 +469,283 @@
                 <h5 class="modal-title" id="addScheduleModalLabel">Add New Schedule Item</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="addScheduleForm" onsubmit="return false;">
+            <form id="addScheduleForm" onsubmit="return validateAndSubmit(this);">
                 <input type="hidden" name="project_id" value="<?php echo isset($_GET['project_id']) ? htmlspecialchars($_GET['project_id']) : ''; ?>">
+                <input type="hidden" name="tasks_data" id="tasks_data">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="task_name" class="form-label">Task Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="task_name" name="task_name" required>
-                        <div class="invalid-feedback">Please provide a task name.</div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Select</th>
+                                    <th>Task Name</th>
+                                    <th>Start Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tasksTableBody">
+                                <tr>
+                                    <td colspan="3" class="text-center">Loading tasks...</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="start_date" name="start_date" 
-                                   <?php if (isset($start_date)) echo 'min="' . $start_date . '"'; ?> 
-                                   <?php if (isset($deadline)) echo 'max="' . $deadline . '"'; ?> 
-                                   required>
-                            <div class="invalid-feedback">Please select a start date.</div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="end_date" class="form-label">End Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="end_date" name="end_date" 
-                                   <?php if (isset($start_date)) echo 'min="' . $start_date . '"'; ?> 
-                                   <?php if (isset($deadline)) echo 'max="' . $deadline . '"'; ?> 
-                                   required>
-                            <div class="invalid-feedback">Please select an end date after the start date.</div>
-                        </div>
-                    </div>
+                    <input type="hidden" name="selected_task_id" id="selected_task_id" required>
+                    <div class="invalid-feedback">Please select a task.</div>
+                    
+                    <script>
+                    // Fetch tasks when modal is shown
+                    document.getElementById('addScheduleModal').addEventListener('shown.bs.modal', function() {
+                        const tbody = document.getElementById('tasksTableBody');
+                        
+                        fetch('get_tasks.php')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success && data.tasks && data.tasks.length > 0) {
+                                    // Clear loading message
+                                    tbody.innerHTML = '';
+                                    
+                                    // Add tasks to table
+                                    data.tasks.forEach(task => {
+                                        const row = document.createElement('tr');
+                                        
+                                        // Generate unique IDs for date inputs
+                                        const startDateId = `start_date_${task.id}`;
+                                        const endDateId = `end_date_${task.id}`;
+                                        
+                                        row.innerHTML = `
+                                            <td class="text-center">
+                                                <input type="checkbox" 
+                                                       name="selected_tasks[]" 
+                                                       value="${task.id}" 
+                                                       class="form-check-input task-checkbox"
+                                                       data-start-date-id="${startDateId}"
+                                                       data-task-name="${task.name.replace(/"/g, '&quot;')}">
+                                            </td>
+                                            <td>${task.name}</td>
+                                            <td>
+                                                <input type="date" 
+                                                       id="${startDateId}" 
+                                                       class="form-control form-control-sm start-date"
+                                                       onchange="updateTaskDates(this)"
+                                                       <?php if (isset($start_date)) echo 'min="' . $start_date . '"'; ?>
+                                                       <?php if (isset($deadline)) echo 'max="' . $deadline . '"'; ?>>
+                                            </td>
+                                        `;
+                                        
+                                        tbody.appendChild(row);
+                                    });
+                                } else {
+                                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No tasks available</td></tr>';
+                                    if (data.error) console.error('Error:', data.error);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching tasks:', error);
+                                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading tasks</td></tr>';
+                            });
+                    });
+                    
+
+                    
+                    // Function to update end date min value when start date changes
+                    function updateDateValidation(startDateInput, endDateId) {
+                        const endDateInput = document.getElementById(endDateId);
+                        endDateInput.min = startDateInput.value;
+                        
+                        // If end date is before start date, clear it
+                        if (endDateInput.value && new Date(endDateInput.value) < new Date(startDateInput.value)) {
+                            endDateInput.value = '';
+                        }
+                        
+                        // Update the hidden form field if this row is selected
+                        const radio = startDateInput.closest('tr').querySelector('input[type="radio"]');
+                        if (radio && radio.checked) {
+                            document.getElementById('start_date').value = startDateInput.value;
+                            document.getElementById('end_date').value = endDateInput.value;
+                        }
+                    }
+
+                    
+                    // Function to calculate end date (start date + 3 days)
+                    function calculateEndDate(startDate) {
+                        if (!startDate) return '';
+                        
+                        const date = new Date(startDate);
+                        date.setDate(date.getDate() + 3);
+                        return date.toISOString().split('T')[0];
+                    }
+                    
+                    // Function to update task dates when start date changes
+                    function updateTaskDates(startDateInput) {
+                        const row = startDateInput.closest('tr');
+                        const checkbox = row.querySelector('.task-checkbox');
+                        
+                        if (checkbox.checked) {
+                            // If the task is checked, update the tasks data
+                            updateTasksData();
+                        }
+                    }
+                    
+                    // Function to update the tasks data in the hidden input
+                    function updateTasksData() {
+                        const tasks = [];
+                        const checkboxes = document.querySelectorAll('.task-checkbox:checked');
+                        
+                        checkboxes.forEach(checkbox => {
+                            const startDateId = checkbox.dataset.startDateId;
+                            const startDateInput = document.getElementById(startDateId);
+                            
+                            if (startDateInput && startDateInput.value) {
+                                tasks.push({
+                                    task_id: checkbox.value,
+                                    task_name: checkbox.dataset.taskName,
+                                    start_date: startDateInput.value,
+                                    end_date: calculateEndDate(startDateInput.value)
+                                });
+                            }
+                        });
+                        
+                        // Update the hidden input with JSON data
+                        document.getElementById('tasks_data').value = JSON.stringify(tasks);
+                        
+                        // Log for debugging
+                        console.log('Updated tasks data:', tasks);
+                        return tasks;
+                    }
+                    
+                    // Function to update end date min value when start date changes
+                    function updateDateValidation(startDateInput, endDateId) {
+                        const endDateInput = document.getElementById(endDateId);
+                        endDateInput.min = startDateInput.value;
+                        
+                        // If end date is before start date, clear it
+                        if (endDateInput.value && new Date(endDateInput.value) < new Date(startDateInput.value)) {
+                            endDateInput.value = '';
+                        }
+                        
+                        // Update the hidden form field if this row is selected
+                        const radio = startDateInput.closest('tr').querySelector('input[type="radio"]');
+                        if (radio && radio.checked) {
+                            document.getElementById('start_date').value = startDateInput.value;
+                            document.getElementById('end_date').value = endDateInput.value;
+                        }
+                    }
+                    
+                    // Function to validate and submit the form
+                    function validateAndSubmit(form) {
+                        // Update tasks data before submission
+                        const tasks = updateTasksData();
+                        
+                        // Validate at least one task is selected
+                        if (tasks.length === 0) {
+                            alert('Please select at least one task');
+                            return false;
+                        }
+                        
+                        // Validate all selected tasks have a start date
+                        const validTasks = [];
+                        for (const task of tasks) {
+                            if (!task.start_date) {
+                                alert(`Please select a start date for task: ${task.task_name}`);
+                                return false;
+                            }
+                            // Ensure all required fields are present
+                            validTasks.push({
+                                task_id: task.task_id,
+                                task_name: task.task_name,
+                                start_date: task.start_date,
+                                end_date: task.end_date || calculateEndDate({value: task.start_date}),
+                                description: task.description || ''
+                            });
+                        }
+                        
+                        // Update the hidden input with the validated tasks
+                        document.getElementById('tasks_data').value = JSON.stringify(validTasks);
+                        
+                        // Submit the form data using fetch API
+                        const formData = new FormData();
+                        formData.append('project_id', '<?php echo isset($_GET['project_id']) ? htmlspecialchars($_GET['project_id']) : ''; ?>');
+                        formData.append('tasks_data', JSON.stringify(validTasks));
+
+                        fetch('save_schedule.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(err => { throw err; });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                // Show success toast
+                                const toastHTML = `
+                                    <div class="toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="3000">
+                                        <div class="d-flex">
+                                            <div class="toast-body">
+                                                <i class="fas fa-check-circle me-2"></i> ${data.message || 'Schedule saved successfully!'}
+                                            </div>
+                                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                showToast(toastHTML);
+                                
+                                // Close the modal
+                                const modal = bootstrap.Modal.getInstance(document.getElementById('addScheduleModal'));
+                                modal.hide();
+                                
+                                // Reload the page after a short delay to show the toast
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 1000);
+                            } else {
+                                throw new Error(data.message || 'Failed to save schedule');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            const errorMessage = error.message || 'An error occurred while saving the schedule';
+                            const toastHTML = `
+                                <div class="toast align-items-center text-white bg-danger border-0 position-fixed top-0 end-0 m-3" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+                                    <div class="d-flex">
+                                        <div class="toast-body">
+                                            <i class="fas fa-exclamation-circle me-2"></i> ${errorMessage}
+                                        </div>
+                                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                                    </div>
+                                </div>
+                            `;
+                            showToast(toastHTML);
+                        });
+                        
+                        // Prevent the original form submission
+                        return false;
+                    }
+                    
+                    
+                    // Function to show toast notification
+                    function showToast(toastHTML) {
+                        // Create and show toast
+                        document.body.insertAdjacentHTML('beforeend', toastHTML);
+                        const toastEl = document.querySelector('.toast:last-child');
+                        const toast = new bootstrap.Toast(toastEl);
+                        toast.show();
+                        
+                        // Remove toast after it hides
+                        toastEl.addEventListener('hidden.bs.toast', () => {
+                            toastEl.remove();
+                        });
+                    }
+                    </script>
+                    
+                    <!-- Hidden fields to store the selected task's data -->
+                    <input type="hidden" id="selected_task_id" name="selected_task_id">
+                    <input type="hidden" id="task_name" name="task_name">
+                    <input type="hidden" id="start_date" name="start_date">
+                    <input type="hidden" id="end_date" name="end_date">
                     <input type="hidden" name="status" value="Not Started">
                 </div>
                 <div class="modal-footer">
