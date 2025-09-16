@@ -548,3 +548,87 @@
 [2025-08-17 15:34:44] Processing add_estimation_material request
 [2025-08-17 15:34:44] Received 1 materials
 >>>>>>> Stashed changes
+[2025-09-15 10:13:34] New request: Array
+(
+    [add_estimation_material] => 1
+    [project_id] => 217
+    [materials] => Array
+        (
+            [0] => Array
+                (
+                    [material_id] => 97
+                    [quantity] => 1
+                )
+
+            [1] => Array
+                (
+                    [material_id] => 88
+                    [quantity] => 1
+                )
+
+            [2] => Array
+                (
+                    [material_id] => 98
+                    [quantity] => 1
+                )
+
+            [3] => Array
+                (
+                    [material_id] => 94
+                    [quantity] => 1
+                )
+
+            [4] => Array
+                (
+                    [material_id] => 89
+                    [quantity] => 1
+                )
+
+            [5] => Array
+                (
+                    [material_id] => 96
+                    [quantity] => 1
+                )
+
+            [6] => Array
+                (
+                    [material_id] => 95
+                    [quantity] => 1
+                )
+
+            [7] => Array
+                (
+                    [material_id] => 90
+                    [quantity] => 1
+                )
+
+            [8] => Array
+                (
+                    [material_id] => 91
+                    [quantity] => 1
+                )
+
+            [9] => Array
+                (
+                    [material_id] => 92
+                    [quantity] => 2
+                )
+
+            [10] => Array
+                (
+                    [material_id] => 93
+                    [quantity] => 2
+                )
+
+            [11] => Array
+                (
+                    [material_id] => 100
+                    [quantity] => 2
+                )
+
+        )
+
+)
+
+[2025-09-15 10:13:34] Processing add_estimation_material request
+[2025-09-15 10:13:34] Received 12 materials

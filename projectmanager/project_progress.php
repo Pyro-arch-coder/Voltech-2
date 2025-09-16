@@ -74,9 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_division'])) {
     $task_name = trim(mysqli_real_escape_string($con, $_POST['division_name']));
     $start_date = $_POST['start_date'] ?? null;
     $end_date = $_POST['end_date'] ?? null;
-    $description = $_POST['description'] ?? '';
     if ($task_name !== '' && $start_date && $end_date) {
-        mysqli_query($con, "INSERT INTO project_timeline (project_id, task_name, start_date, end_date, progress, status, description, created_at, updated_at) VALUES ('$project_id', '$task_name', '$start_date', '$end_date', 0, 'Not Started', '$description', NOW(), NOW())");
+        mysqli_query($con, "INSERT INTO project_timeline (project_id, task_name, start_date, end_date, progress, status, created_at, updated_at) VALUES ('$project_id', '$task_name', '$start_date', '$end_date', 0, 'Not Started', NOW(), NOW())");
     }
     header("Location: project_progress.php?id=$project_id&added=1");
     exit();
@@ -89,8 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $progress = max(0, min(100, intval($_POST['progress'])));
         $status = $progress == 100 ? 'Completed' : ($progress > 0 ? 'In Progress' : 'Not Started');
         $updated_at = date('Y-m-d H:i:s');
-        $description = $_POST['description'] ?? '';
-        mysqli_query($con, "UPDATE project_timeline SET progress='$progress', status='$status', updated_at='$updated_at', description='$description' WHERE id='$division_id' AND project_id='$project_id'");
+        mysqli_query($con, "UPDATE project_timeline SET progress='$progress', status='$status', updated_at='$updated_at' WHERE id='$division_id' AND project_id='$project_id'");
         header("Location: project_progress.php?id=$project_id&updated=1");
         exit();
     }
@@ -385,10 +383,6 @@ if ($userid) {
                                             <label>Progress (%)</label>
                                             <input type="number" name="progress" class="form-control" min="0" max="100" value="<?php echo intval($div['progress']); ?>" required>
                                           </div>
-                                          <div class="mb-3">
-                                            <label>Description</label>
-                                            <textarea name="description" class="form-control"><?php echo htmlspecialchars($div['description'] ?? ''); ?></textarea>
-                                          </div>
                                         </div>
                                         <div class="modal-footer">
                                           <button type="submit" name="update_division" class="btn btn-success">Save</button>
@@ -429,10 +423,6 @@ if ($userid) {
                     <div class="mb-3">
                         <label class="form-label">End Date</label>
                         <input type="date" name="end_date" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea name="description" class="form-control"></textarea>
                     </div>
                     <div class="modal-footer px-0 pb-0">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

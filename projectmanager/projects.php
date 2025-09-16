@@ -668,7 +668,7 @@ addForecastStyles();
                                         <th class="text-center">No.</th>
                                         <th>Project Name</th>
                                         <th>Location</th>
-                                        <th>Size (sqm)</th>
+                                        <th>Size (Floor sqm)</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -885,7 +885,7 @@ addForecastStyles();
                                     </div>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    <label for="size" class="form-label">Size (sqm) <span class="text-danger">*</span></label>
+                                    <label for="size" class="form-label">Size (Floor sqm) <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <input type="number" class="form-control" id="size" name="size" step="0.01" min="0" required>
                                         <span class="input-group-text">sqm</span>
