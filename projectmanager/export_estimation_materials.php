@@ -23,6 +23,30 @@ $project_days = $interval->days + 1;
 $con->begin_transaction();
 
 try {
+    // SNAPSHOT: Persist current estimated materials into project_add_materials
+    // Delete existing snapshot for this project to avoid duplicates
+    $del_sql = "DELETE FROM project_add_materials WHERE project_id = '$project_id'";
+    if (!$con->query($del_sql)) {
+        throw new Exception("Failed to clear existing project_add_materials: " . $con->error);
+    }
+
+    // Insert fresh rows from current estimation (map labor_other -> additional_cost)
+    $ins_sql = "INSERT INTO project_add_materials (project_id, material_id, material_name, unit, material_price, quantity, additional_cost, added_at)
+                SELECT pem.project_id,
+                       pem.material_id,
+                       COALESCE(m.material_name, pem.material_name),
+                       COALESCE(m.unit, pem.unit),
+                       COALESCE(m.material_price, 0),
+                       COALESCE(pem.quantity, 1),
+                       COALESCE(m.labor_other, 0),
+                       NOW()
+                FROM project_estimating_materials pem
+                LEFT JOIN materials m ON pem.material_id = m.id
+                WHERE pem.project_id = '$project_id'";
+    if (!$con->query($ins_sql)) {
+        throw new Exception("Failed to insert snapshot into project_add_materials: " . $con->error);
+    }
+
     // Calculate total estimation cost from materials
     $materials = [];
     $mat_total = 0;

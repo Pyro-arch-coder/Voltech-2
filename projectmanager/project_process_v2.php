@@ -481,7 +481,7 @@ function peso($amount) {
                                             <i class="fas fa-plus-square me-1"></i> Add Materials
                                         </button>
                                         <button type="button" class="btn btn-light btn-sm ms-2" id="exportCostEstimationBtn">
-                                            <i class="fas fa-file-export"></i> Export PDF
+                                            <i class="fas fa-file-export"></i> Save & Export PDF
                                         </button>
                                     </div>
                                     <div class="card-body p-0">
