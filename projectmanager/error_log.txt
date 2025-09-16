@@ -1,0 +1,263 @@
+[16-Sep-2025 07:11:43 Europe/Berlin] Debug - Received data: Array
+(
+    [project_id] => 0
+    [materials] => Array
+        (
+            [0] => Array
+                (
+                    [material_name] => dasdada
+                    [quantity] => 1
+                    [unit] => m²
+                    [material_price] => 31231
+                )
+
+            [1] => Array
+                (
+                    [material_name] => 3dasdas
+                    [quantity] => 1
+                    [unit] => set
+                    [material_price] => 323
+                )
+
+            [2] => Array
+                (
+                    [material_name] => dassdadasd
+                    [quantity] => 1
+                    [unit] => sack/bag
+                    [material_price] => 31231
+                )
+
+            [3] => Array
+                (
+                    [material_name] => Cement
+                    [quantity] => 1
+                    [unit] => pcs
+                    [material_price] => 260
+                )
+
+            [4] => Array
+                (
+                    [material_name] => Paint
+                    [quantity] => 1
+                    [unit] => pcs
+                    [material_price] => 900
+                )
+
+            [5] => Array
+                (
+                    [material_name] => dadsa
+                    [quantity] => 1
+                    [unit] => sack/bag
+                    [material_price] => 312
+                )
+
+            [6] => Array
+                (
+                    [material_name] => Rebar
+                    [quantity] => 1
+                    [unit] => pcs
+                    [material_price] => 450
+                )
+
+            [7] => Array
+                (
+                    [material_name] => dasd
+                    [quantity] => 1
+                    [unit] => rl
+                    [material_price] => 32131
+                )
+
+            [8] => Array
+                (
+                    [material_name] => dasddadsdd
+                    [quantity] => 1
+                    [unit] => sack/bag
+                    [material_price] => 1231
+                )
+
+            [9] => Array
+                (
+                    [material_name] => 5123
+                    [quantity] => 1
+                    [unit] => m²
+                    [material_price] => 3123321
+                )
+
+            [10] => Array
+                (
+                    [material_name] => hollowblock
+                    [quantity] => 1
+                    [unit] => rl
+                    [material_price] => 1000
+                )
+
+            [11] => Array
+                (
+                    [material_name] => d23
+                    [quantity] => 1
+                    [unit] => m²
+                    [material_price] => 3123321
+                )
+
+            [12] => Array
+                (
+                    [material_name] => Plywood
+                    [quantity] => 1
+                    [unit] => pcs
+                    [material_price] => 700
+                )
+
+            [13] => Array
+                (
+                    [material_name] => dadsdadasdas
+                    [quantity] => 1
+                    [unit] => sack/bag
+                    [material_price] => 1512
+                )
+
+            [14] => Array
+                (
+                    [material_name] => Sand
+                    [quantity] => 1
+                    [unit] => pcs
+                    [material_price] => 1200
+                )
+
+        )
+
+)
+
+[16-Sep-2025 07:11:43 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'id' in 'field list' in C:\xampp\htdocs\Voltech-2\projectmanager\save_suggested_materials.php:82
+Stack trace:
+#0 C:\xampp\htdocs\Voltech-2\projectmanager\save_suggested_materials.php(82): mysqli->query('SELECT id, proj...')
+#1 {main}
+  thrown in C:\xampp\htdocs\Voltech-2\projectmanager\save_suggested_materials.php on line 82
+[16-Sep-2025 07:15:57 Europe/Berlin] Debug - Received data: Array
+(
+    [project_id] => 0
+    [materials] => Array
+        (
+            [0] => Array
+                (
+                    [material_name] => dasdada
+                    [quantity] => 1
+                    [unit] => m²
+                    [material_price] => 31231
+                )
+
+            [1] => Array
+                (
+                    [material_name] => 3dasdas
+                    [quantity] => 1
+                    [unit] => set
+                    [material_price] => 323
+                )
+
+            [2] => Array
+                (
+                    [material_name] => dassdadasd
+                    [quantity] => 1
+                    [unit] => sack/bag
+                    [material_price] => 31231
+                )
+
+            [3] => Array
+                (
+                    [material_name] => Cement
+                    [quantity] => 1
+                    [unit] => pcs
+                    [material_price] => 260
+                )
+
+            [4] => Array
+                (
+                    [material_name] => Paint
+                    [quantity] => 1
+                    [unit] => pcs
+                    [material_price] => 900
+                )
+
+            [5] => Array
+                (
+                    [material_name] => dadsa
+                    [quantity] => 1
+                    [unit] => sack/bag
+                    [material_price] => 312
+                )
+
+            [6] => Array
+                (
+                    [material_name] => Rebar
+                    [quantity] => 1
+                    [unit] => pcs
+                    [material_price] => 450
+                )
+
+            [7] => Array
+                (
+                    [material_name] => dasd
+                    [quantity] => 1
+                    [unit] => rl
+                    [material_price] => 32131
+                )
+
+            [8] => Array
+                (
+                    [material_name] => dasddadsdd
+                    [quantity] => 1
+                    [unit] => sack/bag
+                    [material_price] => 1231
+                )
+
+            [9] => Array
+                (
+                    [material_name] => 5123
+                    [quantity] => 1
+                    [unit] => m²
+                    [material_price] => 3123321
+                )
+
+            [10] => Array
+                (
+                    [material_name] => hollowblock
+                    [quantity] => 1
+                    [unit] => rl
+                    [material_price] => 1000
+                )
+
+            [11] => Array
+                (
+                    [material_name] => d23
+                    [quantity] => 1
+                    [unit] => m²
+                    [material_price] => 3123321
+                )
+
+            [12] => Array
+                (
+                    [material_name] => Plywood
+                    [quantity] => 1
+                    [unit] => pcs
+                    [material_price] => 700
+                )
+
+            [13] => Array
+                (
+                    [material_name] => dadsdadasdas
+                    [quantity] => 1
+                    [unit] => sack/bag
+                    [material_price] => 1512
+                )
+
+            [14] => Array
+                (
+                    [material_name] => Sand
+                    [quantity] => 1
+                    [unit] => pcs
+                    [material_price] => 1200
+                )
+
+        )
+
+)
+

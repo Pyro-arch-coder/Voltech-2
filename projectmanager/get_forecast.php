@@ -24,7 +24,7 @@ if (empty($category)) {
 }
 
 try {
-    // Get all projects that have expenses in the specified category
+    // Get all finished, non-archived projects that have expenses in the specified category
     $query = "SELECT 
                 p.project_id,
                 p.project,
@@ -36,6 +36,8 @@ try {
               WHERE e.expensecategory = 'Project' 
               AND e.expense > 0
               AND p.size > 0
+              AND p.status = 'Finished'
+              AND (p.archived IS NULL OR p.archived = 0)
               AND p.category = ?
               GROUP BY p.project_id, p.project, p.size, p.category";
     
@@ -66,6 +68,8 @@ try {
                               WHERE e.expensecategory = 'Project' 
                               AND e.expense > 0
                               AND p.size > 0
+                              AND p.status = 'Finished'
+                              AND (p.archived IS NULL OR p.archived = 0)
                               AND p.category LIKE ?
                               GROUP BY p.project_id, p.project, p.size, p.category";
         

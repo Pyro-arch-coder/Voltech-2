@@ -284,17 +284,31 @@ addForecastStyles();
             if (!mysqli_stmt_execute($stmt)) {
                 throw new Exception('Error creating project: ' . mysqli_error($con));
             }
-    
+
+            // Capture the newly inserted project ID before committing
+            $project_id = mysqli_insert_id($con);
+            if (!$project_id && function_exists('mysqli_stmt_insert_id')) {
+                $project_id = mysqli_stmt_insert_id($stmt);
+            }
+
             mysqli_commit($con);
-    
+
+            // Ensure we have a valid project ID
+            if (empty($project_id)) {
+                throw new Exception('Failed to retrieve the new project ID.');
+            }
+            
+            // Get the project category for the redirect
+            $category = isset($_POST['category']) ? urlencode($_POST['category']) : '';
+            
             if ($isAjax) {
                 echo json_encode([
                     'success' => true,
                     'message' => 'Project created successfully!',
-                    'redirect' => 'projects.php?success=add'
+                    'redirect' => 'projects.php?success=add&project_id=' . $project_id . '&category=' . $category
                 ]);
             } else {
-                header("Location: projects.php?success=add");
+                header("Location: projects.php?success=add&project_id=" . $project_id . '&category=' . $category);
             }
             exit();
     
@@ -745,7 +759,67 @@ addForecastStyles();
             </div>
         </div>
 
-         <!-- Feedback Modal -->
+    <!-- Suggestion Modal -->
+    <div class="modal fade" id="suggestionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Project Creation Suggestion</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Would you like to add materials and equipment to this project now?</p>
+                    <p class="small text-muted">You can add them later from the project details page if needed.</p>
+                    
+                    <!-- Suggested Materials Section -->
+                    <div class="mt-4">
+                        <h6>Suggested Materials (based on similar projects):</h6>
+                        <div id="suggestedMaterialsLoading" class="text-center py-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 mb-0">Loading suggested materials...</p>
+                        </div>
+                        <div id="suggestedMaterialsContainer" class="d-none">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Material</th>
+                                            <th>Quantity</th>
+                                            <th>Unit</th>
+                                            <th>Unit Price</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="suggestedMaterialsList">
+                                        <!-- Suggested materials will be inserted here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="alert alert-info mt-2">
+                                <i class="fas fa-info-circle me-1"></i> These are suggested materials based on similar completed projects. You can add them with one click or add your own materials.
+                            </div>
+                        </div>
+                        <div id="noSuggestions" class="alert alert-warning d-none">
+                            <i class="fas fa-exclamation-circle me-1"></i> No suggested materials found for this project type.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Maybe Later</button>
+                    <button type="button" id="goToProjectBtn" class="btn btn-primary">
+                        <span class="d-flex align-items-center">
+                            <span id="addNowText">Yes, Add Now</span>
+                            <span id="addNowLoading" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
      <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
        <div class="modal-dialog modal-dialog-centered">
          <div class="modal-content text-center">
@@ -1109,6 +1183,247 @@ addForecastStyles();
 
     <script src="js/project_overdue.js"></script>
     <script>
+    let lastProjectId = null; // Store the last created project ID
+    
+    // Show suggestion modal
+    function showSuggestion(projectId, category = '') {
+        const modal = new bootstrap.Modal(document.getElementById('suggestionModal'));
+        const modalEl = document.getElementById('suggestionModal');
+        
+        // Store the project ID in the modal for later use
+        modalEl.dataset.projectId = projectId;
+        
+        // Reset UI state
+        document.getElementById('suggestedMaterialsLoading').classList.remove('d-none');
+        document.getElementById('suggestedMaterialsContainer').classList.add('d-none');
+        document.getElementById('noSuggestions').classList.add('d-none');
+        
+        // Get the project category if not provided
+        if (!category) {
+            // Try to get category from the URL or form data
+            const urlParams = new URLSearchParams(window.location.search);
+            category = urlParams.get('category') || '';
+        }
+        
+        // If we have a category, fetch suggested materials
+        if (category) {
+            fetchSuggestedMaterials(category, projectId);
+        } else {
+            // No category, hide loading and show no suggestions
+            document.getElementById('suggestedMaterialsLoading').classList.add('d-none');
+            document.getElementById('noSuggestions').classList.remove('d-none');
+        }
+        
+        // Add event listener for the "Add Now" button
+        const addNowBtn = document.getElementById('goToProjectBtn');
+        const addNowText = document.getElementById('addNowText');
+        const addNowLoading = document.getElementById('addNowLoading');
+        
+        // Remove any existing event listeners to prevent duplicates
+        const newAddNowBtn = addNowBtn.cloneNode(true);
+        addNowBtn.parentNode.replaceChild(newAddNowBtn, addNowBtn);
+        
+        newAddNowBtn.addEventListener('click', function() {
+            // Call addSuggestedMaterial with the project ID
+            const projectId = modalEl.dataset.projectId;
+            if (projectId) {
+                addSuggestedMaterial(projectId);
+            } else {
+                console.error('Project ID not found');
+                showFeedback('error', 'Error: Project ID not found');
+            }
+        });
+        
+        // Add event listener to show feedback when modal is closed
+        if (suggestionModal) {
+            suggestionModal.addEventListener('hidden.bs.modal', function() {
+                showFeedback('success', 'Project has been added successfully!');
+            });
+        }
+        
+        modal.show();
+    }
+    
+    // Fetch suggested materials based on project category
+    function fetchSuggestedMaterials(category, projectId) {
+        const loadingEl = document.getElementById('suggestedMaterialsLoading');
+        const containerEl = document.getElementById('suggestedMaterialsContainer');
+        const noSuggestionsEl = document.getElementById('noSuggestions');
+        const materialsListEl = document.getElementById('suggestedMaterialsList');
+        
+        // Show loading state
+        loadingEl.classList.remove('d-none');
+        containerEl.classList.add('d-none');
+        noSuggestionsEl.classList.add('d-none');
+        
+        // Fetch suggested materials from the API
+        fetch(`get_suggested_materials.php?category=${encodeURIComponent(category)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loading state
+                loadingEl.classList.add('d-none');
+                
+                if (data.error) {
+                    console.error('Error fetching suggested materials:', data.error);
+                    noSuggestionsEl.classList.remove('d-none');
+                    return;
+                }
+                
+                if (!data.suggestions || data.suggestions.length === 0) {
+                    noSuggestionsEl.classList.remove('d-none');
+                    return;
+                }
+                
+                // Clear existing materials
+                materialsListEl.innerHTML = '';
+                
+                // Add each suggested material to the list
+                data.suggestions.forEach(material => {
+                    const totalCost = (material.material_price * material.quantity + parseFloat(material.additional_cost || 0)).toFixed(2);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${material.material_name}</td>
+                        <td>${parseFloat(material.quantity).toFixed(2)}</td>
+                        <td>${material.unit || 'pcs'}</td>
+                        <td>₱${parseFloat(material.material_price).toFixed(2)}</td>
+                        <td>₱${totalCost}</td>
+                    `;
+                    row.style.cursor = 'pointer';
+                    row.title = 'Click to add this material';
+                    row.addEventListener('click', () => {
+                        addSuggestedMaterial(projectId, material);
+                    });
+                    materialsListEl.appendChild(row);
+                });
+                
+                // Show the materials container
+                containerEl.classList.remove('d-none');
+            })
+            .catch(error => {
+                console.error('Error fetching suggested materials:', error);
+                loadingEl.classList.add('d-none');
+                noSuggestionsEl.classList.remove('d-none');
+            });
+    }
+    
+    // Add all suggested materials to the project
+    function addSuggestedMaterial(projectId, material) {
+        const addNowBtn = document.getElementById('goToProjectBtn');
+        const addNowText = document.getElementById('addNowText');
+        const addNowLoading = document.getElementById('addNowLoading');
+        
+        // Disable the button and show loading
+        addNowBtn.disabled = true;
+        addNowText.textContent = 'Saving Materials...';
+        addNowLoading.classList.remove('d-none');
+        
+        // If a single material is provided, use it directly
+        // Otherwise, get all materials from the table
+        let materialsToSave = [];
+        
+        if (material) {
+            // Single material provided (from row click)
+            materialsToSave = [{
+                material_name: material.material_name,
+                quantity: parseFloat(material.quantity),
+                unit: material.unit || 'pcs',
+                material_price: parseFloat(material.material_price)
+            }];
+        } else {
+            // Get all materials from the table (from Add Now button)
+            const materialRows = document.querySelectorAll('#suggestedMaterialsList tr');
+            materialRows.forEach(row => {
+                const cells = row.cells;
+                if (cells.length >= 4) {
+                    materialsToSave.push({
+                        material_name: cells[0].textContent.trim(),
+                        quantity: parseFloat(cells[1].textContent) || 1,
+                        unit: cells[2].textContent.trim() || 'pcs',
+                        material_price: parseFloat(cells[3].textContent.replace('₱', '').replace(/,/g, '')) || 0
+                    });
+                }
+            });
+        }
+        
+        // Validate project ID
+        if (!projectId || projectId === '0') {
+            console.error('Invalid project ID:', projectId);
+            showFeedback('error', 'Error: Invalid project ID. Please try again.');
+            addNowBtn.disabled = false;
+            addNowText.textContent = 'Add Now';
+            addNowLoading.classList.add('d-none');
+            return;
+        }
+        
+        // Validate materials
+        if (materialsToSave.length === 0) {
+            console.error('No materials to save');
+            showFeedback('error', 'Error: No materials selected');
+            addNowBtn.disabled = false;
+            addNowText.textContent = 'Add Now';
+            addNowLoading.classList.add('d-none');
+            return;
+        }
+        
+        console.log('Saving materials for project ID:', projectId);
+        console.log('Materials to save:', materialsToSave);
+        
+        // Send the materials to the server
+        fetch('save_suggested_materials.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                project_id: projectId,
+                materials: materialsToSave
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.message || 'Network response was not ok');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Server response:', data);
+            if (data.success) {
+                addNowText.textContent = 'Success!';
+                // Show success modal then redirect to projects page
+                const successModalEl = document.getElementById('successModal');
+                if (successModalEl) {
+                    const successMsgEl = document.getElementById('successMessage');
+                    if (successMsgEl) {
+                        successMsgEl.textContent = 'Materials added successfully!';
+                    }
+                    const successModal = new bootstrap.Modal(successModalEl);
+                    successModal.show();
+                }
+                setTimeout(() => {
+                    window.location.href = `projects.php`;
+                }, 1500);
+            } else {
+                throw new Error(data.message || 'Failed to save materials');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            addNowText.textContent = 'Add Now';
+            addNowBtn.disabled = false;
+            addNowLoading.classList.add('d-none');
+            
+            // Show error feedback to user
+            showFeedback('error', 'Failed to save materials: ' + (error.message || 'Unknown error'));
+        });
+    }
+    
     // Show feedback modal
     function showFeedback(type, message) {
       console.log('showFeedback called with:', type, message);
@@ -1151,17 +1466,52 @@ addForecastStyles();
       const urlParams = new URLSearchParams(window.location.search);
       
       if (urlParams.has('success')) {
+        const projectId = urlParams.get('project_id');
+        const category = urlParams.get('category') || '';
+        
+        if (projectId) {
+          // Show suggestion modal for new project with category
+          showSuggestion(projectId, category);
+          
+          // Clean up URL
+          const cleanUrl = window.location.pathname + 
+            window.location.search
+              .replace(/[?&]success=[^&]*/, '')
+              .replace(/[?&]project_id=[^&]*/, '')
+              .replace(/[?&]category=[^&]*/, '')
+              .replace(/^&/, '?');
+          window.history.replaceState({}, document.title, cleanUrl);
+          return;
+        }
+        
         let message = 'Operation completed successfully!';
+        
         if (urlParams.get('success') === 'add') {
+          const projectId = urlParams.get('project_id');
+          const category = urlParams.get('category') || '';
           message = 'Project has been added successfully!';
+          if (projectId) {
+            // Show suggestion modal instead of feedback for new projects
+            showSuggestion(projectId, category);
+            // Clean up URL without showing the default success message
+            const cleanUrl = window.location.pathname + 
+              window.location.search
+                .replace(/[?&]success=[^&]*/, '')
+                .replace(/[?&]project_id=[^&]*/, '')
+                .replace(/[?&]category=[^&]*/, '')
+                .replace(/^&/, '?');
+            window.history.replaceState({}, document.title, cleanUrl);
+            return;
+          }
         } else if (urlParams.get('success') === 'archive') {
           message = 'Project has been archived successfully!';
         }
+        
         showFeedback('success', message);
         
         // Clean up URL
         const cleanUrl = window.location.pathname + 
-          window.location.search.replace(/[?&]success=[^&]*/, '').replace(/^&/, '?');
+          window.location.search.replace(/[?&]success=[^&]*/, '').replace(/[?&]project_id=[^&]*/, '').replace(/^&/, '?');
         window.history.replaceState({}, document.title, cleanUrl);
       }
       
