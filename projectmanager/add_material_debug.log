@@ -650,3 +650,75 @@
 
 [2025-09-16 16:27:34] Processing add_estimation_material request
 [2025-09-16 16:27:34] Received 1 materials
+[2025-09-17 12:15:08] New request: Array
+(
+    [add_estimation_material] => 1
+    [project_id] => 217
+    [materials] => Array
+        (
+            [0] => Array
+                (
+                    [material_id] => 97
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-09-17 12:15:08] Processing add_estimation_material request
+[2025-09-17 12:15:08] Received 1 materials
+[2025-09-17 12:15:13] New request: Array
+(
+    [add_estimation_material] => 1
+    [project_id] => 217
+    [materials] => Array
+        (
+            [0] => Array
+                (
+                    [material_id] => 101
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-09-17 12:15:13] Processing add_estimation_material request
+[2025-09-17 12:15:13] Received 1 materials
+[2025-09-17 18:40:15] New request: Array
+(
+    [add_estimation_material] => 1
+    [project_id] => 217
+    [materials] => Array
+        (
+            [0] => Array
+                (
+                    [material_id] => 101
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-09-17 18:40:15] Processing add_estimation_material request
+[2025-09-17 18:40:15] Received 1 materials
+[2025-09-17 18:45:02] New request: Array
+(
+    [add_estimation_material] => 1
+    [project_id] => 217
+    [materials] => Array
+        (
+            [0] => Array
+                (
+                    [material_id] => 99
+                    [quantity] => 1
+                )
+
+        )
+
+)
+
+[2025-09-17 18:45:02] Processing add_estimation_material request
+[2025-09-17 18:45:02] Received 1 materials

@@ -435,39 +435,164 @@ function peso($amount) {
                                                          <div class="step-content d-none" id="step2">
                                  <h4 class="mb-4">Step 2: Cost Estimation</h4>
                                  
-                                 <!-- Forecasted Cost Display Card -->
-                                 <div class="row justify-content-center mb-4">
-                                     <div class="col-lg-6">
-                                         <div class="card border-0 shadow-sm bg-gradient-primary text-white">
-                                             <div class="card-body text-center p-4">
-                                                 <div class="d-flex align-items-center justify-content-center mb-3">
-                                                     <i class="fas fa-chart-line fa-2x me-3"></i>
-                                                     <h5 class="card-title mb-0">Forecasted Project Cost</h5>
+                                 <!-- Cost Summary Cards -->
+                                 <div class="row g-3 mb-4">
+                                     <!-- Forecasted Cost Card -->
+                                     <div class="col-md-3">
+                                         <div class="card border-0 shadow-sm h-100">
+                                             <div class="card-header bg-primary text-white py-2">
+                                                 <div class="d-flex align-items-center">
+                                                     <i class="fas fa-chart-line me-2"></i>
+                                                     <h6 class="mb-0">Forecasted Budget</h6>
                                                  </div>
-                                                                                                   <div class="display-6 fw-bold mb-2">
-                                                      ₱<?php 
-                                                      if ($project_id > 0) {
-                                                          $forecast_query = "SELECT forecasted_cost FROM projects WHERE project_id = ?";
-                                                          if ($stmt = $con->prepare($forecast_query)) {
-                                                              $stmt->bind_param("i", $project_id);
-                                                              $stmt->execute();
-                                                              $result = $stmt->get_result();
-                                                              if ($result && $result->num_rows > 0) {
-                                                                  $row = $result->fetch_assoc();
-                                                                  $forecasted_cost = $row['forecasted_cost'];
-                                                                  echo number_format($forecasted_cost, 2);
-                                                              } else {
-                                                                  echo "0.00";
-                                                              }
-                                                              $stmt->close();
-                                                          } else {
-                                                              echo "0.00";
-                                                          }
-                                                      } else {
-                                                          echo "0.00";
-                                                      }
-                                                      ?>
-                                                  </div>
+                                             </div>
+                                             <div class="card-body text-center py-3">
+                                                 <h3 class="text-primary fw-bold mb-0">
+                                                     ₱<?php 
+                                                     $forecasted_cost = 0;
+                                                     if ($project_id > 0) {
+                                                         $forecast_query = "SELECT forecasted_cost FROM projects WHERE project_id = ?";
+                                                         if ($stmt = $con->prepare($forecast_query)) {
+                                                             $stmt->bind_param("i", $project_id);
+                                                             $stmt->execute();
+                                                             $result = $stmt->get_result();
+                                                             if ($result && $result->num_rows > 0) {
+                                                                 $row = $result->fetch_assoc();
+                                                                 $forecasted_cost = $row['forecasted_cost'];
+                                                             }
+                                                             $stmt->close();
+                                                         }
+                                                     }
+                                                     echo number_format($forecasted_cost, 2);
+                                                     ?>
+                                                 </h3>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     
+                                     <!-- Materials Cost Card -->
+                                     <div class="col-md-3">
+                                         <div class="card border-0 shadow-sm h-100">
+                                             <div class="card-header bg-success text-white py-2">
+                                                 <div class="d-flex align-items-center">
+                                                     <i class="fas fa-boxes me-2"></i>
+                                                     <h6 class="mb-0">Materials Cost</h6>
+                                                 </div>
+                                             </div>
+                                             <div class="card-body text-center py-3">
+                                                 <?php 
+                                                 $materials_total = 0;
+                                                 if ($project_id > 0) {
+                                                     $materials_query = "SELECT COALESCE(SUM((pem.material_price + COALESCE(m.labor_other, 0)) * pem.quantity), 0) as total 
+                                                                       FROM project_estimating_materials pem
+                                                                       LEFT JOIN materials m ON pem.material_id = m.id
+                                                                       WHERE pem.project_id = ?";
+                                                     if ($stmt = $con->prepare($materials_query)) {
+                                                         $stmt->bind_param("i", $project_id);
+                                                         $stmt->execute();
+                                                         $result = $stmt->get_result();
+                                                         if ($result && $row = $result->fetch_assoc()) {
+                                                             $materials_total = $row['total'];
+                                                         }
+                                                         $stmt->close();
+                                                     }
+                                                 }
+                                                 ?>
+                                                 <h3 class="text-success fw-bold mb-0">₱<?php echo number_format($materials_total, 2); ?></h3>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     
+                                     <!-- Labor Cost Card -->
+                                     <div class="col-md-3">
+                                         <div class="card border-0 shadow-sm h-100">
+                                             <div class="card-header bg-info text-white py-2">
+                                                 <div class="d-flex align-items-center">
+                                                     <i class="fas fa-users me-2"></i>
+                                                     <h6 class="mb-0">Labor Cost</h6>
+                                                 </div>
+                                             </div>
+                                             <div class="card-body text-center py-3">
+                                                 <?php 
+                                                 $labor_total = 0;
+                                                 if ($project_id > 0) {
+                                                     $labor_query = "SELECT COALESCE(SUM(total), 0) as total 
+                                                                   FROM project_estimation_employee 
+                                                                   WHERE project_id = ?";
+                                                     if ($stmt = $con->prepare($labor_query)) {
+                                                         $stmt->bind_param("i", $project_id);
+                                                         $stmt->execute();
+                                                         $result = $stmt->get_result();
+                                                         if ($result && $row = $result->fetch_assoc()) {
+                                                             $labor_total = $row['total'];
+                                                         }
+                                                         $stmt->close();
+                                                     }
+                                                 }
+                                                 ?>
+                                                 <h3 class="text-info fw-bold mb-0">₱<?php echo number_format($labor_total, 2); ?></h3>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     
+                                     <!-- Overhead Cost Card -->
+                                     <div class="col-md-3">
+                                         <div class="card border-0 shadow-sm h-100">
+                                             <div class="card-header bg-warning text-dark py-2">
+                                                 <div class="d-flex align-items-center">
+                                                     <i class="fas fa-calculator me-2"></i>
+                                                     <h6 class="mb-0">Overhead Costs</h6>
+                                                 </div>
+                                             </div>
+                                             <div class="card-body text-center py-3">
+                                                 <?php 
+                                                 $overhead_total = 0;
+                                                 if ($project_id > 0) {
+                                                     $overhead_query = "SELECT COALESCE(SUM(price), 0) as total 
+                                                                     FROM overhead_costs 
+                                                                     WHERE project_id = ?";
+                                                     $stmt = $con->prepare($overhead_query);
+                                                     $stmt->bind_param("i", $project_id);
+                                                     $stmt->execute();
+                                                     $result = $stmt->get_result();
+                                                     if ($result && $row = $result->fetch_assoc()) {
+                                                         $overhead_total = $row['total'];
+                                                     }
+                                                     $stmt->close();
+                                                 }
+                                                 ?>
+                                                 <h3 class="text-warning fw-bold mb-0">₱<?php echo number_format($overhead_total, 2); ?></h3>
+                                             </div>
+                                         </div>
+                                     </div>
+
+                                     <!-- Total Cost Card -->
+                                     <div class="col-12">
+                                         <div class="card border-0 shadow-sm bg-gradient-primary text-white">
+                                             <div class="card-body text-center p-3">
+                                                 <div class="d-flex flex-column flex-md-row align-items-center justify-content-between">
+                                                     <h5 class="mb-2 mb-md-0">
+                                                         <i class="fas fa-calculator me-2"></i>
+                                                         Total Project Estimation
+                                                     </h5>
+                                                     <h2 class="fw-bold mb-0" id="totalProjectCost">
+                                                         ₱<?php 
+                                                         $total_cost = $materials_total + $labor_total + $overhead_total;
+                                                         echo number_format($total_cost, 2);
+                                                         ?>
+                                                     </h2>
+                                                 </div>
+                                                 <div class="mt-2 small">
+                                                     <span class="badge bg-light text-dark me-1">
+                                                         <i class="fas fa-boxes me-1"></i> Materials: ₱<?php echo number_format($materials_total, 2); ?>
+                                                     </span>
+                                                     <span class="badge bg-light text-dark me-1">
+                                                         <i class="fas fa-users me-1"></i> Labor: ₱<?php echo number_format($labor_total, 2); ?>
+                                                     </span>
+                                                     <span class="badge bg-light text-dark">
+                                                         <i class="fas fa-calculator me-1"></i> Overhead: ₱<?php echo number_format($overhead_total, 2); ?>
+                                                     </span>
+                                                 </div>
                                              </div>
                                          </div>
                                      </div>
@@ -480,9 +605,7 @@ function peso($amount) {
                                         <button type="button" class="btn btn-light btn-sm ml-auto" id="addMaterialsBtn" data-bs-toggle="modal" data-bs-target="#addMaterialsModal">
                                             <i class="fas fa-plus-square me-1"></i> Add Materials
                                         </button>
-                                        <button type="button" class="btn btn-light btn-sm ms-2" id="exportCostEstimationBtn">
-                                            <i class="fas fa-file-export"></i> Save & Export PDF
-                                        </button>
+                                       
                                     </div>
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
@@ -608,10 +731,291 @@ function peso($amount) {
                                         <?php endif; ?>
                                     </div>
                                 </div>
+                                <!-- Error Message Display -->
+                                <?php if (isset($_GET['error'])): ?>
+                                <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <?php echo htmlspecialchars($_GET['error']); ?>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                                <?php endif; ?>
+                                <!-- Project Employees Section -->
+                                <div class="card mb-3 shadow-sm">
+                                    <div class="card-header bg-success text-white d-flex align-items-center">
+                                        <span class="flex-grow-1">Project Team</span>
+                                        <button type="button" class="btn btn-light btn-sm ml-auto" id="addEmployeeBtn" data-bs-toggle="modal" data-bs-target="#addEmployeeModal">
+                                            <i class="fas fa-user-plus me-1"></i> Add Employee
+                                        </button>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered mb-0">
+                                                <thead class="table-secondary">
+                                                    <tr>
+                                                        <th>No.</th>
+                                                        <th>Name</th>
+                                                        <th>Position</th>
+                                                        <th>Employee Type</th>
+                                                        <th>Daily Rate</th>
+                                                        <th>Project Days</th>
+                                                        <th>Total</th>
+                                                        <th>Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <?php
+                                                    $project_days = 1; // Default value, will be calculated based on project duration
+                                                    $emp_total = 0;
+                                                    $proj_emps = [];
+                                                    
+                                                    if ($project_id) {
+                                                        // Calculate project working days (excluding Sundays)
+                                                        $start_date = $project['start_date'] ?? date('Y-m-d');
+                                                        $end_date = $project['deadline'] ?? date('Y-m-d', strtotime('+1 day'));
+                                                        
+                                                        $start = new DateTime($start_date);
+                                                        $end = new DateTime($end_date);
+                                                        $interval = $start->diff($end);
+                                                        $days = $interval->days + 1; // Total days including start and end
+                                                        
+                                                        // Calculate number of Sundays in the date range
+                                                        $sundays = 0;
+                                                        $period = new DatePeriod(
+                                                            $start,
+                                                            new DateInterval('P1D'),
+                                                            $end->modify('+1 day') // Include end date in calculation
+                                                        );
+                                                        
+                                                        foreach ($period as $date) {
+                                                            if ($date->format('N') == 7) { // 7 = Sunday
+                                                                $sundays++;
+                                                            }
+                                                        }
+                                                        
+                                                        // Calculate working days (excluding Sundays)
+                                                        $project_days = $days - $sundays;
+                                                        
+                                                        // Fetch estimation employees for this project
+                                                        $emp_query = $con->prepare("SELECT pee.*, e.first_name, e.last_name, e.company_type
+                                                                                FROM project_estimation_employee pee
+                                                                                JOIN employees e ON pee.employee_id = e.employee_id
+                                                                                WHERE pee.project_id = ?
+                                                                                ORDER BY e.last_name, e.first_name");
+                                                        $emp_query->bind_param("i", $project_id);
+                                                        $emp_query->execute();
+                                                        $result = $emp_query->get_result();
+                                                        
+                                                        while ($row = $result->fetch_assoc()) {
+                                                            $proj_emps[] = $row;
+                                                        }
+                                                        $emp_query->close();
+                                                    }
+                                                    
+                                                    if (count($proj_emps) > 0): 
+                                                        $i = 1;
+                                                        foreach ($proj_emps as $emp): 
+                                                            $emp_cost = $emp['daily_rate'] * $project_days;
+                                                            $emp_total += $emp_cost;
+                                                    ?>
+                                                    <tr>
+                                                        <td><?php echo $i++; ?></td>
+                                                        <td style="font-weight:bold;color:#222;">
+                                                            <?php echo htmlspecialchars(($emp['first_name'] ?? '') . ' ' . ($emp['last_name'] ?? '')); ?>
+                                                        </td>
+                                                        <td><?php echo htmlspecialchars($emp['position'] ?? 'N/A'); ?></td>
+                                                        <td><?php echo htmlspecialchars($emp['company_type'] ?? 'N/A'); ?></td>
+                                                        <td>₱<?php echo number_format($emp['daily_rate'] ?? 0, 2); ?></td>
+                                                        <td><?php echo $project_days; ?></td>
+                                                        <td style="font-weight:bold;color:#222;">₱<?php echo number_format($emp_cost, 2); ?></td>
+                                                        <td>
+                                                            <button type="button" class="btn btn-sm btn-danger remove-employee" 
+                                                                    data-id="<?php echo $emp['id'] ?? ''; ?>"
+                                                                    data-is-estimation="1">
+                                                                <i class="fas fa-trash"></i> Remove
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <?php 
+                                                        endforeach; 
+                                                    else: 
+                                                    ?>
+                                                    <tr>
+                                                        <td colspan="8" class="text-center">No employees added</td>
+                                                    </tr>
+                                                    <?php endif; ?>
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <th colspan="5" class="text-end">Total</th>
+                                                        <th colspan="2" style="font-weight:bold;color:#222;">₱<?php echo number_format($emp_total, 2); ?></th>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Overhead Costs Section -->
+                                <div class="card mb-3 shadow-sm">
+                                    <div class="card-header bg-success text-white d-flex align-items-center">
+                                        <span class="flex-grow-1">Overhead Costs</span>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered mb-0">
+                                                <thead class="table-success">
+                                                    <tr>
+                                                        <th>No.</th>
+                                                        <th>Name</th>
+                                                        <th>Price (₱)</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="overheadCostsBody">
+                                                    <?php
+                                                    $project_id = isset($_GET['project_id']) ? intval($_GET['project_id']) : 0;
+                                                    $overhead_total = 0;
+                                                    $counter = 1;
+                                                    
+                                                    // Hardcoded overhead cost names
+                                                    $overhead_names = [
+                                                        'Mobilization/Demobilization',
+                                                        'Others',
+                                                        'Misc. Items',
+                                                        'Profit',
+                                                        'Overhead & Supervision',
+                                                        'VAT',
+                                                        'Accommodation (Food, Housing)'
+                                                    ];
+                                                    
+                                                    // Get project-specific prices if project_id is valid
+                                                    $project_prices = [];
+                                                    if ($project_id > 0) {
+                                                        $price_query = "SELECT id, name, price FROM overhead_costs WHERE project_id = ?";
+                                                        $stmt = $con->prepare($price_query);
+                                                        $stmt->bind_param("i", $project_id);
+                                                        $stmt->execute();
+                                                        $price_result = $stmt->get_result();
+                                                        
+                                                        while ($price_row = $price_result->fetch_assoc()) {
+                                                            $project_prices[$price_row['name']] = $price_row['price'];
+                                                        }
+                                                        $stmt->close();
+                                                    }
+                                                    
+                                                    // Display all overhead costs with project-specific prices or 0
+                                                    foreach ($overhead_names as $index => $name) {
+                                                        $price = isset($project_prices[$name]) ? $project_prices[$name] : 0;
+                                                        $overhead_total += $price;
+                                                        
+                                                        echo '<tr data-name="' . htmlspecialchars($name) . '">';
+                                                        echo '<td>' . $counter++ . '</td>';
+                                                        echo '<td>' . htmlspecialchars($name) . '</td>';
+                                                        echo '<td class="editable-price">';
+                                                        echo '<input type="number" class="form-control form-control-sm price-input" value="' . $price . '" step="0.01" min="0" onchange="updateOverheadPrice(\'' . htmlspecialchars($name, ENT_QUOTES) . '\', this)" onkeydown="if(event.key === \'Enter\') { event.preventDefault(); this.blur(); }">';
+                                                        echo '</td>';
+                                                        echo '</tr>';
+                                                    }
+                                                    
+                                                    if (empty($overhead_names)) {
+                                                        echo '<tr><td colspan="3" class="text-center">No overhead costs found</td></tr>';
+                                                    }
+                                                    ?>
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <th colspan="2" class="text-end">Total Overhead Costs:</th>
+                                                        <th id="overheadTotal">₱<?php echo number_format($overhead_total, 2); ?></th>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <script>
+                                function updateOverheadPrice(id, inputElement) {
+                                    const price = inputElement.value;
+                                    const projectId = <?php echo isset($_GET['project_id']) ? intval($_GET['project_id']) : 0; ?>;
+                                    
+                                    // Don't do anything if price is not a valid number
+                                    if (isNaN(price) || price === '') {
+                                        return;
+                                    }
+                                    
+                                    if (projectId === 0) {
+                                        alert('Error: Project ID not found');
+                                        return;
+                                    }
+                                    
+                                    // Send AJAX request to update the price
+                                    fetch('save_overhead_costs.php', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/x-www-form-urlencoded',
+                                        },
+                                        body: 'name=' + encodeURIComponent(id) + '&price=' + price + '&project_id=' + projectId
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            // Update total if needed
+                                            updateOverheadTotal();
+                                        } else {
+                                            alert('Error updating price: ' + (data.message || 'Unknown error'));
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
+                                        alert('Error updating price');
+                                    });
+                                }
+
+                                function updateOverheadTotal() {
+                                    // Recalculate total
+                                    let total = 0;
+                                    document.querySelectorAll('.price-input').forEach(input => {
+                                        total += parseFloat(input.value) || 0;
+                                    });
+                                    document.getElementById('overheadTotal').textContent = '₱' + total.toFixed(2);
+                                }
+                                
+                                // Add event listeners after the page loads
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    // Handle Enter key press
+                                    document.addEventListener('keydown', function(e) {
+                                        if (e.target.classList.contains('price-input') && e.key === 'Enter') {
+                                            e.preventDefault();
+                                            e.target.blur(); // This will trigger the onchange event
+                                        }
+                                    });
+                                    
+                                    // Prevent form submission when pressing Enter in price inputs
+                                    document.querySelectorAll('.price-input').forEach(input => {
+                                        input.addEventListener('keypress', function(e) {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                return false;
+                                            }
+                                        });
+                                    });
+                                });
+                                </script>
+                                
                                 <!-- Navigation Buttons -->
                                 <div class="d-flex justify-content-between mt-4">
-                                    <button type="button" class="btn btn-secondary prev-step" data-prev="1">Previous</button>
-                                    <button type="button" class="btn btn-primary next-step" data-next="3">Next <i class="fas fa-arrow-right"></i></button>
+                                    <button type="button" class="btn btn-secondary prev-step" data-prev="1">
+                                        <i class="fas fa-arrow-left me-1"></i> Previous
+                                    </button>
+                                    <div class="d-flex align-items-center">
+                                        <button type="button" class="btn btn-outline-primary me-2 d-flex align-items-center" id="exportCostEstimationBtn" 
+                                                style="border-color: #0d6efd; font-weight: 500;">
+                                            <i class="fas fa-file-pdf me-1 text-danger"></i> 
+                                            <span>Save & Export PDF</span>
+                                        </button>
+                                        <button type="button" class="btn btn-primary next-step d-flex align-items-center" data-next="3">
+                                            <span>Next</span>
+                                            <i class="fas fa-arrow-right ms-1"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="step-content d-none" id="step3">

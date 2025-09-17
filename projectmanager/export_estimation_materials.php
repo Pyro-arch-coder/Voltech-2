@@ -47,17 +47,16 @@ try {
         throw new Exception("Failed to insert snapshot into project_add_materials: " . $con->error);
     }
 
-    // Calculate total estimation cost from materials
+    // Calculate total materials cost
     $materials = [];
     $mat_total = 0;
     $mat_query = $con->query("SELECT pem.*, m.material_name, m.unit, m.material_price, m.labor_other 
-                             FROM project_estimating_materials pem 
-                             LEFT JOIN materials m ON pem.material_id = m.id 
-                             WHERE pem.project_id = '$project_id'");
+                            FROM project_estimating_materials pem 
+                            LEFT JOIN materials m ON pem.material_id = m.id 
+                            WHERE pem.project_id = '$project_id'");
     
     while($row = $mat_query->fetch_assoc()) {
         $materials[] = $row;
-        // Calculate total using the same formula as grand total: (material_price + labor_other) * quantity
         $material_price = floatval($row['material_price'] ?? 0);
         $labor_other = floatval($row['labor_other'] ?? 0);
         $quantity = floatval($row['quantity'] ?? 0);
@@ -65,10 +64,68 @@ try {
         $mat_total += $item_total;
     }
     
+    // Calculate total labor cost from project_estimation_employee
+    $labor_total = 0;
+    $labor_query = $con->query("SELECT COALESCE(SUM(total), 0) as total 
+                               FROM project_estimation_employee 
+                               WHERE project_id = '$project_id'");
+    if ($labor_row = $labor_query->fetch_assoc()) {
+        $labor_total = floatval($labor_row['total']);
+    }
+    
+    // Save overhead costs to overhead_cost_actual
+    $overhead_query = $con->query("SELECT * FROM overhead_costs WHERE project_id = '$project_id'");
+    if ($overhead_query->num_rows > 0) {
+        $delete_old = $con->query("DELETE FROM overhead_cost_actual WHERE project_id = '$project_id'");
+        if (!$delete_old) {
+            throw new Exception("Failed to clear existing overhead_cost_actual: " . $con->error);
+        }
+        
+        $stmt = $con->prepare("INSERT INTO overhead_cost_actual (project_id, name, price, created_at) VALUES (?, ?, ?, NOW())");
+        if (!$stmt) {
+            throw new Exception("Prepare failed: " . $con->error);
+        }
+        
+        while ($row = $overhead_query->fetch_assoc()) {
+            $stmt->bind_param("isd", $row['project_id'], $row['name'], $row['price']);
+            if (!$stmt->execute()) {
+                throw new Exception("Failed to save overhead cost: " . $stmt->error);
+            }
+        }
+        $stmt->close();
+    }
+    
+    // Calculate total overhead costs
+    $overhead_total = 0;
+    $overhead_sum_query = $con->query("SELECT COALESCE(SUM(price), 0) as total FROM overhead_costs WHERE project_id = '$project_id'");
+    if ($overhead_sum_row = $overhead_sum_query->fetch_assoc()) {
+        $overhead_total = floatval($overhead_sum_row['total']);
+    }
+    
+    $total_estimation = $mat_total + $labor_total + $overhead_total;
+    
     // Update total_estimation_cost in projects table
-    $update_query = "UPDATE projects SET total_estimation_cost = $mat_total WHERE project_id = $project_id";
-    if (!$con->query($update_query)) {
+    $update_query = $con->prepare("UPDATE projects SET total_estimation_cost = ? WHERE project_id = ?");
+    if (!$update_query) {
+        throw new Exception("Prepare failed: " . $con->error);
+    }
+    $update_query->bind_param("di", $total_estimation, $project_id);
+    if (!$update_query->execute()) {
         throw new Exception("Failed to update project total estimation cost: " . $con->error);
+    }
+    
+    // Move employees from project_estimation_employee to project_add_employee
+    $move_employees = $con->prepare("INSERT INTO project_add_employee 
+                                    (project_id, employee_id, position, daily_rate, total, status, added_at)
+                                    SELECT project_id, employee_id, position, daily_rate, total, 'Working', NOW()
+                                    FROM project_estimation_employee
+                                    WHERE project_id = ?");
+    if (!$move_employees) {
+        throw new Exception("Prepare failed: " . $con->error);
+    }
+    $move_employees->bind_param("i", $project_id);
+    if (!$move_employees->execute()) {
+        throw new Exception("Failed to move employees to project team: " . $con->error);
     }
     
     // Commit the transaction

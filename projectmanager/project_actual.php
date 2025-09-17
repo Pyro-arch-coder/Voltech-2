@@ -332,22 +332,26 @@ if (isset($_POST['update_project_status'])) {
                 error_log("Materials Total: " . $mat_total);
                 error_log("Equipment Total: " . $equip_total);
                 
-                $total_expenses = $mat_total + $equip_total + $emp_total_for_expense;
+                $total_expenses = $mat_total + $equip_total + $emp_total_for_expense + $overhead_total;
                 
+                // Calculate the remaining budget after expenses
+                $remaining_budget = $project_data['budget'] - $total_expenses;
                 
                 // Debug: Log final total
                 error_log("Final Expenses Total: " . $total_expenses);
+                error_log("Project Budget: " . $project_data['budget']);
+                error_log("Remaining Budget: " . $remaining_budget);
                 
-                // Insert expense record
+                // Insert expense record with the remaining budget as the expense amount
                 $expense_date = date('Y-m-d');
                 $expense_category = 'Project';
-                $description = 'Finished Project: ' . $project_data['project'];
+                $description = 'Remaining Budget for Project: ' . $project_data['project'];
                 $project_name = $project_data['project'];
                 
                 $expense_query = "INSERT INTO expenses (user_id, expense, expensedate, project_name, expensecategory, description, project_id) 
                                 VALUES (?, ?, ?, ?, ?, ?, ?)";
                 $expense_stmt = $con->prepare($expense_query);
-                $expense_stmt->bind_param('idssssi', $userid, $total_expenses, $expense_date, $project_name, $expense_category, $description, $project_id);
+                $expense_stmt->bind_param('idssssi', $userid, $remaining_budget, $expense_date, $project_name, $expense_category, $description, $project_id);
                 
                 if (!$expense_stmt->execute()) {
                     throw new Exception('Failed to create expense record');
@@ -666,6 +670,14 @@ $div_chart_data = [];
 
 // Initialize employee totals
 $emp_totals = 0;
+
+// Initialize and calculate overhead total
+$overhead_total = 0;
+$overhead_query = mysqli_query($con, "SELECT SUM(price) as total FROM overhead_cost_actual WHERE project_id = '$project_id'");
+if ($overhead_query) {
+    $overhead_row = mysqli_fetch_assoc($overhead_query);
+    $overhead_total = $overhead_row['total'] ?? 0;
+}
 
 // Try to fetch division progress if the table exists
 try {
@@ -1083,17 +1095,21 @@ if ($userid) {
                                         <span class="fw-bold text-primary">₱<?php echo number_format($emp_totals, 2); ?></span>
                                     </div>
                                 <?php endif; ?>
+                                  <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-dark">Overhead Costs:</span>
+                                    <span class="fw-bold text-info">₱<?php echo number_format($overhead_total, 2); ?></span>
+                                  </div>
                                   <hr class="my-2">
                                   <div class="d-flex justify-content-between mb-2">
                                     <span class="text-dark fw-bold">Total Project Cost:</span>
-                                    <span class="fw-bold text-danger fs-5">₱<?php echo number_format($mat_total + $equip_total + $emp_totals, 2); ?></span>
+                                    <span class="fw-bold text-danger fs-5">₱<?php echo number_format($mat_total + $equip_total + $emp_totals + $overhead_total, 2); ?></span>
                                   </div>
                                 </div>
                                 
                                 <!-- Right Column: Budget - Total Cost = Result -->
                                 <div class="col-6">
                                   <?php 
-                                  $total_project_cost = $mat_total + $equip_total + $emp_totals;
+                                  $total_project_cost = $mat_total + $equip_total + $emp_totals + $overhead_total;
                                   $profit_loss = $project['budget'] - $total_project_cost;
                                   $profit_class = $profit_loss >= 0 ? 'success' : 'danger';
                                   $profit_icon = $profit_loss >= 0 ? '▲' : '▼';
@@ -1478,6 +1494,11 @@ if ($userid) {
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="equipment-tab" data-bs-toggle="tab" data-bs-target="#equipment" type="button" role="tab" aria-controls="equipment" aria-selected="false">
                             <i class="fas fa-tools me-1"></i> Project Equipment
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="overhead-tab" data-bs-toggle="tab" data-bs-target="#overhead" type="button" role="tab" aria-controls="overhead" aria-selected="false">
+                            <i class="fas fa-money-bill-wave me-1"></i> Overhead Costs
                         </button>
                     </li>
                 </ul>
@@ -1948,10 +1969,179 @@ if ($userid) {
                       </div>
                     </div>
                 </div>
-           
-
+                
+                <!-- Overhead Costs Tab -->
+                <div class="tab-pane fade" id="overhead" role="tabpanel" aria-labelledby="overhead-tab">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white d-flex align-items-center">
+                            <span class="flex-grow-1">Overhead Costs</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-bordered mb-0">
+                                    <thead class="table-success">
+                                        <tr>
+                                            <th>No.</th>
+                                            <th>Name</th>
+                                            <th>Price (₱)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="overheadCostsBody">
+                                        <?php
+                                        $project_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+                                        $overhead_total = 0;
+                                        $counter = 1;
+                                        
+                                        // Hardcoded overhead cost names
+                                        $overhead_names = [
+                                            'Mobilization/Demobilization',
+                                            'Others',
+                                            'Misc. Items',
+                                            'Profit',
+                                            'Overhead & Supervision',
+                                            'VAT',
+                                            'Accommodation (Food, Housing)'
+                                        ];
+                                        
+                                        // Get project-specific prices if project_id is valid
+                                        $project_prices = [];
+                                        if ($project_id > 0) {
+                                            $price_query = "SELECT id, name, price FROM overhead_cost_actual WHERE project_id = ?";
+                                            $stmt = $con->prepare($price_query);
+                                            $stmt->bind_param("i", $project_id);
+                                            $stmt->execute();
+                                            $price_result = $stmt->get_result();
+                                            
+                                            while ($price_row = $price_result->fetch_assoc()) {
+                                                $project_prices[$price_row['name']] = $price_row['price'];
+                                            }
+                                            $stmt->close();
+                                        }
+                                        
+                                        // Display all overhead costs with project-specific prices or 0
+                                        foreach ($overhead_names as $index => $name) {
+                                            $price = isset($project_prices[$name]) ? $project_prices[$name] : 0;
+                                            $overhead_total += $price;
+                                            
+                                            echo '<tr data-name="' . htmlspecialchars($name) . '">';
+                                            echo '<td>' . $counter++ . '</td>';
+                                            echo '<td>' . htmlspecialchars($name) . '</td>';
+                                            echo '<td class="editable-price">';
+                                            echo '<div class="input-group input-group-sm">';
+                                            echo '<span class="input-group-text">₱</span>';
+                                            echo '<input type="number" class="form-control form-control-sm price-input" 
+                                                   value="' . number_format($price, 2, '.', '') . '" 
+                                                   step="0.01" min="0" 
+                                                   data-name="' . htmlspecialchars($name, ENT_QUOTES) . '"';
+                                            echo ' onchange="updateOverheadPrice(this)" onkeydown="if(event.key === \'Enter\') { event.preventDefault(); this.blur(); }">';
+                                            echo '</div>';
+                                            echo '</td>';
+                                            echo '</tr>';
+                                        }
+                                        
+                                        if (empty($overhead_names)) {
+                                            echo '<tr><td colspan="3" class="text-center">No overhead costs found</td></tr>';
+                                        }
+                                        ?>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th colspan="2" class="text-end">Total Overhead Costs:</th>
+                                            <th id="overheadTotal">₱<?php echo number_format($overhead_total, 2); ?></th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <script>
+                    function updateOverheadPrice(input) {
+                        const price = parseFloat(input.value);
+                        const name = input.getAttribute('data-name');
+                        const projectId = <?php echo $project_id; ?>;
+                        const row = input.closest('tr');
+                        const totalCell = document.getElementById('overheadTotal');
+                        
+                        // Validate price
+                        if (isNaN(price) || price < 0) {
+                            // Revert to previous value if invalid
+                            input.value = input.defaultValue;
+                            return;
+                        }
+                        
+                        // Update the input's default value
+                        input.defaultValue = price.toFixed(2);
+                        
+                        // Show loading state
+                        const originalHTML = input.outerHTML;
+                        input.outerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Loading...</span></div>';
+                        
+                        // Send AJAX request to save the price
+                        const formData = new FormData();
+                        formData.append('project_id', projectId);
+                        formData.append('name', name);
+                        formData.append('price', price);
+                        
+                        fetch('save_overhead_actual_costs.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Update the total if provided
+                                if (data.total !== undefined) {
+                                    totalCell.textContent = '₱' + parseFloat(data.total).toLocaleString('en-US', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    });
+                                }
+                                
+                                // Show success message
+                                const successMsg = document.createElement('span');
+                                successMsg.className = 'text-success ms-2';
+                                successMsg.innerHTML = '<i class="fas fa-check"></i>';
+                                row.querySelector('td:last-child').appendChild(successMsg);
+                                
+                                // Remove success message after 1.5 seconds
+                                setTimeout(() => {
+                                    successMsg.remove();
+                                }, 1500);
+                            } else {
+                                // Show error message
+                                alert('Error: ' + (data.message || 'Failed to save overhead cost'));
+                                // Revert to original value on error
+                                input.value = input.defaultValue;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Error saving overhead cost. Please try again.');
+                            // Revert to original value on error
+                            input.value = input.defaultValue;
+                        })
+                        .finally(() => {
+                            // Restore the input field
+                            row.querySelector('td:last-child').innerHTML = originalHTML;
+                            // Reattach the event listener
+                            const newInput = row.querySelector('.price-input');
+                            if (newInput) {
+                                newInput.onchange = function() { updateOverheadPrice(this); };
+                                newInput.onkeydown = function(e) { 
+                                    if (e.key === 'Enter') { 
+                                        e.preventDefault(); 
+                                        this.blur(); 
+                                    } 
+                                };
+                            }
+                        });
+                    }
+                    </script>
                 </div>
-                        <div class="row mt-4">
+            
+                </div>
+                <div class="row mt-4">
                         <div class="col-12 text-end">
                             <?php if ($project['status'] !== 'Finished' && $project['status'] !== 'Cancelled' && $project['status'] !== 'Overdue Finished'): ?>
                               <button type="button" class="btn btn-danger me-2" id="cancelProjectBtn" data-bs-toggle="modal" data-bs-target="#cancelProjectModal">

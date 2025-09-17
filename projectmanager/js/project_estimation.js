@@ -104,7 +104,7 @@ function renderMaterialsInModal() {
         row.innerHTML = `
             <td class="text-center align-middle">
                 <div class="form-check d-flex justify-content-center">
-                    <input class="form-check-input material-checkbox" type="checkbox" name="selected_materials[]" value="${material.id}">
+                    <input class="form-check-input estimation-material-checkbox" type="checkbox" name="selected_materials[]" value="${material.id}">
                 </div>
             </td>
             <td class="align-middle">
@@ -190,7 +190,7 @@ function setupMaterialsModal() {
 
             // Get all selected materials with quantities
             const selectedMaterials = [];
-            const checkboxes = modal.querySelectorAll('.material-checkbox:checked');
+            const checkboxes = modal.querySelectorAll('.-estimation-material-checkbox:checked');
             if (checkboxes.length === 0) {
                 showAlert('Please select at least one material', 'warning');
                 return;
@@ -536,3 +536,4 @@ function removeMaterial(pemId) {
         });
     }
 }
+

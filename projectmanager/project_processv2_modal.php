@@ -776,3 +776,194 @@
     </form>
   </div>
 </div>
+
+<?php
+// --- BACKEND FETCH: Employees and Positions --- //
+$positions = [];
+$positions_query = "SELECT position_id, title, daily_rate FROM positions";
+$positions_result = $con->query($positions_query);
+if ($positions_result) {
+    while ($row = $positions_result->fetch_assoc()) {
+        $positions[] = $row;
+    }
+}
+
+// Fetch distinct company types for filter dropdown
+$company_types = [];
+$company_type_query = "SELECT DISTINCT company_type FROM employees";
+$company_type_result = $con->query($company_type_query);
+if ($company_type_result) {
+    while ($row = $company_type_result->fetch_assoc()) {
+        $company_types[] = $row['company_type'];
+    }
+}
+
+// Fetch employees who are not currently working on any project or are already assigned to this project
+$employees = [];
+$employees_query = "SELECT e.employee_id, e.first_name, e.last_name, e.position_id, e.contact_number, e.company_type 
+                   FROM employees e
+                   WHERE e.employee_id NOT IN (
+                       SELECT employee_id 
+                       FROM project_add_employee 
+                       WHERE status = 'Working' AND project_id != '$project_id'
+                   )
+                   AND e.employee_id NOT IN (
+                       SELECT employee_id 
+                       FROM project_add_employee 
+                       WHERE project_id = '$project_id' AND status = 'Working'
+                   )";
+$employees_result = $con->query($employees_query);
+if ($employees_result) {
+    while ($row = $employees_result->fetch_assoc()) {
+        $employees[] = $row;
+    }
+}
+?>
+
+<!-- Add Employee Modal -->
+<div class="modal fade" id="addEmployeeModal" tabindex="-1" role="dialog" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addEmployeeModalLabel">Add Employee(s)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" action="save_project_employee_estimation.php" id="addEmployeeTableForm">
+        <input type="hidden" name="project_id" value="<?php echo $project_id; ?>">
+        <div class="modal-body">
+          <!-- Filter Controls -->
+          <div class="row mb-3 g-3">
+            <div class="col-12">
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search"></i></span>
+                <input type="text" class="form-control border-start-0" id="employeeSearchInput" placeholder="Search employees by name..." onkeyup="filterEmployeeTable()">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label for="filterPosition" class="form-label fw-bold">Filter by Position</label>
+              <select class="form-select" id="filterPosition" onchange="filterEmployeeTable()">
+                <option value="">All Positions</option>
+                <?php foreach ($positions as $pos): ?>
+                  <option value="<?php echo htmlspecialchars($pos['title']); ?>"><?php echo htmlspecialchars($pos['title']); ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="filterCompanyType" class="form-label fw-bold">Filter by Company Type</label>
+              <select class="form-select" id="filterCompanyType" onchange="filterEmployeeTable()">
+                <option value="">All Company Types</option>
+                <?php foreach ($company_types as $type): ?>
+                  <option value="<?php echo htmlspecialchars($type); ?>"><?php echo htmlspecialchars($type); ?></option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle" id="employeeChecklistTable">
+              <thead class="table-light">
+                <tr>
+                  <th style="width:5%;"><input type="checkbox" id="checkAll" onclick="toggleAllEmployees(this)"></th>
+                  <th>Full Name</th>
+                  <th>Last Name</th>
+                  <th>Company Type</th>
+                  <th>Position</th>
+                  <th>Contact Number</th>
+                  <th>Daily Rate</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <?php
+                $positions_map = [];
+                foreach ($positions as $pos) {
+                  $positions_map[$pos['position_id']] = [
+                    'title' => $pos['title'],
+                    'daily_rate' => $pos['daily_rate']
+                  ];
+                }
+                
+                foreach ($employees as $emp): 
+                  $pos_id = $emp['position_id'];
+                  $position_title = $positions_map[$pos_id]['title'] ?? 'N/A';
+                  $daily_rate = isset($positions_map[$pos_id]) ? number_format($positions_map[$pos_id]['daily_rate'],2) : 'N/A';
+                  $is_available = $employee_availability[$emp['employee_id']]['is_available'] ?? true;
+                  $assigned_projects = $employee_availability[$emp['employee_id']]['assigned_projects'] ?? '';
+                  $status_class = $is_available ? 'success' : 'warning';
+                  $status_text = $is_available ? 'Available' : 'Assigned to Project(s)';
+                ?>
+                  <tr class="employee-row" 
+                      data-position="<?php echo htmlspecialchars($position_title); ?>" 
+                      data-company-type="<?php echo htmlspecialchars($emp['company_type']); ?>">
+                    <td>
+                      <input type="checkbox" name="selected_employees[]" 
+                             value="<?php echo $emp['employee_id']; ?>" 
+                             class="estimation-employee-check"
+                             <?php echo !$is_available ? 'disabled' : ''; ?>>
+                    </td>
+                    <td><?php echo htmlspecialchars($emp['first_name'] . ' ' . $emp['last_name']); ?></td>
+                    <td><?php echo htmlspecialchars($emp['last_name']); ?></td>
+                    <td><?php echo htmlspecialchars($emp['company_type']); ?></td>
+                    <td><?php echo htmlspecialchars($position_title); ?></td>
+                    <td><?php echo htmlspecialchars($emp['contact_number']); ?></td>
+                    <td><?php echo $daily_rate; ?></td>
+                    <td>
+                      <span class="badge bg-<?php echo $status_class; ?>" 
+                            data-bs-toggle="<?php echo !$is_available ? 'tooltip' : ''; ?>" 
+                            title="<?php echo !$is_available ? htmlspecialchars($assigned_projects) : ''; ?>">
+                        <?php echo $status_text; ?>
+                      </span>
+                    </td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+            <?php if (empty($employees)): ?>
+              <div class="alert alert-info mt-3">No available employees found.</div>
+            <?php endif; ?>
+          </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">Add Selected Employee(s)</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+function toggleAllEmployees(source) {
+  let checkboxes = document.querySelectorAll('.estimation-employee-check');
+  for (let c of checkboxes) c.checked = source.checked;
+}
+
+// JS Filter Function
+function filterEmployeeTable() {
+  var searchTerm = document.getElementById('employeeSearchInput').value.toLowerCase();
+  var position = document.getElementById('filterPosition').value.toLowerCase();
+  var companyType = document.getElementById('filterCompanyType').value.toLowerCase();
+  
+  var rows = document.querySelectorAll('#employeeChecklistTable tbody tr');
+  
+  rows.forEach(function(row) {
+    var rowPosition = row.getAttribute('data-position') ? row.getAttribute('data-position').toLowerCase() : '';
+    var rowCompanyType = row.getAttribute('data-company-type') ? row.getAttribute('data-company-type').toLowerCase() : '';
+    var employeeName = row.cells[1].textContent.toLowerCase(); // Full name is in the second cell (index 1)
+    var lastName = row.cells[2].textContent.toLowerCase(); // Last name is in the third cell (index 2)
+    
+    var searchMatch = searchTerm === '' || 
+                     employeeName.includes(searchTerm) || 
+                     lastName.includes(searchTerm);
+    var positionMatch = position === '' || rowPosition.includes(position);
+    var companyTypeMatch = companyType === '' || rowCompanyType.includes(companyType);
+    
+    if (searchMatch && positionMatch && companyTypeMatch) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+</script>
