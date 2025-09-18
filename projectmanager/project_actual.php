@@ -1137,6 +1137,11 @@ if ($userid) {
                                   $total_project_cost = $mat_total + $equip_total + $emp_totals + $overhead_total;
                                   $profit_loss = $project['budget'] - $total_project_cost;
                                   $profit_class = $profit_loss >= 0 ? 'success' : 'danger';
+                                  
+                                  // Check if total project cost exceeds estimated cost
+                                  $exceeds_estimate = $total_project_cost > $project['total_estimation_cost'];
+                                  // Store in session for JavaScript to access
+                                  $_SESSION['exceeds_estimate'] = $exceeds_estimate;
                                   $profit_icon = $profit_loss >= 0 ? '▲' : '▼';
                                   ?>
                                   <div class="d-flex justify-content-between mb-2">
@@ -2164,7 +2169,31 @@ if ($userid) {
                     }
                     </script>
                 </div>
-            
+                
+                <!-- Check if project cost exceeds estimate -->
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const finishBtn = document.getElementById('finishProjectBtn');
+                    const exceedsEstimate = <?php echo isset($_SESSION['exceeds_estimate']) && $_SESSION['exceeds_estimate'] ? 'true' : 'false'; ?>;
+                    
+                    if (finishBtn && exceedsEstimate) {
+                        // Disable the button
+                        finishBtn.disabled = true;
+                        finishBtn.title = 'Cannot finish project: Total cost exceeds estimated cost';
+                        finishBtn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Cannot Finish (Cost Exceeded)';
+                        finishBtn.classList.remove('btn-success');
+                        finishBtn.classList.add('btn-secondary');
+                        
+                        // Add tooltip
+                        new bootstrap.Tooltip(finishBtn, {
+                            title: 'Total project cost exceeds the estimated cost. Please review your expenses.',
+                            placement: 'top',
+                            trigger: 'hover'
+                        });
+                    }
+                });
+                </script>
+                
                 </div>
                 <div class="row mt-4">
                         <div class="col-12 text-end">
@@ -2172,8 +2201,13 @@ if ($userid) {
                               <button type="button" class="btn btn-danger me-2" id="cancelProjectBtn" data-bs-toggle="modal" data-bs-target="#cancelProjectModal">
                                 <i class="fas fa-times-circle"></i> Cancel Project
                               </button>
-                              <button type="button" class="btn btn-success me-2" id="finishProjectBtn" data-bs-toggle="modal" data-bs-target="#finishProjectModal">
-                                <i class="fas fa-check-circle"></i> Finish Project
+                              <button type="button" class="btn btn-success me-2" id="finishProjectBtn" data-bs-toggle="modal" data-bs-target="#finishProjectModal" 
+                                <?php 
+                                $total_cost = $mat_total + $equip_total + $emp_totals + $overhead_total;
+                                $exceeds_estimate = $total_cost > $project['total_estimation_cost'];
+                                if ($exceeds_estimate) echo 'disabled title="Cannot finish project: Total cost exceeds estimated cost"';
+                                ?>>
+                                <i class="fas fa-check-circle"></i> <?php echo $exceeds_estimate ? 'Cannot Finish (Cost Exceeded)' : 'Finish Project'; ?>
                               </button>
                             <?php endif; ?>
                             <?php if ($project['status'] === 'Finished'): ?>
