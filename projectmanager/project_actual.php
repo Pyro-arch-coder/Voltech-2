@@ -335,7 +335,7 @@ if (isset($_POST['update_project_status'])) {
                 $total_expenses = $mat_total + $equip_total + $emp_total_for_expense + $overhead_total;
                 
                 // Calculate the remaining budget after expenses
-                $remaining_budget = $project_data['budget'] - $total_expenses;
+                $remaining_budget = $total_expenses;
                 
                 // Debug: Log final total
                 error_log("Final Expenses Total: " . $total_expenses);
@@ -359,8 +359,33 @@ if (isset($_POST['update_project_status'])) {
                 
                 $expense_stmt->close();
                 
-                // Calculate profit/loss (total_contract_amount - total expenses, can be negative for loss)
-                $profit_loss = $project_data['total_contract_amount'] - $total_expenses;
+
+               
+
+                // Get the budget directly from the database
+                $budget_query = "SELECT budget FROM projects WHERE project_id = ?";
+                $budget_stmt = $con->prepare($budget_query);
+                $budget_stmt->bind_param('i', $project_id);
+                $budget_stmt->execute();
+                $budget_result = $budget_stmt->get_result();
+                $budget_row = $budget_result->fetch_assoc();
+                $budget_stmt->close();
+                
+                $budget = (float)$budget_row['budget'];
+                $total_expenses = (float)$total_expenses;
+                $profit_loss = $budget - $total_expenses;
+                
+                // Debug information
+                error_log("=== Profit/Loss Calculation ===");
+                error_log("Budget from DB: " . $budget);
+                error_log("Total Expenses: " . $total_expenses);
+                error_log("Calculated Profit/Loss: " . $profit_loss);
+                
+                // Debug log calculated values
+                error_log("Formatted Budget: " . $budget);
+                error_log("Formatted Total Expenses: " . $total_expenses);
+                error_log("Calculated Profit/Loss: " . $profit_loss);
+                error_log("Expected Calculation: {$budget} - {$total_expenses} = " . ($budget - $total_expenses));
                 
                 // Insert the calculated profit/loss
                 $profit_query = "

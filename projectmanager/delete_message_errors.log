@@ -1,0 +1,21 @@
+[17-Sep-2025 23:26:04 Europe/Berlin] PHP Warning:  require_once(db_connect.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\Voltech-2\projectmanager\delete_message.php on line 52
+[17-Sep-2025 23:26:04 Europe/Berlin] PHP Fatal error:  Uncaught Error: Failed opening required 'db_connect.php' (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\Voltech-2\projectmanager\delete_message.php:52
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\Voltech-2\projectmanager\delete_message.php on line 52
+[17-Sep-2025 23:27:21 Europe/Berlin] Message deletion error: Unknown column 'conversation_id' in 'field list' in C:\xampp\htdocs\Voltech-2\projectmanager\delete_message.php:70
+[17-Sep-2025 23:27:45 Europe/Berlin] Message deletion error: Unknown column 'conversation_id' in 'field list' in C:\xampp\htdocs\Voltech-2\projectmanager\delete_message.php:70
+[17-Sep-2025 23:28:35 Europe/Berlin] Error 400: Missing or invalid required parameters
+[17-Sep-2025 23:28:42 Europe/Berlin] Error 400: Missing or invalid required parameters
+[17-Sep-2025 23:29:47 Europe/Berlin] Error 400: Missing or invalid required parameters
+[17-Sep-2025 23:31:01 Europe/Berlin] ===== DELETE MESSAGE REQUEST =====
+[17-Sep-2025 23:31:01 Europe/Berlin] Raw POST data: message_id=18&action=delete-for-everyone
+[17-Sep-2025 23:31:01 Europe/Berlin] POST array: Array
+(
+    [message_id] => 18
+    [action] => delete-for-everyone
+)
+
+[17-Sep-2025 23:31:01 Europe/Berlin] SESSION user_id: not set
+[17-Sep-2025 23:31:01 Europe/Berlin] =================================
+[17-Sep-2025 23:31:01 Europe/Berlin] Error 400: Missing or invalid required parameters

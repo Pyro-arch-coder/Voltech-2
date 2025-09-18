@@ -36,8 +36,8 @@ try {
     // Prepare the insert statement
     $stmt = mysqli_prepare($con, "
         INSERT INTO project_estimating_materials 
-        (project_id, material_name, unit, material_price, quantity, added_at) 
-        VALUES (?, ?, ?, ?, ?, NOW())
+        (project_id, material_id, material_name, unit, material_price, quantity, added_at) 
+        VALUES (?, ?, ?, ?, ?, ?, NOW())
     ");
     
     if (!$stmt) {
@@ -45,8 +45,9 @@ try {
     }
     
     // Bind parameters
-    mysqli_stmt_bind_param($stmt, 'issdi', 
+    mysqli_stmt_bind_param($stmt, 'iissdi', 
         $project_id_param,
+        $material_id,
         $material_name,
         $unit,
         $material_price,
@@ -58,6 +59,7 @@ try {
     
     // Insert each material
     foreach ($materials as $material) {
+        $material_id = intval($material['material_id'] ?? 0);
         $material_name = $material['material_name'];
         $unit = $material['unit'] ?? 'pcs';
         $material_price = floatval($material['material_price']);

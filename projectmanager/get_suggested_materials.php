@@ -45,16 +45,19 @@ try {
     // Get materials from the selected projects
     $stmt = $con->prepare("
         SELECT 
+            m.material_id,
             m.material_name,
             m.unit,
             m.material_price,
             m.quantity,
             m.additional_cost,
-            (m.material_price * m.quantity + m.additional_cost) as total_cost,
+            (m.material_price * m.quantity + IFNULL(m.additional_cost, 0)) as total_cost,
             COUNT(*) as usage_count
         FROM project_add_materials m
         WHERE m.project_id IN ($placeholders)
-        GROUP BY m.material_name, m.unit, m.material_price, m.quantity, m.additional_cost, m.added_at
+        AND m.material_id IS NOT NULL
+        AND m.material_id != 0
+        GROUP BY m.material_id, m.material_name, m.unit, m.material_price, m.quantity, m.additional_cost, m.added_at
         ORDER BY usage_count DESC, m.added_at DESC
     ");
     

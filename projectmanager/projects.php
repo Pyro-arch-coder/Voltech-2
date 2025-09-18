@@ -1287,6 +1287,7 @@ addForecastStyles();
                     const totalCost = (material.material_price * material.quantity + parseFloat(material.additional_cost || 0)).toFixed(2);
                     const row = document.createElement('tr');
                     row.innerHTML = `
+                        <td>${material.material_id}</td>
                         <td>${material.material_name}</td>
                         <td>${parseFloat(material.quantity).toFixed(2)}</td>
                         <td>${material.unit || 'pcs'}</td>
@@ -1329,6 +1330,7 @@ addForecastStyles();
         if (material) {
             // Single material provided (from row click)
             materialsToSave = [{
+                material_id: material.material_id, // Include material_id in the saved object
                 material_name: material.material_name,
                 quantity: parseFloat(material.quantity),
                 unit: material.unit || 'pcs',
@@ -1339,12 +1341,13 @@ addForecastStyles();
             const materialRows = document.querySelectorAll('#suggestedMaterialsList tr');
             materialRows.forEach(row => {
                 const cells = row.cells;
-                if (cells.length >= 4) {
+                if (cells.length >= 6) { // Changed from 4 to 6 to account for all columns
                     materialsToSave.push({
-                        material_name: cells[0].textContent.trim(),
-                        quantity: parseFloat(cells[1].textContent) || 1,
-                        unit: cells[2].textContent.trim() || 'pcs',
-                        material_price: parseFloat(cells[3].textContent.replace('₱', '').replace(/,/g, '')) || 0
+                        material_id: parseInt(cells[0].textContent.trim()) || 0, // Get material_id from first column
+                        material_name: cells[1].textContent.trim(), // Material name is now in the second column
+                        quantity: parseFloat(cells[2].textContent) || 1,
+                        unit: cells[3].textContent.trim() || 'pcs',
+                        material_price: parseFloat(cells[4].textContent.replace('₱', '').replace(/,/g, '')) || 0
                     });
                 }
             });
