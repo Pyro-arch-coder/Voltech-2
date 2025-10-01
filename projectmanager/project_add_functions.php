@@ -1,4 +1,10 @@
 <?php
+if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user_level'] != 3) {
+    header("Location: ../login.php");
+    exit();
+}
+require_once '../config.php';
+
 // Add Equipment to Project
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_project_equipment'])) {
   $equipment_id = intval($_POST['equipment_id']);
@@ -73,6 +79,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_project_employ
     $project_id = intval($_GET['id']);
     mysqli_query($con, "DELETE FROM project_add_employee WHERE id='$row_id'");
     header("Location:project_actual.php?id=$project_id&removeemp=1");
+    exit();
+}
+
+// Remove estimation employee from project
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_estimation_employee'])) {
+    header('Content-Type: application/json');
+    
+    $employee_id = intval($_POST['employee_id']);
+    $project_id = intval($_POST['project_id']);
+    
+    // Debug logging
+    error_log("Removing estimation employee: employee_id=$employee_id, project_id=$project_id");
+    
+    if (!$employee_id || !$project_id) {
+        echo json_encode(['success' => false, 'error' => 'Missing employee_id or project_id']);
+        exit();
+    }
+    
+    // Delete from project_estimation_employee table
+    $query = "DELETE FROM project_estimation_employee WHERE id='$employee_id' AND project_id='$project_id'";
+    $result = mysqli_query($con, $query);
+    
+    if (!$result) {
+        echo json_encode(['success' => false, 'error' => mysqli_error($con)]);
+        exit();
+    }
+    
+    $affected_rows = mysqli_affected_rows($con);
+    error_log("Affected rows: $affected_rows");
+    
+    // Return success response
+    echo json_encode(['success' => true, 'affected_rows' => $affected_rows]);
     exit();
 }
 // Add Material to Project

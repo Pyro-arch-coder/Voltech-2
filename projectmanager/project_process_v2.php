@@ -4,16 +4,13 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-
 require_once '../config.php';
-
 $userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 $user_email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
 $user_firstname = isset($_SESSION['firstname']) ? $_SESSION['firstname'] : '';
 $user_lastname = isset($_SESSION['lastname']) ? $_SESSION['lastname'] : '';
 $user_name = trim($user_firstname . ' ' . $user_lastname);
 $current_page = basename($_SERVER['PHP_SELF']);
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
     header('Content-Type: application/json');
     $response = ['success' => false, 'message' => ''];
@@ -52,8 +49,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
 
 // Fetch project details if project_id is in GET
 $project_id = isset($_GET['project_id']) ? intval($_GET['project_id']) : 0;
-$project_name = '';
 
+// Handle add division (task)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_division'])) {
+    $task_name = trim(mysqli_real_escape_string($con, $_POST['division_name']));
+    $start_date = $_POST['start_date'] ?? null;
+    $end_date = $_POST['end_date'] ?? null;
+    if ($task_name !== '' && $start_date && $end_date && $project_id > 0) {
+        mysqli_query($con, "INSERT INTO project_timeline (project_id, task_name, start_date, end_date, progress, status, created_at, updated_at) VALUES ('$project_id', '$task_name', '$start_date', '$end_date', 0, 'Not Started', NOW(), NOW())");
+    }
+    header("Location: project_process_v2.php?project_id=$project_id&added=1");
+    exit();
+}
+
+// Handle automatic creation of standard project phases
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_standard_phases'])) {
+    if ($project_id > 0) {
+        // Delete existing tasks for this project
+        mysqli_query($con, "DELETE FROM project_timeline WHERE project_id = $project_id");
+        
+        // Get project dates
+        $project_query = "SELECT start_date, deadline FROM projects WHERE project_id = ?";
+        if ($stmt = $con->prepare($project_query)) {
+            $stmt->bind_param("i", $project_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            if ($result && $result->num_rows > 0) {
+                $project = $result->fetch_assoc();
+                $project_start = new DateTime($project['start_date']);
+                $project_end = new DateTime($project['deadline']);
+                $project_duration = $project_start->diff($project_end)->days;
+                
+                // Standard project phases
+                $phases = [
+                    'Mobilization',
+                    'Planning & Preparation', 
+                    'Procurement & Inspection',
+                    'Installation Works',
+                    'Testing & Commissioning',
+                    'Turnover',
+                    'Demobilization'
+                ];
+                
+                $phase_duration = floor($project_duration / count($phases));
+                $current_start = clone $project_start;
+                
+                foreach ($phases as $index => $phase) {
+                    // Calculate end date for this phase
+                    $current_end = clone $current_start;
+                    $current_end->add(new DateInterval('P' . $phase_duration . 'D'));
+                    
+                    // For the last phase, ensure it ends on project deadline
+                    if ($index === count($phases) - 1) {
+                        $current_end = clone $project_end;
+                    }
+                    
+                    // Insert phase into database
+                    $phase_name = mysqli_real_escape_string($con, $phase);
+                    $start_date_str = $current_start->format('Y-m-d');
+                    $end_date_str = $current_end->format('Y-m-d');
+                    
+                    mysqli_query($con, "INSERT INTO project_timeline (project_id, task_name, start_date, end_date, progress, status, created_at, updated_at) VALUES ('$project_id', '$phase_name', '$start_date_str', '$end_date_str', 0, 'Not Started', NOW(), NOW())");
+                    
+                    // Set next phase start date
+                    $current_start = clone $current_end;
+                    $current_start->add(new DateInterval('P1D')); // Start next day
+                }
+            }
+            $stmt->close();
+        }
+    }
+    header("Location: project_process_v2.php?project_id=$project_id&auto_created=1");
+    exit();
+}
+
+$project_name = '';
 if ($project_id > 0) {
     $project_query = "SELECT project, start_date, deadline FROM projects WHERE project_id = ?";
     if ($stmt = $con->prepare($project_query)) {
@@ -71,9 +141,17 @@ if ($project_id > 0) {
         $stmt->close();
     }
 }
+
+// Set success messages
+$success_message = '';
+if (isset($_GET['added'])) {
+    $success_message = 'Task added successfully!';
+}
+if (isset($_GET['auto_created'])) {
+    $success_message = 'Standard project phases created successfully!';
+}
 $current_project_name = '';
 $current_step = 1; // Default step
-
 // Output project dates as JavaScript variables for client-side validation
 echo "<script>
     // Format: YYYY-MM-DD for date inputs
@@ -84,7 +162,6 @@ echo "<script>
     const PROJECT_START_DISPLAY = '" . date('F j, Y', strtotime($start_date)) . "';
     const PROJECT_DEADLINE_DISPLAY = '" . date('F j, Y', strtotime($deadline)) . "';
 </script>";
-
 if (isset($_GET['project_id'])) {
     $pid = intval($_GET['project_id']);
     $res = $con->query("SELECT project, step_progress, status FROM projects WHERE project_id = $pid LIMIT 1");
@@ -116,7 +193,6 @@ if (isset($_GET['project_id'])) {
         }
     }
 }
-
 // User profile image fetch block (restored)
 $user = null;
 $userprofile = '../uploads/default_profile.png';
@@ -130,7 +206,6 @@ if ($userid) {
         $userprofile = isset($user['profile_path']) && $user['profile_path'] ? '../uploads/' . $user['profile_path'] : '../uploads/default_profile.png';
     }
 }
-
 $blueprint_count = 0;
 if ($project_id > 0) {
     $stmt = $con->prepare("SELECT COUNT(*) FROM blueprints WHERE project_id = ?");
@@ -140,7 +215,6 @@ if ($project_id > 0) {
     $stmt->fetch();
     $stmt->close();
 }
-
 $budget_doc_exists = false;
 if ($project_id > 0) {
     $stmt = $con->prepare("SELECT COUNT(*) FROM project_pdf_approval WHERE project_id = ?");
@@ -151,7 +225,6 @@ if ($project_id > 0) {
     $stmt->close();
     $budget_doc_exists = $doc_count > 0;
 }
-
 // 1. Get project total budget and initial payment
 $project_budget = 0;
 $initial_budget = 0;
@@ -161,7 +234,6 @@ $stmt->execute();
 $stmt->bind_result($project_budget, $initial_budget);
 $stmt->fetch();
 $stmt->close();
-
 // 2. Get total approved billing requests (subsequent payments after initial)
 $total_approved = 0;
 $stmt = $con->prepare("SELECT COALESCE(SUM(amount),0) FROM billing_requests WHERE project_id = ? AND status = 'approved'");
@@ -170,20 +242,15 @@ $stmt->execute();
 $stmt->bind_result($total_approved);
 $stmt->fetch();
 $stmt->close();
-
 // 3. Calculate total payments (initial + approved requests)
 $total_payments = $initial_budget + $total_approved;
-
 // 4. Calculate remaining budget and usage percentage
 $remaining_budget = $project_budget - $total_payments;
 $budget_percentage = $project_budget > 0 ? min(($total_payments / $project_budget) * 100, 100) : 0;
-
 // 5. Formatting helper
 function peso($amount) {
     return '₱' . number_format($amount, 2);
 }
-
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -242,7 +309,6 @@ function peso($amount) {
             justify-content: center;
         }
     </style>
-
 <body>
     <div class="d-flex" id="wrapper">
         <!-- Sidebar -->
@@ -284,7 +350,6 @@ function peso($amount) {
             </div>
         </div>
         <!-- /#sidebar-wrapper -->
-
         <!-- Page Content -->
         <div id="page-content-wrapper">
             <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
@@ -376,11 +441,10 @@ function peso($amount) {
                         </div>
                     </div>
                 </div>
-
                 <!-- Step Content -->
                 <div class="card shadow rounded-3">
                     <div class="card-body">
-                        <form id="projectProcessForm">
+                        <form id="projectProcessForm" method="post" action="">
                             <div class="step-content" id="step1">
                                 <div class="row justify-content-center">
                                     <div class="col-lg-8">
@@ -530,7 +594,7 @@ function peso($amount) {
                                                      }
                                                  }
                                                  ?>
-                                                 <h3 class="text-info fw-bold mb-0">₱<?php echo number_format($labor_total, 2); ?></h3>
+                                                 <h3 class="text-info fw-bold mb-0" id="laborTotal">₱<?php echo number_format($labor_total, 2); ?></h3>
                                              </div>
                                          </div>
                                      </div>
@@ -565,7 +629,6 @@ function peso($amount) {
                                              </div>
                                          </div>
                                      </div>
-
                                      <!-- Total Cost Card -->
                                      <div class="col-12">
                                          <div class="card border-0 shadow-sm bg-gradient-primary text-white">
@@ -968,14 +1031,58 @@ function peso($amount) {
                                         alert('Error updating price');
                                     });
                                 }
-
                                 function updateOverheadTotal() {
                                     // Recalculate total
                                     let total = 0;
                                     document.querySelectorAll('.price-input').forEach(input => {
-                                        total += parseFloat(input.value) || 0;
+                                        if (!input.readOnly) {
+                                            total += parseFloat(input.value) || 0;
+                                        }
                                     });
                                     document.getElementById('overheadTotal').textContent = '₱' + total.toFixed(2);
+                                    
+                                    // Update VAT calculation
+                                    calculateVAT();
+                                }
+                                
+                                function calculateVAT() {
+                                    // Calculate total project estimation (materials + labor + overhead excluding VAT)
+                                    const materialsTotal = parseFloat(document.getElementById('materialsTotal').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                                    const laborTotal = parseFloat(document.getElementById('laborTotal').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                                    
+                                    // Get all overhead costs except VAT
+                                    let overheadTotal = 0;
+                                    document.querySelectorAll('.price-input').forEach(input => {
+                                        const row = input.closest('tr');
+                                        const name = row.getAttribute('data-name');
+                                        // Exclude VAT from overhead total calculation
+                                        if (name !== 'VAT') {
+                                            overheadTotal += parseFloat(input.value) || 0;
+                                        }
+                                    });
+                                    
+                                    // Calculate total project estimation (materials + labor + overhead excluding VAT)
+                                    const totalProjectEstimation = materialsTotal + laborTotal + overheadTotal;
+                                    
+                                    // Calculate VAT as 12% of total project estimation
+                                    const vatAmount = totalProjectEstimation * 0.12;
+                                    
+                                    // Update VAT input field
+                                    const vatInput = document.querySelector('tr[data-name="VAT"] .price-input');
+                                    if (vatInput) {
+                                        vatInput.value = vatAmount.toFixed(2);
+                                    }
+                                    
+                                    // Update overhead total to include VAT
+                                    let newOverheadTotal = overheadTotal + vatAmount;
+                                    document.getElementById('overheadTotal').textContent = '₱' + newOverheadTotal.toFixed(2);
+                                    
+                                    // Update total project cost
+                                    const totalProjectCost = totalProjectEstimation + vatAmount;
+                                    const totalCostElement = document.getElementById('totalProjectCost');
+                                    if (totalCostElement) {
+                                        totalCostElement.textContent = '₱' + totalProjectCost.toFixed(2);
+                                    }
                                 }
                                 
                                 // Add event listeners after the page loads
@@ -997,6 +1104,40 @@ function peso($amount) {
                                             }
                                         });
                                     });
+                                    
+                                    // Initialize VAT calculation on page load
+                                    setTimeout(function() {
+                                        calculateVAT();
+                                        
+                                        // Make VAT input field read-only and style it
+                                        const vatInput = document.querySelector('tr[data-name="VAT"] .price-input');
+                                        if (vatInput) {
+                                            vatInput.setAttribute('readonly', true);
+                                            vatInput.style.backgroundColor = '#f8f9fa';
+                                            vatInput.style.cursor = 'not-allowed';
+                                            vatInput.title = 'VAT is automatically calculated as 12% of total project estimation';
+                                        }
+                                        
+                                        // Set up MutationObserver to monitor laborTotal changes
+                                        const laborTotalElement = document.getElementById('laborTotal');
+                                        if (laborTotalElement) {
+                                            const observer = new MutationObserver(function(mutations) {
+                                                mutations.forEach(function(mutation) {
+                                                    if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                                                        // Labor total has changed, recalculate VAT
+                                                        calculateVAT();
+                                                    }
+                                                });
+                                            });
+                                            
+                                            // Configure the observer to watch for changes to the content
+                                            observer.observe(laborTotalElement, {
+                                                childList: true,    // Watch for addition/removal of child nodes
+                                                characterData: true, // Watch for changes to text content
+                                                subtree: true       // Watch all descendants
+                                            });
+                                        }
+                                    }, 500); // Small delay to ensure all elements are loaded
                                 });
                                 </script>
                                 
@@ -1025,13 +1166,11 @@ function peso($amount) {
                                     $budget_val = "";
                                     $pending = false;
                                     $approved = false;
-
                                     $sql = "SELECT budget, status FROM project_budget_approval WHERE project_id = ? ORDER BY id DESC LIMIT 1";
                                     $stmt = $con->prepare($sql);
                                     $stmt->bind_param("i", $project_id);
                                     $stmt->execute();
                                     $result = $stmt->get_result();
-
                                     if ($row = $result->fetch_assoc()) {
                                         $budget_val = $row['budget'];
                                         if ($row['status'] === "Pending") {
@@ -1074,7 +1213,6 @@ function peso($amount) {
                                                             </div>
                                                             <div class="invalid-feedback d-block text-danger" id="budgetError" style="display:none;"></div>
                                                         </div>
-
                                                         <div class="mt-auto text-center">
                                                             <button type="button" id="requestBudgetBtn" class="btn btn-primary w-100"
                                                                 <?php if ($pending || $approved) echo 'disabled'; ?>>
@@ -1093,7 +1231,6 @@ function peso($amount) {
                                                 </div>
                                             </form>
                                         </div>
-
                                         <!-- Payment Verification Column -->
                                         <div class="col-lg-6">
                                             <div class="card shadow-sm h-100">
@@ -1154,7 +1291,6 @@ function peso($amount) {
                                             </div>
                                         </div>
                                     </div>
-
 <!-- End of Two Column Layout -->
                                         <div class="alert alert-info d-flex align-items-center mb-4 mt-4">
                                             <i class="fas fa-info-circle me-2"></i>
@@ -1179,17 +1315,14 @@ function peso($amount) {
                                 </div>
                                 <div class="step-content d-none" id="step4">
                                 <h4 class="mb-4">Step 4: Contract Signing</h4>
-
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
                                     Please upload the required contract PDFs for signing.
                                 </div>
-
                                 <div class="card mb-4">
                                     <div class="card-body">
                                         <h5 class="card-title mb-4">Upload Contracts</h5>
                                         <input type="hidden" id="projectIdInput" value="<?php echo isset($project_id) ? $project_id : ''; ?>">
-
                                         <div class="row g-4">
                                             <!-- Original Contract -->
                                             <div class="col-md-4">
@@ -1206,7 +1339,6 @@ function peso($amount) {
                                                     </div>
                                                 </div>
                                             </div>
-
                                             <!-- Your Contract -->
                                             <div class="col-md-4">
                                                 <div class="card h-100 border-2 border-dashed" id="yourDropZone">
@@ -1238,7 +1370,6 @@ function peso($amount) {
                                                     </div>
                                                 </div>
                                             </div>
-
                                             <!-- Client Contract -->
                                             <div class="col-md-4">
                                                 <div class="card h-100 border-2 border-dashed" id="clientDropZone">
@@ -1285,22 +1416,18 @@ function peso($amount) {
                                         Next <i class="fas fa-arrow-right ms-1"></i>
                                     </button>
                                 </div>
-
                              
                             </div>
                             <div class="step-content d-none" id="step5">
                                 <h4 class="mb-4">Step 5: Permits</h4>
-
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
                                     Please upload the required permits below. You can drag and drop files or click to browse.
                                 </div>
-
                                 <div class="card mb-4">
                                     <div class="card-body">
                                         <h5 class="card-title mb-4">Upload Permits</h5>
                                         <input type="hidden" id="projectIdInputPermits" value="<?php echo $project_id; ?>">
-
                                         <div class="row g-4">
                                             <!-- LGU Clearance -->
                                             <div class="col-md-4">
@@ -1333,7 +1460,6 @@ function peso($amount) {
                                                     </div>
                                                 </div>
                                             </div>
-
                                             <!-- Fire Permit -->
                                             <div class="col-md-4">
                                                 <div class="card h-100 border-2 border-dashed" id="fireDropZone">
@@ -1365,7 +1491,6 @@ function peso($amount) {
                                                     </div>
                                                 </div>
                                             </div>
-
                                             <!-- Zoning Clearance -->
                                             <div class="col-md-4">
                                                 <div class="card h-100 border-2 border-dashed" id="zoningDropZone">
@@ -1397,7 +1522,6 @@ function peso($amount) {
                                                     </div>
                                                 </div>
                                             </div>
-
                                             <!-- Occupancy Permit -->
                                             <div class="col-md-4">
                                                 <div class="card h-100 border-2 border-dashed" id="occupancyDropZone">
@@ -1429,7 +1553,6 @@ function peso($amount) {
                                                     </div>
                                                 </div>
                                             </div>
-
                                             <!-- Barangay Clearance -->
                                             <div class="col-md-4">
                                                 <div class="card h-100 border-2 border-dashed" id="barangayDropZone">
@@ -1464,12 +1587,10 @@ function peso($amount) {
                                         </div>
                                     </div>
                                 </div>
-
                                 <div id="permitsAlert" class="alert alert-warning mt-3 d-none">
                                     <i class="fas fa-exclamation-triangle me-2"></i>
                                     Please upload all required permits to proceed.
                                 </div>
-
                                 <div class="d-flex justify-content-between mt-4">
                                     <button type="button" class="btn btn-secondary prev-step" data-prev="4">
                                         <i class="fas fa-arrow-left me-1"></i> Previous
@@ -1479,7 +1600,6 @@ function peso($amount) {
                                     </button>
                                 </div>
                             </div>
-
                             <!-- Step 6: Schedule -->
                             <div class="step-content d-none" id="step6">
                                 <h4 class="mb-4">Step 6: Schedule</h4>
@@ -1489,16 +1609,25 @@ function peso($amount) {
                                         Schedule of the project
                                     </div>
                                 </div>
-
                                 <div class="row">
                                     <!-- Project Timeline Row (Moved to top) -->
                                     <div class="col-12 mb-4">
                                         <div class="card">
                                             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                                                 <h5 class="card-title mb-0"><i class="fas fa-tasks me-2"></i>Project Timeline</h5>
-                                                <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
-                                                    <i class="fas fa-plus me-1"></i> Add Time Schedule
-                                                </button>
+                                                <div>
+                                                    <button type="button" class="btn btn-light btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addDivisionModal">
+                                                        <i class="fas fa-plus me-1"></i> Add Task
+                                                    </button>
+                                                    <form method="post" style="display: inline;">
+                                                        <button type="submit" name="create_standard_phases" class="btn btn-info btn-sm me-2">
+                                                            <i class="fas fa-magic me-1"></i> Auto-Create Phases
+                                                        </button>
+                                                    </form>
+                                                    <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+                                                        <i class="fas fa-plus me-1"></i> Add Time Schedule
+                                                    </button>
+                                                </div>
                                             </div>
                                             <div class="card-body p-3">
                                                 <div class="table-responsive">
@@ -1639,7 +1768,6 @@ function peso($amount) {
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="d-flex justify-content-between mt-4">
                                     <button type="button" class="btn btn-secondary prev-step" data-prev="5"><i class="fas fa-arrow-left me-1"></i>Previous</button>
                                     <button type="button" class="btn btn-primary next-step" data-next="7">Next <i class="fas fa-arrow-right ms-1"></i></button>
@@ -1650,7 +1778,6 @@ function peso($amount) {
                                 <div class="container-fluid px-4 py-4">
                                         <div class="row justify-content-center">
                                             <div class="col-12 col-md-8 col-lg-6">
-
                                                     <?php if (
                                                         $project_status === 'Ongoing' ||
                                                         $project_status === 'Overdue' ||
@@ -1745,7 +1872,6 @@ function peso($amount) {
                                                         </div>
                                                     </div>
                                                 <?php endif; ?>
-
                                             </div>
                                         </div>
                                     </div>
@@ -1783,7 +1909,6 @@ function peso($amount) {
                                                         </button>
                                                     </div>
                                                 </form>
-
                                                 <!-- Budget Request Status -->
                                                 <div class="mt-3" id="budgetStatusSection" style="display: block;">
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -1802,7 +1927,6 @@ function peso($amount) {
                                             </div>
                                         </div>
                                     </div>
-
                                     <!-- Budget Summary Card -->
                                     <div class="col-md-4">
                                         <div class="card shadow-sm h-100">
@@ -1842,7 +1966,6 @@ function peso($amount) {
                                                         </span>
                                                     </div>
                                                 </div>
-
                                                 <!-- Budget Usage Progress Bar -->
                                                 <div class="mb-2">
                                                     <div class="d-flex justify-content-between mb-1">
@@ -1861,7 +1984,6 @@ function peso($amount) {
                                                         </div>
                                                     </div>
                                                 </div>
-
                                                 <?php if($remaining_budget < 0): ?>
                                                 <div class="alert alert-warning mt-3 mb-0 p-3">
                                                     <div class="d-flex align-items-center">
@@ -1876,7 +1998,6 @@ function peso($amount) {
                                             </div>
                                         </div>
                                     </div>
-
                                     <!-- Client Proof of Payment Card -->
                                     <div class="col-lg-4">
                                             <div class="card shadow-sm h-100">
@@ -1939,7 +2060,6 @@ function peso($amount) {
                                         </div>
                                     <!-- Payment Proofs Modal has been removed -->
                                 </div>
-
                                 
                                 <div class="d-flex justify-content-between mt-4">
                                     <button type="button" class="btn btn-secondary prev-step" data-prev="7">
@@ -1971,7 +2091,6 @@ function peso($amount) {
             </div>
         </div>
     </div>
-
     <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -2002,7 +2121,6 @@ function peso($amount) {
             </div>
         </div>
     </div>
-
        <?php include 'project_processv2_modal.php'; ?>
     
     <!-- Success Modal -->
@@ -2024,7 +2142,6 @@ function peso($amount) {
             </div>
         </div>
     </div>
-
         <!-- Error Modal -->
      <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
          <div class="modal-dialog modal-dialog-centered">
@@ -2044,6 +2161,40 @@ function peso($amount) {
              </div>
          </div>
      </div>
+     
+     <!-- Add Task Modal -->
+     <div class="modal fade" id="addDivisionModal" tabindex="-1" aria-labelledby="addDivisionModalLabel" aria-hidden="true">
+         <div class="modal-dialog modal-dialog-centered">
+             <div class="modal-content">
+                 <div class="modal-header bg-success text-white">
+                     <h5 class="modal-title" id="addDivisionModalLabel">Add Tasks</h5>
+                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                 </div>
+                 <div class="modal-body">
+                     <form method="post">
+                         <input type="hidden" name="add_division" value="1">
+                         <div class="mb-3">
+                             <label class="form-label">Task Name</label>
+                             <input type="text" name="division_name" class="form-control" required>
+                         </div>
+                         <div class="mb-3">
+                             <label class="form-label">Start Date</label>
+                             <input type="date" name="start_date" class="form-control" required>
+                         </div>
+                         <div class="mb-3">
+                             <label class="form-label">End Date</label>
+                             <input type="date" name="end_date" class="form-control" required>
+                         </div>
+                         <div class="modal-footer px-0 pb-0">
+                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                             <button type="submit" class="btn btn-success">Save</button>
+                         </div>
+                     </form>
+                 </div>
+             </div>
+         </div>
+     </div>
+     
      
      <!-- Budget History Modal -->
      <div class="modal fade" id="budgetHistoryModal" tabindex="-1" aria-labelledby="budgetHistoryModalLabel" aria-hidden="true">
@@ -2099,13 +2250,25 @@ function peso($amount) {
    
     
     <script>
+    // Define showSuccessModal function
+    function showSuccessModal(message) {
+        document.getElementById('successMessage').textContent = message;
+        const modal = new bootstrap.Modal(document.getElementById('successModal'));
+        modal.show();
+    }
+    
     document.addEventListener('DOMContentLoaded', function() {
+        // Show success message if task was added
+        <?php if (!empty($success_message)): ?>
+            showSuccessModal('<?php echo addslashes($success_message); ?>');
+        <?php endif; ?>
+        
         const startProjectBtn = document.getElementById('startProjectBtn');
         const confirmStartBtn = document.getElementById('confirmStartProject');
         const startDateWarning = document.getElementById('startDateWarning');
         const dateMessage = document.getElementById('dateMessage');
         const modalHeader = document.getElementById('modalHeader');
-        const projectStartDate = new Date('<?php echo $project['start_date']; ?>');
+        const projectStartDate = new Date('<?php echo isset($start_date) ? $start_date : date('Y-m-d'); ?>');
         const today = new Date();
         
         // Reset time part for accurate date comparison
@@ -2121,6 +2284,7 @@ function peso($amount) {
         const isStartDatePast = daysDiff < 0;
         
         startProjectBtn.addEventListener('click', function() {
+            console.log('Start Project button clicked');
             // Get current date in Philippines timezone
             const today = new Date();
             const phDate = new Date(today.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
@@ -2129,6 +2293,9 @@ function peso($amount) {
                 month: 'long', 
                 day: 'numeric' 
             });
+            console.log('Project start date:', projectStartDate);
+            console.log('Today:', today);
+            console.log('Days diff:', daysDiff);
             
             // Configure modal based on date
             if (isStartDatePast) {
@@ -2155,8 +2322,10 @@ function peso($amount) {
         });
         
         confirmStartBtn.addEventListener('click', function() {
+            console.log('Confirm Start Project button clicked');
             // Update project status to 'Ongoing'
             const projectId = <?php echo $project_id; ?>;
+            console.log('Project ID:', projectId);
             
             fetch('update_project_status.php', {
                 method: 'POST',
@@ -2167,15 +2336,18 @@ function peso($amount) {
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Fetch response:', data);
                 if (data.success) {
+                    console.log('Project status updated successfully, redirecting...');
                     // Redirect to project_actual.php on success
                     window.location.href = 'project_actual.php?id=' + projectId;
                 } else {
+                    console.log('Error response:', data.message);
                     alert('Error: ' + (data.message || 'Failed to start project'));
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Fetch error:', error);
                 alert('An error occurred while starting the project');
             });
         });
@@ -2184,6 +2356,7 @@ function peso($amount) {
     <script src="js/permits_uploads.js" type="module"></script>
     <script src="js/project_blueprint.js"></script>
     <script src="js/project_estimation.js"></script>
+    <script src="js/employee_removal.js"></script>
     <script src="js/schedule_management.js"></script>
     <script src="js/payment_verification.js"></script>
     <style>
@@ -2272,26 +2445,22 @@ function peso($amount) {
             const modal = new bootstrap.Modal(document.getElementById('errorModal'));
             modal.show();
         }
-
         // Initialize tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-
         // Step navigation
         const form = document.getElementById('projectProcessForm');
         const nextButtons = document.querySelectorAll('.next-step');
         const prevButtons = document.querySelectorAll('.prev-step');
         const progressBar = document.querySelector('.progress-bar');
         const totalSteps = 8;
-
         // STEP 1: Show step from backend on page load
         let currentStep = <?php echo $current_step; ?>;
         window.currentStep = currentStep; // Make it globally accessible
         showStep(currentStep);
         updateProgress(currentStep);
-
         // Function to validate blueprints before proceeding
         async function validateBlueprints(projectId) {
             try {
@@ -2316,7 +2485,6 @@ function peso($amount) {
                 return false;
             }
         }
-
         // Next button click handler
         nextButtons.forEach(button => {
             button.addEventListener('click', async function() {
@@ -2345,7 +2513,6 @@ function peso($amount) {
                         return;
                     }
                 }
-
                 btn.disabled = true;
                 fetch('update_project_step.php', {
                     method: 'POST',
@@ -2385,7 +2552,6 @@ function peso($amount) {
                 });
             });
         });
-
         // Previous button click handler
         prevButtons.forEach(button => {
             button.addEventListener('click', function() {
@@ -2393,12 +2559,10 @@ function peso($amount) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const projectId = urlParams.get('project_id');
                 const btn = this;
-
                 if (!projectId || isNaN(prevStep)) {
                     alert('Missing project ID or previous step.');
                     return;
                 }
-
                 btn.disabled = true;
                 fetch('update_project_step.php', {
                     method: 'POST',
@@ -2438,7 +2602,6 @@ function peso($amount) {
                 });
             });
         });
-
         
         // Show specific step
         function showStep(stepNumber) {
@@ -2455,13 +2618,11 @@ function peso($amount) {
                 }, 100);
             }
         }
-
         // Update progress bar and step indicators
         function updateProgress(step) {
             const progress = (step / totalSteps) * 100;
             progressBar.style.width = progress + '%';
             progressBar.setAttribute('aria-valuenow', progress);
-
             // Update step indicators
             document.querySelectorAll('.step-number').forEach((el, index) => {
                 const stepNum = index + 1;
@@ -2476,7 +2637,6 @@ function peso($amount) {
                 }
             });
         }
-
         // Validate current step
         function validateStep(step) {
             const currentStepEl = document.getElementById('step' + step);
@@ -2489,7 +2649,6 @@ function peso($amount) {
             
             const inputs = currentStepEl.querySelectorAll('[required]');
             let isValid = true;
-
             inputs.forEach(input => {
                 if (!input.value.trim()) {
                     input.classList.add('is-invalid');
@@ -2498,7 +2657,6 @@ function peso($amount) {
                     input.classList.remove('is-invalid');
                 }
             });
-
             return isValid;
         }
         
@@ -2543,8 +2701,6 @@ function peso($amount) {
                 return false;
             }
         }
-
-
         function showAlert(message, type) {
             const alertDiv = document.createElement('div');
             alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
@@ -2559,13 +2715,9 @@ function peso($amount) {
             }, 3000);
         }
     });
-
     </script>
-
     <!-- Budget Approval Script -->
     <script src="js/budget_approval.js"></script>
-
-
     <!-- Export Contract Functionality -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -2669,7 +2821,6 @@ function peso($amount) {
         }
     });
     </script>
-
     
 <script>
         // Change Password AJAX (like pm_profile.php)
@@ -2921,7 +3072,6 @@ function peso($amount) {
          }
         
         // Proof of payments functionality removed as per user request
-
         
         // Complete project button
         const completeProjectBtn = document.getElementById('completeProjectBtn');
@@ -3021,13 +3171,6 @@ function peso($amount) {
              console.log('View URL:', viewUrl);
              window.open(viewUrl, '_blank');
          };
-         
-         // Helper functions for modals
-         function showSuccessModal(message) {
-             document.getElementById('successMessage').textContent = message;
-             const modal = new bootstrap.Modal(document.getElementById('successModal'));
-             modal.show();
-         }
          
     });
     </script>

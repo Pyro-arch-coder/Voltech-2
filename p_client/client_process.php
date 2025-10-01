@@ -122,10 +122,10 @@ $total_paid = 0;
 $total_unpaid = 0;
 $stmt = $con->prepare("
     SELECT 
-        COALESCE(SUM(CASE WHEN is_paid = 1 OR payment_status = 'processing' THEN amount ELSE 0 END), 0) as total_paid,
-        COALESCE(SUM(CASE WHEN is_paid = 0 AND payment_status = 'pending' THEN amount ELSE 0 END), 0) as total_unpaid
+        COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as total_paid,
+        COALESCE(SUM(CASE WHEN status = 'approved' THEN amount ELSE 0 END), 0) as total_unpaid
     FROM billing_requests 
-    WHERE project_id = ? AND status = 'approved'
+    WHERE project_id = ? AND status IN ('approved', 'paid')
 ");
 $stmt->bind_param('i', $project_id);
 $stmt->execute();
@@ -465,6 +465,9 @@ function peso($amount) {
                                             </button>
                                             <button type="button" class="btn btn-outline-danger px-3" id="rejectBudget">
                                                 <i class="fas fa-times me-1"></i> Reject
+                                            </button>
+                                            <button type="button" class="btn btn-outline-primary px-3" id="viewCostEstimateBtn">
+                                                <i class="fas fa-file-pdf me-1 text-danger"></i> View Cost Estimate
                                             </button>
                                         </div>
                                     </div>
@@ -904,7 +907,7 @@ function peso($amount) {
                                                             <tr>
                                                                 <td><?php echo $i++; ?></td>
                                                                 <td><?php echo htmlspecialchars($row['task_name']); ?></td>
-                                                                <td><?php echo htmlspecialchars($row['description']); ?></td>
+                                                                <td><?php echo htmlspecialchars($row['description'] ?? ''); ?></td>
                                                                 <td><?php echo htmlspecialchars($row['start_date']); ?></td>
                                                                 <td><?php echo htmlspecialchars($row['end_date']); ?></td>
                                                                 <td>
@@ -1116,6 +1119,9 @@ function peso($amount) {
                                                       </button>
                                                       <button type="button" class="btn btn-outline-danger flex-fill" id="rejectBillingBtn">
                                                           <i class="fas fa-times me-1"></i> Reject
+                                                      </button>
+                                                      <button type="button" class="btn btn-outline-primary flex-fill" id="viewCostEstimateBillingBtn">
+                                                          <i class="fas fa-file-pdf me-1 text-danger"></i> View Cost Estimate
                                                       </button>
                                                   </div>
                                                   
@@ -2047,6 +2053,41 @@ document.addEventListener('DOMContentLoaded', function() {
       xhr.send(formData);
     });
   }
+});
+
+// View Cost Estimate functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Get project_id from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('project_id');
+    
+    // Handle View Cost Estimate button (next to Approve Budget)
+    const viewCostEstimateBtn = document.getElementById('viewCostEstimateBtn');
+    if (viewCostEstimateBtn) {
+        viewCostEstimateBtn.addEventListener('click', function() {
+            if (projectId) {
+                // Open the cost estimation PDF in a new tab
+                const exportUrl = `../projectmanager/export_estimation_materials.php?project_id=${encodeURIComponent(projectId)}`;
+                window.open(exportUrl, '_blank');
+            } else {
+                alert('Project ID not found. Please refresh the page and try again.');
+            }
+        });
+    }
+    
+    // Handle View Cost Estimate button (next to Approve Billing)
+    const viewCostEstimateBillingBtn = document.getElementById('viewCostEstimateBillingBtn');
+    if (viewCostEstimateBillingBtn) {
+        viewCostEstimateBillingBtn.addEventListener('click', function() {
+            if (projectId) {
+                // Open the cost estimation PDF in a new tab
+                const exportUrl = `../projectmanager/export_estimation_materials.php?project_id=${encodeURIComponent(projectId)}`;
+                window.open(exportUrl, '_blank');
+            } else {
+                alert('Project ID not found. Please refresh the page and try again.');
+            }
+        });
+    }
 });
 </script>
 

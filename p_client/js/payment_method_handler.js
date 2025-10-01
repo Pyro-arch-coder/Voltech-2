@@ -183,7 +183,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     container.innerHTML = html;
                 } else {
-                    container.innerHTML = '<div class="alert alert-warning">No payment details found</div>';
+                    // Check if we have a specific message about no bank accounts
+                    if (data.message && data.message.includes('No bank accounts configured')) {
+                        container.innerHTML = `
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>No Bank Accounts Available</strong><br>
+                                ${data.message || 'No bank accounts have been set up for this project manager yet.'}
+                            </div>
+                        `;
+                    } else {
+                        container.innerHTML = '<div class="alert alert-warning">No payment details found</div>';
+                    }
                 }
             })
             .catch(error => {

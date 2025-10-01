@@ -245,33 +245,7 @@ addForecastStyles();
             $end_date = mysqli_real_escape_string($con, $_POST['end_date'] ?? date('Y-m-d', strtotime('+1 month')));
             $category = mysqli_real_escape_string($con, $_POST['category'] ?? 'Other');
     
-            // Check for project conflicts at the same location with overlapping dates
-            $conflict_check = "SELECT project_id, project, start_date, deadline 
-                             FROM projects 
-                             WHERE location = ?
-                             AND (
-                                 (start_date <= ? AND deadline >= ?)  -- New project overlaps with existing project
-                                 OR (start_date BETWEEN ? AND ?)      -- New project starts during existing project
-                                 OR (deadline BETWEEN ? AND ?)        -- New project ends during existing project
-                             )
-                             LIMIT 1";
-            
-            $stmt = mysqli_prepare($con, $conflict_check);
-            mysqli_stmt_bind_param($stmt, 'sssssss', 
-                $location, 
-                $end_date, $start_date,  // For first condition (reversed order for overlap check)
-                $start_date, $end_date,  // For second condition
-                $start_date, $end_date   // For third condition
-            );
-            mysqli_stmt_execute($stmt);
-            $conflict_result = mysqli_stmt_get_result($stmt);
-            
-            if ($conflict_row = mysqli_fetch_assoc($conflict_result)) {
-                $existing_start = date('M d, Y', strtotime($conflict_row['start_date']));
-                $existing_end = date('M d, Y', strtotime($conflict_row['deadline']));
-                throw new Exception("Cannot add project. There is already a project at this location ($location) with overlapping dates: \n" .
-                                "Project: {$conflict_row['project']} (from $existing_start to $existing_end)");
-            }
+            // Conflict checking removed - projects can now be added without location/date overlap validation
             
             // If no conflicts, insert the new project
             // Use the logged-in user's ID (from session) as the project owner
@@ -683,13 +657,14 @@ addForecastStyles();
                                         <th>Project Name</th>
                                         <th>Location</th>
                                         <th>Size (Floor sqm)</th>
+                                        <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php if (empty($projects)): ?>
                                         <tr>
-                                            <td colspan="4" class="text-center py-4">
+                                            <td colspan="5" class="text-center py-4">
                                                 <div class="text-muted">No projects found. Add your first project to get started.</div>
                                             </td>
                                         </tr>
@@ -700,6 +675,30 @@ addForecastStyles();
                                                 <td><?php echo htmlspecialchars($project['project']); ?></td>
                                                 <td><?php echo htmlspecialchars($project['location']); ?></td>
                                                 <td class="text-end"><?php echo number_format($project['size'], 2); ?></td>
+                                                <td>
+                                                    <?php 
+                                                    $status = isset($project['status']) ? $project['status'] : 'Pending';
+                                                    $status_class = '';
+                                                    switch ($status) {
+                                                        case 'Ongoing':
+                                                            $status_class = 'bg-primary';
+                                                            break;
+                                                        case 'Finished':
+                                                            $status_class = 'bg-success';
+                                                            break;
+                                                        case 'Cancelled':
+                                                            $status_class = 'bg-danger';
+                                                            break;
+                                                        case 'On Hold':
+                                                            $status_class = 'bg-warning';
+                                                            break;
+                                                        default:
+                                                            $status_class = 'bg-secondary';
+                                                            break;
+                                                    }
+                                                    ?>
+                                                    <span class="badge <?php echo $status_class; ?>"><?php echo htmlspecialchars($status); ?></span>
+                                                </td>
                                                 <td class="text-nowrap">
                                                   <button class="btn btn-outline-primary btn-sm view-details" data-project-id="<?php echo $project['project_id']; ?>">
                                                         <i class="fas fa-eye"></i> Details
@@ -785,11 +784,11 @@ addForecastStyles();
                                 <table class="table table-sm table-hover">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>Material</th>
-                                            <th>Quantity</th>
-                                            <th>Unit</th>
-                                            <th>Unit Price</th>
-                                            <th>Total</th>
+                                            <th class="text-center">Material</th>
+                                            <th class="text-center">Quantity</th>
+                                            <th class="text-center">Unit</th>
+                                            <th class="text-center">Unit Price</th>
+                                            <th class="text-center">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody id="suggestedMaterialsList">
@@ -1055,9 +1054,11 @@ addForecastStyles();
                                         <option value="House">House</option>
                                         <option value="House Electrical">House Electrical</option>
                                         <option value="House Renovation">House Renovation</option>
+                                        <option value="House Electrical/Renovation">House Electrical/Renovation</option>
                                         <option value="Building">Building</option>
                                         <option value="Building Electrical">Building Electrical</option>
                                         <option value="Building Renovation">Building Renovation</option>
+                                        <option value="Building Electrical/Renovation">Building Electrical/Renovation</option>
                                     </select>
                                 </div>
 
@@ -1287,13 +1288,14 @@ addForecastStyles();
                     const totalCost = (material.material_price * material.quantity + parseFloat(material.additional_cost || 0)).toFixed(2);
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td>${material.material_id}</td>
                         <td>${material.material_name}</td>
                         <td>${parseFloat(material.quantity).toFixed(2)}</td>
                         <td>${material.unit || 'pcs'}</td>
                         <td>₱${parseFloat(material.material_price).toFixed(2)}</td>
                         <td>₱${totalCost}</td>
                     `;
+                    // Store material_id as a data attribute for database operations (required for foreign key constraint)
+                    row.dataset.materialId = material.material_id;
                     row.style.cursor = 'pointer';
                     row.title = 'Click to add this material';
                     row.addEventListener('click', () => {
@@ -1341,13 +1343,13 @@ addForecastStyles();
             const materialRows = document.querySelectorAll('#suggestedMaterialsList tr');
             materialRows.forEach(row => {
                 const cells = row.cells;
-                if (cells.length >= 6) { // Changed from 4 to 6 to account for all columns
+                if (cells.length >= 5) { // Updated to expect 5 columns (without ID)
                     materialsToSave.push({
-                        material_id: parseInt(cells[0].textContent.trim()) || 0, // Get material_id from first column
-                        material_name: cells[1].textContent.trim(), // Material name is now in the second column
-                        quantity: parseFloat(cells[2].textContent) || 1,
-                        unit: cells[3].textContent.trim() || 'pcs',
-                        material_price: parseFloat(cells[4].textContent.replace('₱', '').replace(/,/g, '')) || 0
+                        material_id: parseInt(row.dataset.materialId) || 0, // Get material_id from data attribute (required for foreign key constraint)
+                        material_name: cells[0].textContent.trim(), // Material name is now in the first column
+                        quantity: parseFloat(cells[1].textContent) || 1,
+                        unit: cells[2].textContent.trim() || 'pcs',
+                        material_price: parseFloat(cells[3].textContent.replace('₱', '').replace(/,/g, '')) || 0
                     });
                 }
             });

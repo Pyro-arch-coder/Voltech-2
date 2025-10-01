@@ -146,7 +146,12 @@ try {
     }
     
     if (empty($bankAccounts)) {
-        throw new Exception('No active bank accounts found for this project manager');
+        // Return a successful response with empty bank accounts array
+        sendJsonResponse(true, 'No bank accounts configured yet', [
+            'projectManager' => $projectData['name'],
+            'bankAccounts' => [],
+            'message' => 'No bank accounts have been set up for this project manager yet.'
+        ]);
     }
     
     // Return the bank account details

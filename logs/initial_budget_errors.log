@@ -5749,3 +5749,677 @@
 
 [2025-09-08 21:55:03] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 207
 [2025-09-08 21:55:03] Stack trace: #0 {main}
+[2025-09-19 00:33:28] === New Request ===
+[2025-09-19 00:33:28] POST data: Array
+(
+    [project_id] => 6
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 00:33:28] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => LGU.pdf
+            [full_path] => LGU.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpF22E.tmp
+            [error] => 0
+            [size] => 0
+        )
+
+)
+
+[2025-09-19 00:33:28] SESSION data: Array
+(
+    [csrf_token] => 0ceab554912e561b48a0980e3295a550ae570e003751d452c487e44b4dcea561
+    [last_activity] => 1758232987
+    [email] => contactus@mascorp.p
+    [user_id] => 68
+    [user_level] => 6
+    [firstname] => MACROASIA AIRPORT SERVICE CORPORATION
+    [lastname] =>  
+    [name] => MACROASIA AIRPORT SERVICE CORPORATION  
+    [logged_in] => 1
+)
+
+[2025-09-19 00:33:28] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 6
+            [payment_method] => cash
+            [percentage] => 100
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-19 00:33:28] POST data: Array
+(
+    [project_id] => 6
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 00:33:28] File upload details: Array
+(
+    [name] => LGU.pdf
+    [size] => 0
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpF22E.tmp
+)
+
+[2025-09-19 00:33:28] Error: Invalid file type. Only PDF, JPG, and PNG files are allowed. in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 136
+[2025-09-19 00:33:28] Stack trace: #0 {main}
+[2025-09-19 00:33:55] === New Request ===
+[2025-09-19 00:33:55] POST data: Array
+(
+    [project_id] => 6
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 00:33:55] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => LGU.pdf
+            [full_path] => LGU.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php58C9.tmp
+            [error] => 0
+            [size] => 0
+        )
+
+)
+
+[2025-09-19 00:33:55] SESSION data: Array
+(
+    [csrf_token] => 0ceab554912e561b48a0980e3295a550ae570e003751d452c487e44b4dcea561
+    [last_activity] => 1758232987
+    [email] => contactus@mascorp.p
+    [user_id] => 68
+    [user_level] => 6
+    [firstname] => MACROASIA AIRPORT SERVICE CORPORATION
+    [lastname] =>  
+    [name] => MACROASIA AIRPORT SERVICE CORPORATION  
+    [logged_in] => 1
+)
+
+[2025-09-19 00:33:55] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 6
+            [payment_method] => cash
+            [percentage] => 100
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-19 00:33:55] POST data: Array
+(
+    [project_id] => 6
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 00:33:55] File upload details: Array
+(
+    [name] => LGU.pdf
+    [size] => 0
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php58C9.tmp
+)
+
+[2025-09-19 00:33:55] Error: Invalid file type. Only PDF, JPG, and PNG files are allowed. in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 136
+[2025-09-19 00:33:55] Stack trace: #0 {main}
+[2025-09-19 00:34:23] === New Request ===
+[2025-09-19 00:34:23] POST data: Array
+(
+    [project_id] => 6
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 00:34:23] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => 542656353_1087045950245428_3739238010131165372_n.jpg
+            [full_path] => 542656353_1087045950245428_3739238010131165372_n.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\phpC649.tmp
+            [error] => 0
+            [size] => 539023
+        )
+
+)
+
+[2025-09-19 00:34:23] SESSION data: Array
+(
+    [csrf_token] => 0ceab554912e561b48a0980e3295a550ae570e003751d452c487e44b4dcea561
+    [last_activity] => 1758232987
+    [email] => contactus@mascorp.p
+    [user_id] => 68
+    [user_level] => 6
+    [firstname] => MACROASIA AIRPORT SERVICE CORPORATION
+    [lastname] =>  
+    [name] => MACROASIA AIRPORT SERVICE CORPORATION  
+    [logged_in] => 1
+)
+
+[2025-09-19 00:34:23] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 6
+            [payment_method] => cash
+            [percentage] => 100
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-19 00:34:23] POST data: Array
+(
+    [project_id] => 6
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 00:34:23] File upload details: Array
+(
+    [name] => 542656353_1087045950245428_3739238010131165372_n.jpg
+    [size] => 539023
+    [type] => image/jpeg
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpC649.tmp
+)
+
+[2025-09-19 00:35:36] === New Request ===
+[2025-09-19 00:35:36] POST data: Array
+(
+    [project_id] => 6
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 00:35:36] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Black_colour.jpg
+            [full_path] => Black_colour.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\phpE4DA.tmp
+            [error] => 0
+            [size] => 46230
+        )
+
+)
+
+[2025-09-19 00:35:36] SESSION data: Array
+(
+    [csrf_token] => 0ceab554912e561b48a0980e3295a550ae570e003751d452c487e44b4dcea561
+    [last_activity] => 1758232987
+    [email] => contactus@mascorp.p
+    [user_id] => 68
+    [user_level] => 6
+    [firstname] => MACROASIA AIRPORT SERVICE CORPORATION
+    [lastname] =>  
+    [name] => MACROASIA AIRPORT SERVICE CORPORATION  
+    [logged_in] => 1
+)
+
+[2025-09-19 00:35:36] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 6
+            [payment_method] => cash
+            [percentage] => 100
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-19 00:35:36] POST data: Array
+(
+    [project_id] => 6
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 00:35:36] File upload details: Array
+(
+    [name] => Black_colour.jpg
+    [size] => 46230
+    [type] => image/jpeg
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpE4DA.tmp
+)
+
+[2025-09-19 03:18:40] === New Request ===
+[2025-09-19 03:18:40] POST data: Array
+(
+    [project_id] => 7
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 03:18:40] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => none.jpg
+            [full_path] => none.jpg
+            [type] => image/jpeg
+            [tmp_name] => C:\xampp\tmp\php22FB.tmp
+            [error] => 0
+            [size] => 46230
+        )
+
+)
+
+[2025-09-19 03:18:40] SESSION data: Array
+(
+    [csrf_token] => f7314926da1dfd6dd47df053e0ecb55684c666f9d4c43c502907fe5aec175a87
+    [last_activity] => 1758243433
+    [email] => contactus@mascorp.p
+    [user_id] => 68
+    [user_level] => 6
+    [firstname] => MACROASIA AIRPORT SERVICE CORPORATION
+    [lastname] =>  
+    [name] => MACROASIA AIRPORT SERVICE CORPORATION  
+    [logged_in] => 1
+)
+
+[2025-09-19 03:18:40] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 7
+            [payment_method] => cash
+            [percentage] => 100
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-19 03:18:40] POST data: Array
+(
+    [project_id] => 7
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 03:18:40] File upload details: Array
+(
+    [name] => none.jpg
+    [size] => 46230
+    [type] => image/jpeg
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php22FB.tmp
+)
+
+[2025-09-19 05:17:04] === New Request ===
+[2025-09-19 05:17:04] POST data: Array
+(
+    [project_id] => 8
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 05:17:04] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => none - Copy.png
+            [full_path] => none - Copy.png
+            [type] => image/png
+            [tmp_name] => C:\xampp\tmp\php8A1D.tmp
+            [error] => 0
+            [size] => 46230
+        )
+
+)
+
+[2025-09-19 05:17:04] SESSION data: Array
+(
+    [csrf_token] => f7314926da1dfd6dd47df053e0ecb55684c666f9d4c43c502907fe5aec175a87
+    [last_activity] => 1758244727
+    [email] => contactus@mascorp.p
+    [user_id] => 68
+    [user_level] => 6
+    [firstname] => MACROASIA AIRPORT SERVICE CORPORATION
+    [lastname] =>  
+    [name] => MACROASIA AIRPORT SERVICE CORPORATION  
+    [logged_in] => 1
+)
+
+[2025-09-19 05:17:04] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 8
+            [payment_method] => cash
+            [percentage] => 100
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-19 05:17:04] POST data: Array
+(
+    [project_id] => 8
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 05:17:04] File upload details: Array
+(
+    [name] => none - Copy.png
+    [size] => 46230
+    [type] => image/png
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php8A1D.tmp
+)
+
+[2025-09-19 05:51:36] === New Request ===
+[2025-09-19 05:51:36] POST data: Array
+(
+    [project_id] => 9
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 05:51:36] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => none - Copy.png
+            [full_path] => none - Copy.png
+            [type] => image/png
+            [tmp_name] => C:\xampp\tmp\php27A1.tmp
+            [error] => 0
+            [size] => 46230
+        )
+
+)
+
+[2025-09-19 05:51:36] SESSION data: Array
+(
+    [csrf_token] => ae68d036f3009b414217a141cd7eacfbb498e2ce13e61229a060080b0b840250
+    [last_activity] => 1758252602
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-09-19 05:51:36] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 9
+            [payment_method] => cash
+            [percentage] => 100
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-19 05:51:36] POST data: Array
+(
+    [project_id] => 9
+    [payment_method] => cash
+    [percentage] => 100
+)
+
+[2025-09-19 05:51:36] File upload details: Array
+(
+    [name] => none - Copy.png
+    [size] => 46230
+    [type] => image/png
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php27A1.tmp
+)
+
+[2025-09-21 11:51:01] === New Request ===
+[2025-09-21 11:51:01] POST data: Array
+(
+    [project_id] => 12
+    [payment_method] => gcash
+    [percentage] => 50
+)
+
+[2025-09-21 11:51:01] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => none - Copy.png
+            [full_path] => none - Copy.png
+            [type] => image/png
+            [tmp_name] => C:\xampp\tmp\php2E9E.tmp
+            [error] => 0
+            [size] => 46230
+        )
+
+)
+
+[2025-09-21 11:51:01] SESSION data: Array
+(
+    [csrf_token] => 7345b16e675d1b266cb1f820c1b4f5ec71b741920707314bef986aafc377e0f6
+    [last_activity] => 1758262439
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-09-21 11:51:01] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 12
+            [payment_method] => gcash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-21 11:51:01] POST data: Array
+(
+    [project_id] => 12
+    [payment_method] => gcash
+    [percentage] => 50
+)
+
+[2025-09-21 11:51:01] File upload details: Array
+(
+    [name] => none - Copy.png
+    [size] => 46230
+    [type] => image/png
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php2E9E.tmp
+)
+
+[2025-09-29 04:18:44] === New Request ===
+[2025-09-29 04:18:44] POST data: Array
+(
+    [project_id] => 19
+    [payment_method] => gcash
+    [percentage] => 100
+)
+
+[2025-09-29 04:18:44] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => none.png
+            [full_path] => none.png
+            [type] => image/png
+            [tmp_name] => C:\xampp\tmp\php9365.tmp
+            [error] => 0
+            [size] => 46230
+        )
+
+)
+
+[2025-09-29 04:18:44] SESSION data: Array
+(
+    [csrf_token] => 45ac307afa18993f85527111649d198659627c8cfb4c3575054a817a64544cfc
+    [last_activity] => 1759111787
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-09-29 04:18:44] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 19
+            [payment_method] => gcash
+            [percentage] => 100
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-29 04:18:44] POST data: Array
+(
+    [project_id] => 19
+    [payment_method] => gcash
+    [percentage] => 100
+)
+
+[2025-09-29 04:18:44] File upload details: Array
+(
+    [name] => none.png
+    [size] => 46230
+    [type] => image/png
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php9365.tmp
+)
+
+[2025-09-30 07:59:57] === New Request ===
+[2025-09-30 07:59:57] POST data: Array
+(
+    [project_id] => 26
+    [payment_method] => BPI
+    [percentage] => 100
+)
+
+[2025-09-30 07:59:57] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation26.pdf
+            [full_path] => project_materials_estimation26.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php12A8.tmp
+            [error] => 0
+            [size] => 121764
+        )
+
+)
+
+[2025-09-30 07:59:57] SESSION data: Array
+(
+    [csrf_token] => 45ac307afa18993f85527111649d198659627c8cfb4c3575054a817a64544cfc
+    [last_activity] => 1759111787
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-09-30 07:59:57] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 26
+            [payment_method] => BPI
+            [percentage] => 100
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-09-30 07:59:57] POST data: Array
+(
+    [project_id] => 26
+    [payment_method] => BPI
+    [percentage] => 100
+)
+
+[2025-09-30 07:59:57] File upload details: Array
+(
+    [name] => project_materials_estimation26.pdf
+    [size] => 121764
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php12A8.tmp
+)
+

@@ -1695,3 +1695,10 @@ Stack trace:
 #1 {main}
   thrown in C:\xampp\htdocs\Voltech-2\projectmanager\save_schedule.php on line 86
 [11-Sep-2025 10:26:33 Europe/Berlin] Schedule Save Error: A task with ID 18 already exists in this project.
+[19-Sep-2025 00:03:38 Europe/Berlin] Error in get_bank_details.php: No active bank accounts found for this project manager
+[19-Sep-2025 00:03:38 Europe/Berlin] Sending JSON response: {"success":false,"message":"An error occurred while fetching bank details","data":{"error":"No active bank accounts found for this project manager","trace":"#0 {main}"}}
+[19-Sep-2025 00:34:12 Europe/Berlin] Sending JSON response: {"success":true,"message":"No bank accounts configured yet","data":{"projectManager":"Project Manager","bankAccounts":[],"message":"No bank accounts have been set up for this project manager yet."}}
+[29-Sep-2025 04:17:37 Europe/Berlin] Sending JSON response: {"success":true,"message":"No bank accounts configured yet","data":{"projectManager":"Project Manager","bankAccounts":[],"message":"No bank accounts have been set up for this project manager yet."}}
+[29-Sep-2025 04:17:40 Europe/Berlin] Sending JSON response: {"success":true,"message":"No bank accounts configured yet","data":{"projectManager":"Project Manager","bankAccounts":[],"message":"No bank accounts have been set up for this project manager yet."}}
+[29-Sep-2025 06:26:48 Europe/Berlin] Sending JSON response: {"success":true,"message":"No bank accounts configured yet","data":{"projectManager":"Project Manager","bankAccounts":[],"message":"No bank accounts have been set up for this project manager yet."}}
+[30-Sep-2025 07:59:21 Europe/Berlin] Sending JSON response: {"success":true,"message":"Bank details retrieved successfully","data":{"projectManager":"Project Manager","bankAccounts":[{"bankName":"BPI","accountName":"Romeo Matias","accountNumber":"2769138288","contactNumber":""}]}}

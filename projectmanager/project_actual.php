@@ -332,7 +332,20 @@ if (isset($_POST['update_project_status'])) {
                 error_log("Materials Total: " . $mat_total);
                 error_log("Equipment Total: " . $equip_total);
                 
-                $total_expenses = $mat_total + $equip_total + $emp_total_for_expense + $overhead_total;
+                // Calculate overhead total for expense calculation
+                $overhead_total = 0;
+                $overhead_query = "SELECT SUM(price) as total FROM overhead_cost_actual WHERE project_id = ?";
+                $overhead_stmt = $con->prepare($overhead_query);
+                $overhead_stmt->bind_param("i", $project_id);
+                $overhead_stmt->execute();
+                $overhead_result = $overhead_stmt->get_result();
+                $overhead_row = $overhead_result->fetch_assoc();
+                $overhead_total = floatval($overhead_row['total'] ?? 0);
+                $overhead_stmt->close();
+                
+                error_log("Overhead Total: " . $overhead_total);
+                
+                $total_expenses = $mat_total + $overhead_total;
                 
                 // Calculate the remaining budget after expenses
                 $remaining_budget = $total_expenses;
@@ -342,16 +355,16 @@ if (isset($_POST['update_project_status'])) {
                 error_log("Project Budget: " . $project_data['budget']);
                 error_log("Remaining Budget: " . $remaining_budget);
                 
-                // Insert expense record with the remaining budget as the expense amount
+                // Insert expense record with the total project cost as the expense amount
                 $expense_date = date('Y-m-d');
                 $expense_category = 'Project';
-                $description = 'Remaining Budget for Project: ' . $project_data['project'];
+                $description = 'Total Project Cost for Project: ' . $project_data['project'];
                 $project_name = $project_data['project'];
                 
                 $expense_query = "INSERT INTO expenses (user_id, expense, expensedate, project_name, expensecategory, description, project_id) 
                                 VALUES (?, ?, ?, ?, ?, ?, ?)";
                 $expense_stmt = $con->prepare($expense_query);
-                $expense_stmt->bind_param('idssssi', $userid, $remaining_budget, $expense_date, $project_name, $expense_category, $description, $project_id);
+                $expense_stmt->bind_param('idssssi', $userid, $total_expenses, $expense_date, $project_name, $expense_category, $description, $project_id);
                 
                 if (!$expense_stmt->execute()) {
                     throw new Exception('Failed to create expense record');
@@ -1127,19 +1140,19 @@ if ($userid) {
                                   <hr class="my-2">
                                   <div class="d-flex justify-content-between mb-2">
                                     <span class="text-dark fw-bold">Total Project Cost:</span>
-                                    <span class="fw-bold text-danger fs-5">₱<?php echo number_format($mat_total + $equip_total + $emp_totals + $overhead_total, 2); ?></span>
+                                    <span class="fw-bold text-danger fs-5">₱<?php echo number_format($mat_total + $overhead_total, 2); ?></span>
                                   </div>
                                 </div>
                                 
                                 <!-- Right Column: Budget - Total Cost = Result -->
                                 <div class="col-6">
                                   <?php 
-                                  $total_project_cost = $mat_total + $equip_total + $emp_totals + $overhead_total;
+                                  $total_project_cost = $mat_total + $overhead_total;
                                   $profit_loss = $project['budget'] - $total_project_cost;
                                   $profit_class = $profit_loss >= 0 ? 'success' : 'danger';
                                   
-                                  // Check if total project cost exceeds estimated cost
-                                  $exceeds_estimate = $total_project_cost > $project['total_estimation_cost'];
+                                  // Check if total project cost exceeds estimated budget
+                                  $exceeds_estimate = $total_project_cost > $project['initial_budget'];
                                   // Store in session for JavaScript to access
                                   $_SESSION['exceeds_estimate'] = $exceeds_estimate;
                                   $profit_icon = $profit_loss >= 0 ? '▲' : '▼';
@@ -2170,23 +2183,23 @@ if ($userid) {
                     </script>
                 </div>
                 
-                <!-- Check if project cost exceeds estimate -->
+                <!-- Check if project is at a loss -->
                 <script>
                 document.addEventListener('DOMContentLoaded', function() {
                     const finishBtn = document.getElementById('finishProjectBtn');
-                    const exceedsEstimate = <?php echo isset($_SESSION['exceeds_estimate']) && $_SESSION['exceeds_estimate'] ? 'true' : 'false'; ?>;
+                    const isAtLoss = <?php echo ($profit_loss < 0) ? 'true' : 'false'; ?>;
                     
-                    if (finishBtn && exceedsEstimate) {
+                    if (finishBtn && isAtLoss) {
                         // Disable the button
                         finishBtn.disabled = true;
-                        finishBtn.title = 'Cannot finish project: Total cost exceeds estimated cost';
-                        finishBtn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Cannot Finish (Cost Exceeded)';
+                        finishBtn.title = 'Cannot finish project: Project is at a loss';
+                        finishBtn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Cannot Finish (Project at Loss)';
                         finishBtn.classList.remove('btn-success');
                         finishBtn.classList.add('btn-secondary');
                         
                         // Add tooltip
                         new bootstrap.Tooltip(finishBtn, {
-                            title: 'Total project cost exceeds the estimated cost. Please review your expenses.',
+                            title: 'Project is currently at a loss. Please review your expenses and budget.',
                             placement: 'top',
                             trigger: 'hover'
                         });
@@ -2203,11 +2216,11 @@ if ($userid) {
                               </button>
                               <button type="button" class="btn btn-success me-2" id="finishProjectBtn" data-bs-toggle="modal" data-bs-target="#finishProjectModal" 
                                 <?php 
-                                $total_cost = $mat_total + $equip_total + $emp_totals + $overhead_total;
-                                $exceeds_estimate = $total_cost > $project['total_estimation_cost'];
-                                if ($exceeds_estimate) echo 'disabled title="Cannot finish project: Total cost exceeds estimated cost"';
+                                $total_project_cost = $mat_total + $overhead_total;
+                                $profit_loss = $project['budget'] - $total_project_cost;
+                                if ($profit_loss < 0) echo 'disabled title="Cannot finish project: Project is at a loss"';
                                 ?>>
-                                <i class="fas fa-check-circle"></i> <?php echo $exceeds_estimate ? 'Cannot Finish (Cost Exceeded)' : 'Finish Project'; ?>
+                                <i class="fas fa-check-circle"></i> <?php echo $profit_loss < 0 ? 'Cannot Finish (Project at Loss)' : 'Finish Project'; ?>
                               </button>
                             <?php endif; ?>
                             <?php if ($project['status'] === 'Finished'): ?>
