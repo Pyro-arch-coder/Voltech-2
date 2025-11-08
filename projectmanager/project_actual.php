@@ -1563,10 +1563,10 @@ if ($userid) {
                         <div class="card shadow-sm">
                             <div class="card-header bg-success text-white d-flex align-items-center">
                                 <span class="flex-grow-1">Project Team</span>
-                                <button class="btn btn-light btn-sm ms-auto <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
+                                <button class="btn btn-light btn-sm ms-auto <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>" 
                                     data-bs-toggle="modal" data-bs-target="#addEmployeeModal"
-                                    <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>>
-                                    <i class="fas fa-user-plus me-1"></i> Add Employee
+                                    <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>>
+                                    <!-- <i class="fas fa-user-plus me-1"></i> Add Employee -->
                                 </button>
                             </div>
                             <div class="card-body p-0">
@@ -1581,7 +1581,7 @@ if ($userid) {
                                                 <th>Daily Rate</th>
                                                 <th>Project Days</th>
                                                 <th>Total</th>
-                                                <th>Action</th>
+                                                <!-- <th>Action</th> -->
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1625,16 +1625,16 @@ if ($userid) {
                                                 <td>₱<?php echo number_format($emp['daily_rate'], 2); ?></td>
                                                 <td><?php echo $project_days; ?></td>
                                                 <td style="font-weight:bold;color:#222;">₱<?php echo number_format($emp['daily_rate'] * $project_days, 2); ?></td>
-                                                <td>
+                                               <!-- <td>
                                                     <form method="post" style="display:inline;">
                                                         <input type="hidden" name="row_id" value="<?php echo $emp['id']; ?>">
-                                                        <button type="submit" name="remove_project_employee" class="btn btn-sm btn-danger <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
-                                                            <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?> 
+                                                        <button type="submit" name="remove_project_employee" class="btn btn-sm btn-danger <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>" 
+                                                            <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?> 
                                                             onclick="return confirm('Remove this employee?')">
                                                             <i class="fas fa-trash"></i> Remove
                                                         </button>
                                                     </form>
-                                                </td>
+                                                </td> -->
                                             </tr>
                                             <?php 
                                                 endforeach; 
@@ -1716,11 +1716,11 @@ if ($userid) {
                             <div class="card-header bg-success text-white d-flex align-items-center">
                                 <span class="flex-grow-1">Project Materials</span>
                                 <div class="d-flex gap-2">
-                                    <button class="btn btn-light btn-sm <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
+                                  <!--  <button class="btn btn-light btn-sm <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>" 
                                         data-bs-toggle="modal" data-bs-target="#addMaterialsModal"
-                                        <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>>
+                                        <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>>
                                         <i class="fas fa-plus-square me-1"></i> Add Materials
-                                    </button>
+                                    </button> -->
                                 </div>
                             </div>
                             <div class="card-body p-0">
@@ -1737,7 +1737,7 @@ if ($userid) {
                                                 <th>Supplier</th>
                                                 <th>Additional Cost</th>
                                                 <th>Total</th>
-                                                <th>Action</th>
+                                                <!-- <th>Action</th> -->
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1753,10 +1753,10 @@ if ($userid) {
                                                 <td>
                                                     <?php $add_cost = isset($mat['additional_cost']) ? floatval($mat['additional_cost']) : 0; ?>
                                                     <span class="text-primary">₱<?php echo number_format($add_cost, 2); ?></span>
-                                                    <button type="button" class="btn btn-link btn-sm p-0 ms-1 <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
+                                                    <button type="button" class="btn btn-link btn-sm p-0 ms-1 <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>" 
                                                         data-bs-toggle="modal" data-bs-target="#addCostModal<?php echo $mat['id']; ?>" 
                                                         title="Add/Edit Additional Cost"
-                                                        <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>>
+                                                        <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>>
                                                         <i class="fas fa-plus-circle"></i>
                                                     </button>
                                                 </td>
@@ -1764,15 +1764,15 @@ if ($userid) {
                                                     $row_total = (($mat['labor_other'] + $mat['material_price']) * $mat['quantity']) + $mat['additional_cost'];
                                                     echo number_format($row_total, 2); 
                                                 ?></td>
-                                                <td>
-                                                    <button type="button" class="btn btn-sm btn-warning <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
+                                                <!-- <td>
+                                                    <button type="button" class="btn btn-sm btn-warning <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>" 
                                                         data-bs-toggle="modal" data-bs-target="#returnMaterialModal" 
                                                         data-row-id="<?php echo $mat['id']; ?>" 
                                                         data-max-qty="<?php echo $mat['quantity']; ?>"
-                                                        <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>>
+                                                        <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>>
                                                         <i class="fas fa-undo"></i> Return
                                                     </button>
-                                                </td>
+                                                </td> -->
                                             </tr>
                                             <!-- Add/Edit Additional Cost Modal -->
                                             <div class="modal fade" id="addCostModal<?php echo $mat['id']; ?>" tabindex="-1" aria-labelledby="addCostModalLabel<?php echo $mat['id']; ?>" aria-hidden="true">
@@ -1866,9 +1866,9 @@ if ($userid) {
                         <div class="card shadow-sm">
                             <div class="card-header bg-success text-white d-flex align-items-center">
                                 <span class="flex-grow-1">Project Equipment</span>
-                                <button class="btn btn-light btn-sm ml-auto <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>" 
+                                <button class="btn btn-light btn-sm ml-auto <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>" 
                                     data-bs-toggle="modal" data-bs-target="#addEquipmentModal"
-                                    <?php echo ($project['status'] === 'Finished') ? 'disabled' : ''; ?>>
+                                    <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>>
                                     <i class="fas fa-plus-square me-1"></i> Add Equipment
                                 </button>
                             </div>
@@ -1932,7 +1932,7 @@ if ($userid) {
                                   <?php elseif ($eq['status'] === 'returned'): ?>
                                     <span class="badge bg-success">Returned</span>
                                   <?php else: ?>
-                                    <?php if ($project['status'] !== 'Finished'): ?>
+                                    <?php if ($project['status'] !== 'Finished' && $project['status'] !== 'Overdue Finished'): ?>
                                     <form method="post" style="display:inline;">
                                       <input type="hidden" name="row_id" value="<?php echo $eq['id']; ?>">
                                       <button type="submit" name="return_project_equipment" class="btn btn-sm btn-warning" onclick="return confirm('Mark this equipment as returned?')">
@@ -2077,16 +2077,18 @@ if ($userid) {
                                             echo '<tr data-name="' . htmlspecialchars($name) . '">';
                                             echo '<td>' . $counter++ . '</td>';
                                             echo '<td>' . htmlspecialchars($name) . '</td>';
-                                            echo '<td class="editable-price">';
-                                            echo '<div class="input-group input-group-sm">';
-                                            echo '<span class="input-group-text">₱</span>';
-                                            echo '<input type="number" class="form-control form-control-sm price-input" 
-                                                   value="' . number_format($price, 2, '.', '') . '" 
-                                                   step="0.01" min="0" 
-                                                   data-name="' . htmlspecialchars($name, ENT_QUOTES) . '"';
-                                            echo ' onchange="updateOverheadPrice(this)" onkeydown="if(event.key === \'Enter\') { event.preventDefault(); this.blur(); }">';
-                                            echo '</div>';
-                                            echo '</td>';
+                                            // REMOVE MO LANG COMMENT HAA
+                                            // echo '<td class="editable-price">';
+                                            // echo '<div class="input-group input-group-sm">';
+                                            // echo '<span class="input-group-text">₱</span>';
+                                            // echo '<input type="number" class="form-control form-control-sm price-input" ';
+                                            // echo '       value="' . number_format($price, 2, '.', '') . '" ';
+                                            // echo '       step="0.01" min="0" ';
+                                            // echo '       data-name="' . htmlspecialchars($name, ENT_QUOTES) . '"';
+                                            // echo '       onchange="updateOverheadPrice(this)" onkeydown="if(event.key === \'Enter\') { event.preventDefault(); this.blur(); }">';
+                                            // echo '</div>';
+                                            // echo '</td>';
+                                            echo '<td>₱' . number_format($price, 2) . '</td>';
                                             echo '</tr>';
                                         }
                                         
