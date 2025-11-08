@@ -562,7 +562,7 @@ function peso($amount) {
                                                      }
                                                  }
                                                  ?>
-                                                 <h3 class="text-success fw-bold mb-0">₱<?php echo number_format($materials_total, 2); ?></h3>
+                                                 <h3 class="text-success fw-bold mb-0" id="materialsTotal">₱<?php echo number_format($materials_total, 2); ?></h3>
                                              </div>
                                          </div>
                                      </div>
@@ -612,9 +612,10 @@ function peso($amount) {
                                                  <?php 
                                                  $overhead_total = 0;
                                                  if ($project_id > 0) {
+                                                     // Exclude VAT from overhead total for this card
                                                      $overhead_query = "SELECT COALESCE(SUM(price), 0) as total 
                                                                      FROM overhead_costs 
-                                                                     WHERE project_id = ?";
+                                                                     WHERE project_id = ? AND name <> 'VAT'";
                                                      $stmt = $con->prepare($overhead_query);
                                                      $stmt->bind_param("i", $project_id);
                                                      $stmt->execute();
@@ -625,10 +626,40 @@ function peso($amount) {
                                                      $stmt->close();
                                                  }
                                                  ?>
-                                                 <h3 class="text-warning fw-bold mb-0">₱<?php echo number_format($overhead_total, 2); ?></h3>
+                                                 <h3 class="text-warning fw-bold mb-0" id="overheadSummary">₱<?php echo number_format($overhead_total, 2); ?></h3>
                                              </div>
                                          </div>
                                      </div>
+                                     
+                                     <!-- VAT Card -->
+                                     <div class="col-md-3">
+                                         <div class="card border-0 shadow-sm h-100">
+                                             <div class="card-header bg-purple text-white py-2" style="background-color:#6f42c1!important;">
+                                                 <div class="d-flex align-items-center">
+                                                     <i class="fas fa-receipt me-2"></i>
+                                                     <h6 class="mb-0">VAT (12%)</h6>
+                                                 </div>
+                                             </div>
+                                             <div class="card-body text-center py-3">
+                                                 <?php 
+                                                 $vat_total = 0;
+                                                 if ($project_id > 0) {
+                                                     $vat_query = "SELECT COALESCE(SUM(price), 0) as total FROM overhead_costs WHERE project_id = ? AND name = 'VAT'";
+                                                     $stmt = $con->prepare($vat_query);
+                                                     $stmt->bind_param("i", $project_id);
+                                                     $stmt->execute();
+                                                     $result = $stmt->get_result();
+                                                     if ($result && $row = $result->fetch_assoc()) {
+                                                         $vat_total = $row['total'];
+                                                     }
+                                                     $stmt->close();
+                                                 }
+                                                 ?>
+                                                 <h3 class="fw-bold mb-0" id="vatSummary" style="color:#6f42c1;">₱<?php echo number_format($vat_total, 2); ?></h3>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     
                                      <!-- Total Cost Card -->
                                      <div class="col-12">
                                          <div class="card border-0 shadow-sm bg-gradient-primary text-white">
@@ -640,20 +671,27 @@ function peso($amount) {
                                                      </h5>
                                                      <h2 class="fw-bold mb-0" id="totalProjectCost">
                                                          ₱<?php 
-                                                         $total_cost = $materials_total + $labor_total + $overhead_total;
+                                                         // Ensure VAT card variable exists
+                                                         if (!isset($vat_total)) {
+                                                             $vat_total = 0;
+                                                         }
+                                                         $total_cost = $materials_total + $labor_total + $overhead_total + $vat_total;
                                                          echo number_format($total_cost, 2);
                                                          ?>
                                                      </h2>
                                                  </div>
                                                  <div class="mt-2 small">
                                                      <span class="badge bg-light text-dark me-1">
-                                                         <i class="fas fa-boxes me-1"></i> Materials: ₱<?php echo number_format($materials_total, 2); ?>
+                                                         <i class="fas fa-boxes me-1"></i> Materials: <span id="materialsBadge">₱<?php echo number_format($materials_total, 2); ?></span>
                                                      </span>
                                                      <span class="badge bg-light text-dark me-1">
-                                                         <i class="fas fa-users me-1"></i> Labor: ₱<?php echo number_format($labor_total, 2); ?>
+                                                         <i class="fas fa-users me-1"></i> Labor: <span id="laborBadge">₱<?php echo number_format($labor_total, 2); ?></span>
+                                                     </span>
+                                                     <span class="badge bg-light text-dark me-1">
+                                                         <i class="fas fa-calculator me-1"></i> Overhead: <span id="overheadBadge">₱<?php echo number_format($overhead_total, 2); ?></span>
                                                      </span>
                                                      <span class="badge bg-light text-dark">
-                                                         <i class="fas fa-calculator me-1"></i> Overhead: ₱<?php echo number_format($overhead_total, 2); ?>
+                                                         <i class="fas fa-receipt me-1"></i> VAT: <span id="vatBadge">₱<?php echo number_format($vat_total, 2); ?></span>
                                                      </span>
                                                  </div>
                                              </div>
@@ -946,7 +984,6 @@ function peso($amount) {
                                                         'Misc. Items',
                                                         'Profit',
                                                         'Overhead & Supervision',
-                                                        'VAT',
                                                         'Accommodation (Food, Housing)'
                                                     ];
                                                     
@@ -974,7 +1011,7 @@ function peso($amount) {
                                                         echo '<td>' . $counter++ . '</td>';
                                                         echo '<td>' . htmlspecialchars($name) . '</td>';
                                                         echo '<td class="editable-price">';
-                                                        echo '<input type="number" class="form-control form-control-sm price-input" value="' . $price . '" step="0.01" min="0" onchange="updateOverheadPrice(\'' . htmlspecialchars($name, ENT_QUOTES) . '\', this)" onkeydown="if(event.key === \'Enter\') { event.preventDefault(); this.blur(); }">';
+                                                        echo '<input type="number" class="form-control form-control-sm price-input" value="' . $price . '" step="0.01" min="0" oninput="debouncedUpdateOverheadPrice(\'' . htmlspecialchars($name, ENT_QUOTES) . '\', this)" onchange="updateOverheadPrice(\'' . htmlspecialchars($name, ENT_QUOTES) . '\', this)" onkeydown="if(event.key === \'Enter\') { event.preventDefault(); this.blur(); }">';
                                                         echo '</td>';
                                                         echo '</tr>';
                                                     }
@@ -1031,15 +1068,35 @@ function peso($amount) {
                                         alert('Error updating price');
                                     });
                                 }
+                                // Debounced saver: updates UI immediately and saves after a short pause
+                                const overheadDebounceTimers = {};
+                                function debouncedUpdateOverheadPrice(id, inputElement) {
+                                    // Update UI totals live
+                                    updateOverheadTotal();
+                                    // Debounce backend save per item name
+                                    const key = String(id);
+                                    if (overheadDebounceTimers[key]) {
+                                        clearTimeout(overheadDebounceTimers[key]);
+                                    }
+                                    overheadDebounceTimers[key] = setTimeout(() => {
+                                        updateOverheadPrice(id, inputElement);
+                                    }, 500);
+                                }
                                 function updateOverheadTotal() {
-                                    // Recalculate total
+                                    // Recalculate total (exclude VAT row)
                                     let total = 0;
                                     document.querySelectorAll('.price-input').forEach(input => {
-                                        if (!input.readOnly) {
+                                        const row = input.closest('tr');
+                                        const name = row ? row.getAttribute('data-name') : '';
+                                        if (name !== 'VAT') {
                                             total += parseFloat(input.value) || 0;
                                         }
                                     });
                                     document.getElementById('overheadTotal').textContent = '₱' + total.toFixed(2);
+                                    const overheadSummaryEl = document.getElementById('overheadSummary');
+                                    if (overheadSummaryEl) {
+                                        overheadSummaryEl.textContent = '₱' + total.toFixed(2);
+                                    }
                                     
                                     // Update VAT calculation
                                     calculateVAT();
@@ -1049,7 +1106,7 @@ function peso($amount) {
                                     // Calculate total project estimation (materials + labor + overhead excluding VAT)
                                     const materialsTotal = parseFloat(document.getElementById('materialsTotal').textContent.replace('₱', '').replace(/,/g, '')) || 0;
                                     const laborTotal = parseFloat(document.getElementById('laborTotal').textContent.replace('₱', '').replace(/,/g, '')) || 0;
-                                    
+    
                                     // Get all overhead costs except VAT
                                     let overheadTotal = 0;
                                     document.querySelectorAll('.price-input').forEach(input => {
@@ -1060,28 +1117,43 @@ function peso($amount) {
                                             overheadTotal += parseFloat(input.value) || 0;
                                         }
                                     });
-                                    
+    
                                     // Calculate total project estimation (materials + labor + overhead excluding VAT)
                                     const totalProjectEstimation = materialsTotal + laborTotal + overheadTotal;
-                                    
+    
                                     // Calculate VAT as 12% of total project estimation
                                     const vatAmount = totalProjectEstimation * 0.12;
-                                    
+    
                                     // Update VAT input field
                                     const vatInput = document.querySelector('tr[data-name="VAT"] .price-input');
                                     if (vatInput) {
                                         vatInput.value = vatAmount.toFixed(2);
                                     }
-                                    
-                                    // Update overhead total to include VAT
-                                    let newOverheadTotal = overheadTotal + vatAmount;
-                                    document.getElementById('overheadTotal').textContent = '₱' + newOverheadTotal.toFixed(2);
-                                    
+                                    // Update VAT card and badge
+                                    const vatSummaryEl = document.getElementById('vatSummary');
+                                    if (vatSummaryEl) {
+                                        vatSummaryEl.textContent = '₱' + vatAmount.toFixed(2);
+                                    }
+                                    const vatBadgeEl = document.getElementById('vatBadge');
+                                    if (vatBadgeEl) {
+                                        vatBadgeEl.textContent = '₱' + vatAmount.toFixed(2);
+                                    }
+                                    // Keep Overhead totals excluding VAT (already updated by updateOverheadTotal)
+                                    const overheadBadgeExcl = document.getElementById('overheadBadge');
+                                    if (overheadBadgeExcl) {
+                                        overheadBadgeExcl.textContent = '₱' + overheadTotal.toFixed(2);
+                                    }
+                                        
                                     // Update total project cost
                                     const totalProjectCost = totalProjectEstimation + vatAmount;
                                     const totalCostElement = document.getElementById('totalProjectCost');
                                     if (totalCostElement) {
                                         totalCostElement.textContent = '₱' + totalProjectCost.toFixed(2);
+                                    }
+                                    // Also mirror into Step 3 card if present
+                                    const step3TotalEl = document.getElementById('step3TotalEstimation');
+                                    if (step3TotalEl) {
+                                        step3TotalEl.textContent = '₱' + totalProjectCost.toFixed(2);
                                     }
                                 }
                                 
@@ -1107,7 +1179,17 @@ function peso($amount) {
                                     
                                     // Initialize VAT calculation on page load
                                     setTimeout(function() {
+                                        // Recompute overhead (ex-VAT) first, then VAT
+                                        if (typeof updateOverheadTotal === 'function') {
+                                            updateOverheadTotal();
+                                        }
                                         calculateVAT();
+                                        // Initial sync of Step 3 total from Step 2 card if available
+                                        const totalCostElement = document.getElementById('totalProjectCost');
+                                        const step3TotalEl = document.getElementById('step3TotalEstimation');
+                                        if (totalCostElement && step3TotalEl) {
+                                            step3TotalEl.textContent = totalCostElement.textContent.trim();
+                                        }
                                         
                                         // Make VAT input field read-only and style it
                                         const vatInput = document.querySelector('tr[data-name="VAT"] .price-input');
@@ -1137,6 +1219,23 @@ function peso($amount) {
                                                 subtree: true       // Watch all descendants
                                             });
                                         }
+                                        
+                                        // Also observe materialsTotal changes
+                                        const materialsTotalElement = document.getElementById('materialsTotal');
+                                        if (materialsTotalElement) {
+                                            const matObserver = new MutationObserver(function(mutations) {
+                                                mutations.forEach(function(mutation) {
+                                                    if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                                                        calculateVAT();
+                                                    }
+                                                });
+                                            });
+                                            matObserver.observe(materialsTotalElement, {
+                                                childList: true,
+                                                characterData: true,
+                                                subtree: true
+                                            });
+                                        }
                                     }, 500); // Small delay to ensure all elements are loaded
                                 });
                                 </script>
@@ -1161,6 +1260,20 @@ function peso($amount) {
                             </div>
                             <div class="step-content d-none" id="step3">
                                 <h4 class="mb-4 fw-bold text-success">Step 3: Initial Budget Request</h4>
+                                <!-- Total Project Estimation (from Step 2) -->
+                                <div class="row g-3 mb-3">
+                                    <div class="col-12">
+                                        <div class="card border-0 shadow-sm bg-gradient-primary text-white">
+                                            <div class="card-body d-flex align-items-center justify-content-between p-3">
+                                                <h5 class="mb-0 d-flex align-items-center">
+                                                    <i class="fas fa-calculator me-2"></i>
+                                                    Total Project Estimation (Step 2)
+                                                </h5>
+                                                <h2 class="fw-bold mb-0" id="step3TotalEstimation">₱0.00</h2>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                    <?php
                                     // Get latest budget input (whether pending or approved)
                                     $budget_val = "";
@@ -1198,21 +1311,36 @@ function peso($amount) {
                                                             <label class="form-label fw-bold">Budget Amount (₱)</label>
                                                             <div class="input-group mb-2">
                                                                 <span class="input-group-text">₱</span>
+                                                                <?php 
+                                                                // Determine Total Project Estimation to use as dynamic minimum
+                                                                if (!isset($vat_total)) { $vat_total = 0; }
+                                                                $computed_total_cost = 0;
+                                                                if (isset($materials_total) || isset($labor_total) || isset($overhead_total) || isset($vat_total)) {
+                                                                    $computed_total_cost = floatval(($materials_total ?? 0) + ($labor_total ?? 0) + ($overhead_total ?? 0) + ($vat_total ?? 0));
+                                                                }
+                                                                if (!isset($total_cost) || $total_cost <= 0) {
+                                                                    $total_cost = $computed_total_cost;
+                                                                }
+                                                                $min_budget = max(0, (float)$total_cost);
+                                                                $min_budget_int = (int)floor($min_budget);
+                                                                ?>
                                                                 <input type="text" 
                                                                     class="form-control form-control-lg" 
                                                                     name="budget" 
                                                                     id="budgetAmount" 
-                                                                    placeholder="100000" 
+                                                                    placeholder="<?php echo $min_budget_int; ?>" 
                                                                     inputmode="numeric" 
                                                                     aria-describedby="budgetMessage"
-                                                                    value="<?php echo htmlspecialchars($budget_val); ?>"
+                                                                    data-min-budget="<?php echo $min_budget_int; ?>"
+                                                                    value="<?php echo $min_budget_int; ?>"
                                                                     <?php if ($pending || $approved) echo 'readonly'; ?>>
                                                             </div>
                                                             <div class="form-text text-muted" id="budgetMessage">
-                                                                Enter a budget amount (₱100,000 – ₱100,000,000)
+                                                                Enter a budget amount (₱<?php echo number_format($min_budget_int, 0); ?> – ₱<?php echo number_format(100000000, 0); ?>)
                                                             </div>
                                                             <div class="invalid-feedback d-block text-danger" id="budgetError" style="display:none;"></div>
                                                         </div>
+                                                    
                                                         <div class="mt-auto text-center">
                                                             <button type="button" id="requestBudgetBtn" class="btn btn-primary w-100"
                                                                 <?php if ($pending || $approved) echo 'disabled'; ?>>
@@ -1881,52 +2009,74 @@ function peso($amount) {
                                 </div>
                             </div>
                             <div class="step-content d-none" id="step8">
-                                <h4 class="mb-4 fw-bold text-success">Step 8: Billing & Payment Management</h4>
+                                <h4 class="mb-4 fw-bold text-success">Step 8: Billing & Payment Management
+                                    <?php if ($budget_percentage >= 100): ?>
+                                        <span class="badge bg-success ms-2">Completed</span>
+                                    <?php endif; ?>
+                                </h4>
+
                                 <div class="row g-4">
-                                    <!-- Budget Request Input Card -->
+                                    <!-- Budget Request / Completed Card -->
                                     <div class="col-md-4">
-                                        <div class="card mb-4 shadow-sm">
-                                            <div class="card-header bg-success text-white">
-                                                <h5 class="card-title mb-0">
-                                                    <i class="fas fa-money-bill-wave me-2"></i>Submit Budget Request
-                                                </h5>
+                                        <?php if ($budget_percentage >= 100): ?>
+                                            <div class="card mb-4 shadow-sm border-success">
+                                                <div class="card-header bg-success text-white">
+                                                    <h5 class="card-title mb-0">
+                                                        <i class="fas fa-check-circle me-2"></i>Billing Completed
+                                                    </h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="alert alert-success mb-0">
+                                                        <i class="fas fa-info-circle me-2"></i>
+                                                        All payments are fully settled. No further budget requests are available.
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="card-body">
-                                                <form id="budgetRequestForm">
-                                                    <input type="hidden" name="project_id" value="<?php echo htmlspecialchars($project_id); ?>">
-                                                    <div class="mb-3">
-                                                        <label class="form-label fw-bold">Budget Amount (₱)</label>
-                                                        <div class="input-group">
-                                                            <span class="input-group-text">₱</span>
-                                                            <input type="number" class="form-control" name="budget_amount" id="budgetAmount" 
-                                                                placeholder="Enter budget amount (6-9 digits)" min="100000" max="999999999" step="100" required>
+                                        <?php else: ?>
+                                            <div class="card mb-4 shadow-sm">
+                                                <div class="card-header bg-success text-white">
+                                                    <h5 class="card-title mb-0">
+                                                        <i class="fas fa-money-bill-wave me-2"></i>Submit Budget Request
+                                                    </h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    <form id="budgetRequestForm">
+                                                        <input type="hidden" name="project_id" value="<?php echo htmlspecialchars($project_id); ?>">
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold">Budget Amount (₱)</label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">₱</span>
+                                                                <input type="number" class="form-control" name="budget_amount" id="budgetAmount" 
+                                                                    placeholder="Enter budget amount (6-9 digits)" min="100000" max="999999999" step="100" required>
+                                                            </div>
+                                                            <div class="form-text">Enter amount between ₱100,000 to ₱999,999,999 (6-9 digits only)</div>
                                                         </div>
-                                                        <div class="form-text">Enter amount between ₱100,000 to ₱999,999,999 (6-9 digits only)</div>
-                                                    </div>
-                                                    <div class="d-grid">
-                                                        <button type="submit" class="btn btn-primary" id="submitBudgetBtn">
-                                                            <i class="fas fa-paper-plane me-2"></i>Submit Budget Request
-                                                        </button>
-                                                    </div>
-                                                </form>
-                                                <!-- Budget Request Status -->
-                                                <div class="mt-3" id="budgetStatusSection" style="display: block;">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                                        <h6 class="mb-0">Budget Request Status</h6>
-                                                        <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#budgetHistoryModal">
-                                                            <i class="fas fa-history me-1"></i>View History
-                                                        </button>
-                                                    </div>
-                                                    <div class="alert alert-info mb-0">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="fas fa-info-circle me-2"></i>
-                                                            <span>Total Budget Requests: <strong id="totalBudgetRequests">0</strong></span>
+                                                        <div class="d-grid">
+                                                            <button type="submit" class="btn btn-primary" id="submitBudgetBtn">
+                                                                <i class="fas fa-paper-plane me-2"></i>Submit Budget Request
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                    <!-- Budget Request Status -->
+                                                    <div class="mt-3" id="budgetStatusSection" style="display: block;">
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <h6 class="mb-0">Budget Request Status</h6>
+                                                            <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#budgetHistoryModal">
+                                                                <i class="fas fa-history me-1"></i>View History
+                                                            </button>
+                                                        </div>
+                                                        <div class="alert alert-info mb-0">
+                                                            <div class="d-flex align-items-center">
+                                                                <i class="fas fa-info-circle me-2"></i>
+                                                                <span>Total Budget Requests: <strong id="totalBudgetRequests">0</strong></span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        <?php endif; ?>
                                     </div>
+
                                     <!-- Budget Summary Card -->
                                     <div class="col-md-4">
                                         <div class="card shadow-sm h-100">

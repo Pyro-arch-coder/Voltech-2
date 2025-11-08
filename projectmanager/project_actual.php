@@ -334,7 +334,7 @@ if (isset($_POST['update_project_status'])) {
                 
                 // Calculate overhead total for expense calculation
                 $overhead_total = 0;
-                $overhead_query = "SELECT SUM(price) as total FROM overhead_cost_actual WHERE project_id = ?";
+                $overhead_query = "SELECT SUM(price) as total FROM overhead_cost_actual WHERE project_id = ? AND name <> 'VAT'";
                 $overhead_stmt = $con->prepare($overhead_query);
                 $overhead_stmt->bind_param("i", $project_id);
                 $overhead_stmt->execute();
@@ -345,13 +345,18 @@ if (isset($_POST['update_project_status'])) {
                 
                 error_log("Overhead Total: " . $overhead_total);
                 
-                $total_expenses = $mat_total + $overhead_total;
+                // Compute VAT-inclusive total for finishing: base (materials + equipment + employees + overhead) + 12% VAT
+                $base_total_finish = $mat_total + $equip_total + $emp_total_for_expense + $overhead_total;
+                $vat_finish = $base_total_finish * 0.12;
+                $total_expenses = $base_total_finish + $vat_finish;
                 
                 // Calculate the remaining budget after expenses
                 $remaining_budget = $total_expenses;
                 
                 // Debug: Log final total
-                error_log("Final Expenses Total: " . $total_expenses);
+                error_log("Final Expenses Base (no VAT): " . $base_total_finish);
+                error_log("VAT (12%): " . $vat_finish);
+                error_log("Final Expenses Total (with VAT): " . $total_expenses);
                 error_log("Project Budget: " . $project_data['budget']);
                 error_log("Remaining Budget: " . $remaining_budget);
                 
@@ -711,7 +716,7 @@ $emp_totals = 0;
 
 // Initialize and calculate overhead total
 $overhead_total = 0;
-$overhead_query = mysqli_query($con, "SELECT SUM(price) as total FROM overhead_cost_actual WHERE project_id = '$project_id'");
+$overhead_query = mysqli_query($con, "SELECT SUM(price) as total FROM overhead_cost_actual WHERE project_id = '$project_id' AND name <> 'VAT'");
 if ($overhead_query) {
     $overhead_row = mysqli_fetch_assoc($overhead_query);
     $overhead_total = $overhead_row['total'] ?? 0;
@@ -1121,9 +1126,10 @@ if ($userid) {
                                         $proj_emps[] = $row;
                                     }
 
+                                    // Ensure variable exists for later totals even if no employees
+                                    $emp_totals = 0;
                                     if (count($proj_emps) > 0): 
                                         $i = 1; 
-                                        $emp_totals = 0;
                                         foreach ($proj_emps as $emp): 
                                             $emp_totals += $emp['daily_rate'] * $project_days;
                                         endforeach; 
@@ -1137,17 +1143,28 @@ if ($userid) {
                                     <span class="text-dark">Overhead Costs:</span>
                                     <span class="fw-bold text-info">₱<?php echo number_format($overhead_total, 2); ?></span>
                                   </div>
+                                  <?php 
+                                    // Base total excluding VAT
+                                    $base_total_fs = $mat_total + $equip_total + $emp_totals + $overhead_total; 
+                                    $vat_amount_fs = $base_total_fs * 0.12; 
+                                  ?>
+                                  <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-dark">VAT (12%):</span>
+                                    <span class="fw-bold text-secondary">₱<?php echo number_format($vat_amount_fs, 2); ?></span>
+                                  </div>
                                   <hr class="my-2">
                                   <div class="d-flex justify-content-between mb-2">
                                     <span class="text-dark fw-bold">Total Project Cost:</span>
-                                    <span class="fw-bold text-danger fs-5">₱<?php echo number_format($mat_total + $overhead_total, 2); ?></span>
+                                    <span class="fw-bold text-danger fs-5">₱<?php echo number_format($base_total_fs + $vat_amount_fs, 2); ?></span>
                                   </div>
                                 </div>
                                 
                                 <!-- Right Column: Budget - Total Cost = Result -->
                                 <div class="col-6">
                                   <?php 
-                                  $total_project_cost = $mat_total + $overhead_total;
+                                  $total_project_cost_before_vat = $mat_total + $equip_total + $emp_totals + $overhead_total;
+                                  $vat_amount_right = $total_project_cost_before_vat * 0.12;
+                                  $total_project_cost = $total_project_cost_before_vat + $vat_amount_right;
                                   $profit_loss = $project['budget'] - $total_project_cost;
                                   $profit_class = $profit_loss >= 0 ? 'success' : 'danger';
                                   
@@ -1255,18 +1272,11 @@ if ($userid) {
                                 <span class="badge bg-success">
                                     <i class="fas fa-check-circle me-1"></i> Completed
                                 </span>
-                            <?php else: 
-                                // For ongoing projects, calculate remaining days
-                                $current_date = new DateTime();
-                                $deadline = new DateTime($project['deadline']);
-                                $interval = $current_date->diff($deadline);
-                                $is_overdue = $current_date > $deadline;
-                                $remaining_days = $is_overdue ? -$interval->days : $interval->days;
-                                $remaining_days = $interval->invert ? -$remaining_days : $remaining_days;
-                            ?>
-                                <span class="badge bg-<?php echo $remaining_days >= 0 ? 'success' : 'danger'; ?>">
-                                    <?php echo $remaining_days; ?> days <?php echo $remaining_days < 0 ? 'overdue' : 'left'; ?>
-                                </span>
+                            <?php else: ?>
+                            <span class="badge bg-<?php echo $remaining_days >= 0 ? 'success' : 'danger'; ?> me-2">
+                              <i class="fas fa-<?php echo $remaining_days >= 0 ? 'play-circle' : 'exclamation-circle'; ?> me-1"></i>
+                              <?php echo $remaining_days >= 0 ? 'Active' : 'Overdue'; ?>
+                            </span>
                             <?php endif; ?>
                           </div>
                           <?php 
@@ -1817,7 +1827,6 @@ if ($userid) {
                                             </li>
                                             
                                             <?php 
-                                            // Show page numbers (limit to 5 pages around current page)
                                             $start_page = max(1, $mat_page - 2);
                                             $end_page = min($total_mat_pages, $mat_page + 2);
                                             
@@ -2042,14 +2051,13 @@ if ($userid) {
                                             'Misc. Items',
                                             'Profit',
                                             'Overhead & Supervision',
-                                            'VAT',
                                             'Accommodation (Food, Housing)'
                                         ];
                                         
                                         // Get project-specific prices if project_id is valid
                                         $project_prices = [];
                                         if ($project_id > 0) {
-                                            $price_query = "SELECT id, name, price FROM overhead_cost_actual WHERE project_id = ?";
+                                            $price_query = "SELECT id, name, price FROM overhead_cost_actual WHERE project_id = ? AND name <> 'VAT'";
                                             $stmt = $con->prepare($price_query);
                                             $stmt->bind_param("i", $project_id);
                                             $stmt->execute();
@@ -2216,7 +2224,9 @@ if ($userid) {
                               </button>
                               <button type="button" class="btn btn-success me-2" id="finishProjectBtn" data-bs-toggle="modal" data-bs-target="#finishProjectModal" 
                                 <?php 
-                                $total_project_cost = $mat_total + $overhead_total;
+                                $total_project_cost_before_vat = $mat_total + $equip_total + $emp_totals + $overhead_total;
+                                $vat_amount_finish_btn = $total_project_cost_before_vat * 0.12;
+                                $total_project_cost = $total_project_cost_before_vat + $vat_amount_finish_btn;
                                 $profit_loss = $project['budget'] - $total_project_cost;
                                 if ($profit_loss < 0) echo 'disabled title="Cannot finish project: Project is at a loss"';
                                 ?>>

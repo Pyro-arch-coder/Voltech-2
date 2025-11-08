@@ -73,19 +73,49 @@ try {
         $labor_total = floatval($labor_row['total']);
     }
     
-    // Save overhead costs to overhead_cost_actual
+    // Recompute overhead totals (exclude VAT) and VAT dynamically
+    $overhead_ex_vat = 0;
+    $overhead_ex_vat_query = $con->query("SELECT COALESCE(SUM(price), 0) as total FROM overhead_costs WHERE project_id = '$project_id' AND name <> 'VAT'");
+    if ($overhead_ex_vat_row = $overhead_ex_vat_query->fetch_assoc()) {
+        $overhead_ex_vat = floatval($overhead_ex_vat_row['total']);
+    }
+
+    $base_total = $mat_total + $labor_total + $overhead_ex_vat;
+    $vat_amount = $base_total * 0.12;
+
+    // Ensure a VAT row exists and is updated to the computed amount
+    $has_vat = false;
+    $check_vat = $con->query("SELECT id FROM overhead_costs WHERE project_id = '$project_id' AND name = 'VAT' LIMIT 1");
+    if ($check_vat && $check_vat->num_rows > 0) {
+        $has_vat = true;
+    }
+    if ($has_vat) {
+        $upd_vat = $con->prepare("UPDATE overhead_costs SET price = ? WHERE project_id = ? AND name = 'VAT'");
+        if (!$upd_vat) { throw new Exception("Prepare failed: " . $con->error); }
+        $upd_vat->bind_param("di", $vat_amount, $project_id);
+        if (!$upd_vat->execute()) { throw new Exception("Failed to update VAT: " . $con->error); }
+        $upd_vat->close();
+    } else {
+        $ins_vat = $con->prepare("INSERT INTO overhead_costs (project_id, name, price) VALUES (?, 'VAT', ?)");
+        if (!$ins_vat) { throw new Exception("Prepare failed: " . $con->error); }
+        $ins_vat->bind_param("id", $project_id, $vat_amount);
+        if (!$ins_vat->execute()) { throw new Exception("Failed to insert VAT: " . $con->error); }
+        $ins_vat->close();
+    }
+
+    // After normalizing VAT, snapshot overhead costs to overhead_cost_actual
     $overhead_query = $con->query("SELECT * FROM overhead_costs WHERE project_id = '$project_id'");
     if ($overhead_query->num_rows > 0) {
         $delete_old = $con->query("DELETE FROM overhead_cost_actual WHERE project_id = '$project_id'");
         if (!$delete_old) {
             throw new Exception("Failed to clear existing overhead_cost_actual: " . $con->error);
         }
-        
+
         $stmt = $con->prepare("INSERT INTO overhead_cost_actual (project_id, name, price, created_at) VALUES (?, ?, ?, NOW())");
         if (!$stmt) {
             throw new Exception("Prepare failed: " . $con->error);
         }
-        
+
         while ($row = $overhead_query->fetch_assoc()) {
             $stmt->bind_param("isd", $row['project_id'], $row['name'], $row['price']);
             if (!$stmt->execute()) {
@@ -94,16 +124,10 @@ try {
         }
         $stmt->close();
     }
-    
-    // Calculate total overhead costs
-    $overhead_total = 0;
-    $overhead_sum_query = $con->query("SELECT COALESCE(SUM(price), 0) as total FROM overhead_costs WHERE project_id = '$project_id'");
-    if ($overhead_sum_row = $overhead_sum_query->fetch_assoc()) {
-        $overhead_total = floatval($overhead_sum_row['total']);
-    }
-    
-    $total_estimation = $mat_total + $labor_total + $overhead_total;
-    
+
+    // Final totals
+    $total_estimation = $base_total + $vat_amount;
+
     // Update total_estimation_cost in projects table
     $update_query = $con->prepare("UPDATE projects SET total_estimation_cost = ? WHERE project_id = ?");
     if (!$update_query) {

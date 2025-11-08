@@ -441,6 +441,7 @@ if ($userid) {
                                 </div>
                               </div>
                             </th>
+                            <th>Status</th>
                             <th>Contact</th>
                             <th class="text-center">Actions</th>
                           </tr>
@@ -448,7 +449,11 @@ if ($userid) {
                         <tbody>
                           <?php
                           // Fetch all employees with position details (with filter, limit, offset)
-                          $query = "SELECT e.*, p.title as position_title, p.daily_rate 
+                          $query = "SELECT e.*, p.title as position_title, p.daily_rate,
+                                           CASE WHEN EXISTS (
+                                             SELECT 1 FROM project_add_employee pae 
+                                             WHERE pae.employee_id = e.employee_id AND pae.status = 'Working'
+                                           ) THEN 'Not Available' ELSE 'Available' END AS availability_status
                                     FROM employees e 
                                     JOIN positions p ON e.position_id = p.position_id 
                                     WHERE e.user_id = '$userid' $filter_sql 
@@ -464,6 +469,13 @@ if ($userid) {
                             <td class="emp-name"><?php echo $row['first_name'] . ' ' . $row['last_name']; ?></td>
                             <td class="emp-position"><?php echo $row['position_title']; ?></td>
                             <td><?php echo htmlspecialchars($row['company_type']); ?></td>
+                            <td>
+                              <?php 
+                                $isAvailable = ($row['availability_status'] ?? 'Available') === 'Available';
+                                $badgeClass = $isAvailable ? 'bg-success' : 'bg-secondary';
+                              ?>
+                              <span class="badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($row['availability_status'] ?? 'Available'); ?></span>
+                            </td>
                             <td class="emp-contact" data-number="<?php echo htmlspecialchars($row['contact_number']); ?>" data-email="<?php echo htmlspecialchars($row['fb_link']); ?>" data-company-type="<?php echo htmlspecialchars($row['company_type']); ?>">
                               <?php 
                               if (!empty($row['contact_number'])) {
@@ -495,7 +507,7 @@ if ($userid) {
                           } else {
                           ?>
                           <tr>
-                            <td colspan="5" class="text-center">No employees found</td>
+                            <td colspan="7" class="text-center">No employees found</td>
                           </tr>
                           <?php } ?>
                         </tbody>

@@ -3,7 +3,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const budgetInput = document.getElementById('budgetAmount');
     const budgetError = document.getElementById('budgetError');
 
-    const MIN_BUDGET = 100000;
+    const minFromAttr = budgetInput ? parseInt(budgetInput.getAttribute('data-min-budget') || '0', 10) : 0;
+    const MIN_BUDGET = (Number.isFinite(minFromAttr) && minFromAttr > 0) ? minFromAttr : 100000;
     const MAX_BUDGET = 100000000;
     const MAX_LENGTH = 9; // 9 digits max
 

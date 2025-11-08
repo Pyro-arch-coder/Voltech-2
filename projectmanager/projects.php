@@ -369,6 +369,7 @@ addForecastStyles();
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
     $status_filter = isset($_GET['status']) ? trim($_GET['status']) : '';
     $size_filter = isset($_GET['size_filter']) ? trim($_GET['size_filter']) : '';
+    $category_filter = isset($_GET['category']) ? trim($_GET['category']) : '';
     
     // Build the base query
     $where_conditions = ["user_id = $user_id", "(archived IS NULL OR archived = 0)"];
@@ -377,7 +378,7 @@ addForecastStyles();
     // Add search condition
     if (!empty($search)) {
         $search_term = mysqli_real_escape_string($con, $search);
-        $where_conditions[] = "(project LIKE '%$search_term%' OR location LIKE '%$search_term%')";
+        $where_conditions[] = "(project LIKE '%$search_term%' OR location LIKE '%$search_term%' OR category LIKE '%$search_term%')";
     }
     
     // Add status filter
@@ -402,6 +403,12 @@ addForecastStyles();
                 $where_conditions[] = "size > 200";
                 break;
         }
+    }
+    
+    // Add category filter
+    if (!empty($category_filter)) {
+        $cat = mysqli_real_escape_string($con, $category_filter);
+        $where_conditions[] = "category = '$cat'";
     }
     
     $where_clause = implode(' AND ', $where_conditions);
@@ -641,6 +648,28 @@ addForecastStyles();
                                     <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['size_filter' => '201'])); ?>">201+ sqm</a></li>
                                 </ul>
                             </div>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="categoryFilter" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <?php 
+                                    if (isset($_GET['category']) && !empty($_GET['category'])) {
+                                        echo 'Category: ' . htmlspecialchars($_GET['category']);
+                                    } else {
+                                        echo 'All Categories';
+                                    }
+                                    ?>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="categoryFilter">
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => ''])); ?>">All Categories</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'House'])); ?>">House</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'House Electrical'])); ?>">House Electrical</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'House Renovation'])); ?>">House Renovation</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'House Electrical/Renovation'])); ?>">House Electrical/Renovation</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'Building'])); ?>">Building</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'Building Electrical'])); ?>">Building Electrical</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'Building Renovation'])); ?>">Building Renovation</a></li>
+                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'Building Electrical/Renovation'])); ?>">Building Electrical/Renovation</a></li>
+                                </ul>
+                            </div>
                             <div class="d-flex gap-2">
                             </div>
                         </div>
@@ -656,6 +685,7 @@ addForecastStyles();
                                         <th class="text-center">No.</th>
                                         <th>Project Name</th>
                                         <th>Location</th>
+                                        <th>Category</th>
                                         <th>Size (Floor sqm)</th>
                                         <th>Status</th>
                                         <th>Actions</th>
@@ -664,7 +694,7 @@ addForecastStyles();
                                 <tbody>
                                     <?php if (empty($projects)): ?>
                                         <tr>
-                                            <td colspan="5" class="text-center py-4">
+                                            <td colspan="7" class="text-center py-4">
                                                 <div class="text-muted">No projects found. Add your first project to get started.</div>
                                             </td>
                                         </tr>
@@ -674,6 +704,7 @@ addForecastStyles();
                                                 <td><?php echo $no++; ?></td>
                                                 <td><?php echo htmlspecialchars($project['project']); ?></td>
                                                 <td><?php echo htmlspecialchars($project['location']); ?></td>
+                                                <td><?php echo htmlspecialchars($project['category'] ?? ''); ?></td>
                                                 <td class="text-end"><?php echo number_format($project['size'], 2); ?></td>
                                                 <td>
                                                     <?php 
@@ -732,20 +763,20 @@ addForecastStyles();
                         <nav aria-label="Page navigation" class="mt-4">
                             <ul class="pagination justify-content-center custom-pagination-green">
                                 <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                                    <a class="page-link" href="?page=<?php echo $page - 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status) ? '&status=' . urlencode($status) : ''; ?>" aria-label="Previous">
+                                    <a class="page-link" href="?page=<?php echo $page - 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status) ? '&status=' . urlencode($status) : ''; ?><?php echo (isset($_GET['size_filter']) && $_GET['size_filter']!=='') ? '&size_filter=' . urlencode($_GET['size_filter']) : ''; ?><?php echo (isset($_GET['category']) && $_GET['category']!=='') ? '&category=' . urlencode($_GET['category']) : ''; ?>" aria-label="Previous">
                                         <span aria-hidden="true">&laquo;</span>
                                         <span class="sr-only">Previous</span>
                                     </a>
                                 </li>
                                 <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                                     <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
-                                        <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status) ? '&status=' . urlencode($status) : ''; ?>">
+                                        <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status) ? '&status=' . urlencode($status) : ''; ?><?php echo (isset($_GET['size_filter']) && $_GET['size_filter']!=='') ? '&size_filter=' . urlencode($_GET['size_filter']) : ''; ?><?php echo (isset($_GET['category']) && $_GET['category']!=='') ? '&category=' . urlencode($_GET['category']) : ''; ?>">
                                             <?php echo $i; ?>
                                         </a>
                                     </li>
                                 <?php endfor; ?>
                                 <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
-                                    <a class="page-link" href="?page=<?php echo $page + 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status) ? '&status=' . urlencode($status) : ''; ?>" aria-label="Next">
+                                    <a class="page-link" href="?page=<?php echo $page + 1; ?><?php echo !empty($search) ? '&search=' . urlencode($search) : ''; ?><?php echo !empty($status) ? '&status=' . urlencode($status) : ''; ?><?php echo (isset($_GET['size_filter']) && $_GET['size_filter']!=='') ? '&size_filter=' . urlencode($_GET['size_filter']) : ''; ?><?php echo (isset($_GET['category']) && $_GET['category']!=='') ? '&category=' . urlencode($_GET['category']) : ''; ?>" aria-label="Next">
                                         <span aria-hidden="true">&raquo;</span>
                                         <span class="sr-only">Next</span>
                                     </a>

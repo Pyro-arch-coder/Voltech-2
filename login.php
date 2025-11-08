@@ -569,10 +569,37 @@ if (isset($_SESSION['last_activity']) && time() - $_SESSION['last_activity'] > 1
                 <p class="text-center" style="color: #fff;">
                     Don't have an account? <a href="register.php" class="register-link">Register Now</a>
                 </p>
+                <p class="text-center" style="color: #ccc; font-size: 0.9rem;">
+                    By signing in, you agree to our <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal" class="register-link">Terms of Use</a>.
+                </p>
             </form>
         </div>
     </div>
     
+    <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content" style="background:#1f1f1f; color:#fff;">
+                <div class="modal-header" style="border-color:#333;">
+                    <h5 class="modal-title" id="termsModalLabel">Terms of Use</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="color:#e6e6e6;">
+                    <p>By accessing and using this system, you agree to comply with these Terms of Use and all applicable laws and regulations.</p>
+                    <ul style="margin-left: 1rem;">
+                        <li>Authorized users only. Do not share your credentials.</li>
+                        <li>Protect confidential information and follow company policies.</li>
+                        <li>All activity may be monitored and logged for security.</li>
+                        <li>Misuse may result in access termination and/or legal action.</li>
+                    </ul>
+                    <p>If you do not agree to these terms, do not use this system.</p>
+                </div>
+                <div class="modal-footer" style="border-color:#333;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript Libraries -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
