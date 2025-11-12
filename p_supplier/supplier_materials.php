@@ -266,6 +266,7 @@ if (isset($_SESSION['error'])) {
                                         <th>Material Name</th>
                                         <th>Brand</th>
                                         <th>Category</th>
+                                        <th>Specification</th>
                                         <th>Unit</th>
                                         <th>Price</th>
                                         <th>Status</th>
@@ -281,6 +282,7 @@ if (isset($_SESSION['error'])) {
                                                 <td><?php echo htmlspecialchars($material['material_name']); ?></td>
                                                 <td><?php echo htmlspecialchars($material['brand']); ?></td>
                                                 <td><?php echo htmlspecialchars($material['category']); ?></td>
+                                                <td><?php echo htmlspecialchars($material['specification']); ?></td>
                                                 <td><?php echo htmlspecialchars($material['unit']); ?></td>
                                                 <td>₱<?php echo number_format($material['material_price'], 2); ?></td>
                                                 <td>
@@ -334,7 +336,7 @@ if (isset($_SESSION['error'])) {
                                         <?php endwhile; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="8" class="text-center">No materials found</td>
+                                            <td colspan="9" class="text-center">No materials found</td>
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>

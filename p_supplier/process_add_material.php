@@ -84,18 +84,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             throw new Exception('Please select a category.');
         }
 
-        // Check if material with the same name already exists for this supplier
-        $check_sql = "SELECT id FROM suppliers_materials WHERE supplier_id = ? AND LOWER(material_name) = LOWER(?)";
-        $check_stmt = $con->prepare($check_sql);
-        $check_stmt->bind_param("is", $supplier_id, $material_name);
-        $check_stmt->execute();
-        $check_result = $check_stmt->get_result();
-        
-        if ($check_result->num_rows > 0) {
-            throw new Exception('A material with this name already exists in your inventory.');
-        }
-        $check_stmt->close();
-
         // Prepare and execute SQL query
         $sql = "INSERT INTO suppliers_materials (
             supplier_id, 

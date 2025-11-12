@@ -22,8 +22,8 @@
                                 </div>
                                 <div class="form-group mb-3">
                                     <label>Specification *</label>
-                                    <textarea class="form-control" name="specification" required minlength="5" maxlength="500" rows="2" placeholder="Enter material specifications"></textarea>
-                                    <div class="invalid-feedback">Please enter specifications (5-500 characters).</div>
+                                    <textarea class="form-control" name="specification" required maxlength="500" rows="2" placeholder="Enter material specifications"></textarea>
+                                    <div class="invalid-feedback">Please enter specifications (max 500 characters).</div>
                                 </div>
                                 <div class="form-group mb-3">
                                     <label>Category *</label>

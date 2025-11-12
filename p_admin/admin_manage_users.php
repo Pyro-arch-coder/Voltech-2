@@ -281,6 +281,8 @@ $total_pages = ceil($total_users / $limit);
                             <select class="form-control" name="user_level" required>
                                 <option value="3">Project Manager</option>
                                 <option value="4">Procurement Officer</option>
+                                <option value="5">Supplier</option>
+                                <option value="6">Client</option>
                                 <option value="2">Admin</option>
                             </select>
                         </div>
