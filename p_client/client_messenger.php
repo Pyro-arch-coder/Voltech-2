@@ -1157,7 +1157,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             messageContent = messageContent.replace(
                                 `[File: ${filePath}]`,
                                 `<div class="file-message mt-1">
-                                    <a href="/Voltech-2/${filePath}" class="text-decoration-none ${linkColor} fw-medium" download>
+                                    <a href="${filePath}" class="text-decoration-none ${linkColor} fw-medium" download>
                                         ${fileIcon}${fileName}
                                     </a>
                                 </div>`

@@ -317,8 +317,8 @@ document.addEventListener('DOMContentLoaded', function () {
         formData.append('payment_proof', currentFile);
         formData.append('payment_method', paymentType);
         
-        // Set endpoint and add amount data - using absolute paths to avoid 404
-        const endpoint = isFixedAmount ? '/Voltech-2/p_client/fixed_budget_handler.php' : '/Voltech-2/p_client/initial_budget_handler.php';
+    // Set endpoint and add amount data (use relative paths so it works on any host)
+    const endpoint = isFixedAmount ? 'fixed_budget_handler.php' : 'initial_budget_handler.php';
         
         if (isFixedAmount) {
             const fixedAmount = document.getElementById('fixedAmount').value;
@@ -368,7 +368,8 @@ document.addEventListener('DOMContentLoaded', function () {
             body: formData,
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
-            }
+            },
+            credentials: 'include'
         })
         .then(async response => {
             console.log('Response status:', response.status);
@@ -448,7 +449,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const projectId = document.querySelector('input[name="project_id"]')?.value;
         if (!projectId) return;
 
-        fetch(`/Voltech-2/p_client/check_pending_payment.php?project_id=${projectId}`)
+    fetch(`check_pending_payment.php?project_id=${projectId}`, { credentials: 'include' })
             .then(response => response.json())
             .then(data => {
                 const uploadStatus = document.getElementById('uploadStatus');
@@ -568,7 +569,7 @@ window.handlePaymentMethodChange = function(method) {
         gcashDetails.classList.remove('d-none');
         
         // Fetch GCash details
-        fetch(`/Voltech-2/p_client/get_gcash_details.php?project_id=${projectId}`)
+    fetch(`get_gcash_details.php?project_id=${projectId}`, { credentials: 'include' })
             .then(response => response.json())
             .then(data => {
                 console.log('GCash details response:', data);
@@ -632,7 +633,7 @@ window.handlePaymentMethodChange = function(method) {
         bankTransferDetails.classList.remove('d-none');
         
         // Fetch Bank Transfer details
-        fetch(`/Voltech-2/p_client/get_bank_details.php?project_id=${projectId}`)
+    fetch(`get_bank_details.php?project_id=${projectId}`, { credentials: 'include' })
             .then(response => response.json())
             .then(data => {
                 console.log('Bank details response:', data);

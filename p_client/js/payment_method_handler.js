@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log(`Fetching ${type} details from ${endpoint} for project ${projectId}`);
         
-        fetch(`${endpoint}?project_id=${projectId}`)
+    fetch(`${endpoint}?project_id=${projectId}`, { credentials: 'include' })
             .then(response => {
                 console.log(`${type} API response status:`, response.status);
                 if (!response.ok) {
@@ -238,8 +238,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     console.error('Cannot show GCash details: element not found');
                 }
-            } else if (selectedValue === 'bank') {
-                console.log('Showing bank transfer details');
+            } else if (selectedValue === 'bank' || selectedValue === 'cheque') {
+                console.log('Showing bank transfer details for:', selectedValue);
                 if (bankTransferDetails) {
                     bankTransferDetails.classList.remove('d-none');
                     console.log('Fetching bank details...');
@@ -392,6 +392,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     headers: {
                         'Accept': 'application/json'
                     }
+                    , credentials: 'include'
                 });
                 
                 // Check if response is OK

@@ -534,46 +534,47 @@ function peso($amount) {
                                          </div>
                                      </div>
                                      
-                                     <!-- Materials Cost Card -->
+                                     <!-- Labor Budget Card -->
                                      <div class="col-md-3">
                                          <div class="card border-0 shadow-sm h-100">
-                                             <div class="card-header bg-success text-white py-2">
+                                             <div class="card-header bg-warning text-white py-2">
                                                  <div class="d-flex align-items-center">
-                                                     <i class="fas fa-boxes me-2"></i>
-                                                     <h6 class="mb-0">Materials Cost</h6>
+                                                     <i class="fas fa-wallet me-2"></i>
+                                                     <h6 class="mb-0">Labor Budget</h6>
                                                  </div>
                                              </div>
                                              <div class="card-body text-center py-3">
                                                  <?php 
-                                                 $materials_total = 0;
+                                                 $labor_budget = 0;
                                                  if ($project_id > 0) {
-                                                     $materials_query = "SELECT COALESCE(SUM((pem.material_price + COALESCE(m.labor_other, 0)) * pem.quantity), 0) as total 
-                                                                       FROM project_estimating_materials pem
-                                                                       LEFT JOIN materials m ON pem.material_id = m.id
-                                                                       WHERE pem.project_id = ?";
-                                                     if ($stmt = $con->prepare($materials_query)) {
+                                                     // Get total labor/other costs from project materials
+                                                     $labor_budget_query = "SELECT COALESCE(SUM(pem.quantity * COALESCE(m.labor_other, 0)), 0) as total 
+                                                                            FROM project_estimating_materials pem
+                                                                            LEFT JOIN materials m ON pem.material_id = m.id
+                                                                            WHERE pem.project_id = ?";
+                                                     if ($stmt = $con->prepare($labor_budget_query)) {
                                                          $stmt->bind_param("i", $project_id);
                                                          $stmt->execute();
                                                          $result = $stmt->get_result();
                                                          if ($result && $row = $result->fetch_assoc()) {
-                                                             $materials_total = $row['total'];
+                                                             $labor_budget = $row['total'];
                                                          }
                                                          $stmt->close();
                                                      }
                                                  }
                                                  ?>
-                                                 <h3 class="text-success fw-bold mb-0" id="materialsTotal">₱<?php echo number_format($materials_total, 2); ?></h3>
+                                                 <h3 class="text-warning fw-bold mb-0" id="laborBudget">₱<?php echo number_format($labor_budget, 2); ?></h3>
                                              </div>
                                          </div>
                                      </div>
                                      
-                                     <!-- Labor Cost Card -->
+                                     <!-- Labor Budget Card -->
                                      <div class="col-md-3">
                                          <div class="card border-0 shadow-sm h-100">
                                              <div class="card-header bg-info text-white py-2">
                                                  <div class="d-flex align-items-center">
                                                      <i class="fas fa-users me-2"></i>
-                                                     <h6 class="mb-0">Labor Cost</h6>
+                                                     <h6 class="mb-0">Labor Budget</h6>
                                                  </div>
                                              </div>
                                              <div class="card-body text-center py-3">
@@ -595,6 +596,38 @@ function peso($amount) {
                                                  }
                                                  ?>
                                                  <h3 class="text-info fw-bold mb-0" id="laborTotal">₱<?php echo number_format($labor_total, 2); ?></h3>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     
+                                     <!-- Materials Cost Card -->
+                                     <div class="col-md-3">
+                                         <div class="card border-0 shadow-sm h-100">
+                                             <div class="card-header bg-success text-white py-2">
+                                                 <div class="d-flex align-items-center">
+                                                     <i class="fas fa-boxes me-2"></i>
+                                                     <h6 class="mb-0">Materials Cost</h6>
+                                                 </div>
+                                             </div>
+                                             <div class="card-body text-center py-3">
+                                                 <?php 
+                                                 $materials_total = 0;
+                                                 if ($project_id > 0) {
+                                                     $materials_query = "SELECT COALESCE(SUM(pem.material_price * pem.quantity), 0) as total 
+                                                                       FROM project_estimating_materials pem
+                                                                       WHERE pem.project_id = ?";
+                                                     if ($stmt = $con->prepare($materials_query)) {
+                                                         $stmt->bind_param("i", $project_id);
+                                                         $stmt->execute();
+                                                         $result = $stmt->get_result();
+                                                         if ($result && $row = $result->fetch_assoc()) {
+                                                             $materials_total = $row['total'];
+                                                         }
+                                                         $stmt->close();
+                                                     }
+                                                 }
+                                                 ?>
+                                                 <h3 class="text-success fw-bold mb-0" id="materialsTotal">₱<?php echo number_format($materials_total, 2); ?></h3>
                                              </div>
                                          </div>
                                      </div>
@@ -685,7 +718,7 @@ function peso($amount) {
                                                          <i class="fas fa-boxes me-1"></i> Materials: <span id="materialsBadge">₱<?php echo number_format($materials_total, 2); ?></span>
                                                      </span>
                                                      <span class="badge bg-light text-dark me-1">
-                                                         <i class="fas fa-users me-1"></i> Labor: <span id="laborBadge">₱<?php echo number_format($labor_total, 2); ?></span>
+                                                         <i class="fas fa-users me-1"></i> Labor Budget: <span id="laborBadge">₱<?php echo number_format($labor_budget, 2); ?></span>
                                                      </span>
                                                      <span class="badge bg-light text-dark me-1">
                                                          <i class="fas fa-calculator me-1"></i> Overhead: <span id="overheadBadge">₱<?php echo number_format($overhead_total, 2); ?></span>
@@ -1103,9 +1136,9 @@ function peso($amount) {
                                 }
                                 
                                 function calculateVAT() {
-                                    // Calculate total project estimation (materials + labor + overhead excluding VAT)
+                                    // Calculate total project estimation (materials + labor budget + overhead excluding VAT)
                                     const materialsTotal = parseFloat(document.getElementById('materialsTotal').textContent.replace('₱', '').replace(/,/g, '')) || 0;
-                                    const laborTotal = parseFloat(document.getElementById('laborTotal').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                                    const laborBudget = parseFloat(document.getElementById('laborBudget').textContent.replace('₱', '').replace(/,/g, '')) || 0;
     
                                     // Get all overhead costs except VAT
                                     let overheadTotal = 0;
@@ -1118,8 +1151,8 @@ function peso($amount) {
                                         }
                                     });
     
-                                    // Calculate total project estimation (materials + labor + overhead excluding VAT)
-                                    const totalProjectEstimation = materialsTotal + laborTotal + overheadTotal;
+                                    // Calculate total project estimation (materials + labor budget + overhead excluding VAT)
+                                    const totalProjectEstimation = materialsTotal + laborBudget + overheadTotal;
     
                                     // Calculate VAT as 12% of total project estimation
                                     const vatAmount = totalProjectEstimation * 0.12;
@@ -1200,20 +1233,20 @@ function peso($amount) {
                                             vatInput.title = 'VAT is automatically calculated as 12% of total project estimation';
                                         }
                                         
-                                        // Set up MutationObserver to monitor laborTotal changes
-                                        const laborTotalElement = document.getElementById('laborTotal');
-                                        if (laborTotalElement) {
+                                        // Set up MutationObserver to monitor laborBudget changes
+                                        const laborBudgetElement = document.getElementById('laborBudget');
+                                        if (laborBudgetElement) {
                                             const observer = new MutationObserver(function(mutations) {
                                                 mutations.forEach(function(mutation) {
                                                     if (mutation.type === 'childList' || mutation.type === 'characterData') {
-                                                        // Labor total has changed, recalculate VAT
+                                                        // Labor budget has changed, recalculate VAT
                                                         calculateVAT();
                                                     }
                                                 });
                                             });
                                             
                                             // Configure the observer to watch for changes to the content
-                                            observer.observe(laborTotalElement, {
+                                            observer.observe(laborBudgetElement, {
                                                 childList: true,    // Watch for addition/removal of child nodes
                                                 characterData: true, // Watch for changes to text content
                                                 subtree: true       // Watch all descendants

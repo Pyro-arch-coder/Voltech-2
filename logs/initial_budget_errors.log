@@ -6423,3 +6423,137 @@
     [tmp_name] => C:\xampp\tmp\php12A8.tmp
 )
 
+[2025-11-14 22:08:23] === New Request ===
+[2025-11-14 22:08:23] POST data: Array
+(
+    [project_id] => 32
+    [payment_method] => cash
+    [percentage] => 20
+)
+
+[2025-11-14 22:08:23] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation30 (2).pdf
+            [full_path] => project_materials_estimation30 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpBFD0.tmp
+            [error] => 0
+            [size] => 121789
+        )
+
+)
+
+[2025-11-14 22:08:23] SESSION data: Array
+(
+    [csrf_token] => b6f5d4a553999a19ec0181c1ca2a0d81ae460275ca3f6e5cd9337e6b6d6d1d8c
+    [last_activity] => 1763151510
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-11-14 22:08:23] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 32
+            [payment_method] => cash
+            [percentage] => 20
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-11-14 22:08:23] POST data: Array
+(
+    [project_id] => 32
+    [payment_method] => cash
+    [percentage] => 20
+)
+
+[2025-11-14 22:08:23] File upload details: Array
+(
+    [name] => project_materials_estimation30 (2).pdf
+    [size] => 121789
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpBFD0.tmp
+)
+
+[2025-11-14 22:31:52] === New Request ===
+[2025-11-14 22:31:52] POST data: Array
+(
+    [project_id] => 32
+    [payment_method] => bank_transfer
+    [percentage] => 20
+)
+
+[2025-11-14 22:31:52] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation30 (2).pdf
+            [full_path] => project_materials_estimation30 (2).pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php3F8B.tmp
+            [error] => 0
+            [size] => 121789
+        )
+
+)
+
+[2025-11-14 22:31:52] SESSION data: Array
+(
+    [csrf_token] => b1d013d0e6769d74e4faa96e7d216ad6bc250c7b64365863cc68fcd970907b30
+    [last_activity] => 1763155862
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-11-14 22:31:52] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 32
+            [payment_method] => bank_transfer
+            [percentage] => 20
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-11-14 22:31:52] POST data: Array
+(
+    [project_id] => 32
+    [payment_method] => bank_transfer
+    [percentage] => 20
+)
+
+[2025-11-14 22:31:52] File upload details: Array
+(
+    [name] => project_materials_estimation30 (2).pdf
+    [size] => 121789
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php3F8B.tmp
+)
+

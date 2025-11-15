@@ -687,6 +687,9 @@ addForecastStyles();
                                         <th>Location</th>
                                         <th>Category</th>
                                         <th>Size (Floor sqm)</th>
+                                        <th>Start Date</th>
+                                        <th>End Date</th>
+                                        <th>Duration</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
@@ -694,7 +697,7 @@ addForecastStyles();
                                 <tbody>
                                     <?php if (empty($projects)): ?>
                                         <tr>
-                                            <td colspan="7" class="text-center py-4">
+                                            <td colspan="9" class="text-center py-4">
                                                 <div class="text-muted">No projects found. Add your first project to get started.</div>
                                             </td>
                                         </tr>
@@ -706,6 +709,20 @@ addForecastStyles();
                                                 <td><?php echo htmlspecialchars($project['location']); ?></td>
                                                 <td><?php echo htmlspecialchars($project['category'] ?? ''); ?></td>
                                                 <td class="text-end"><?php echo number_format($project['size'], 2); ?></td>
+                                                <td><?php echo $project['start_date'] ? date('M d, Y', strtotime($project['start_date'])) : 'Not set'; ?></td>
+                                                <td><?php echo $project['deadline'] ? date('M d, Y', strtotime($project['deadline'])) : 'Not set'; ?></td>
+                                                <td>
+                                                    <?php 
+                                                    if ($project['start_date'] && $project['deadline']) {
+                                                        $start = new DateTime($project['start_date']);
+                                                        $end = new DateTime($project['deadline']);
+                                                        $interval = $start->diff($end);
+                                                        echo $interval->days . ' days';
+                                                    } else {
+                                                        echo 'N/A';
+                                                    }
+                                                    ?>
+                                                </td>
                                                 <td>
                                                     <?php 
                                                     $status = isset($project['status']) ? $project['status'] : 'Pending';

@@ -1,4 +1,9 @@
 <?php
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('log_errors', 1);
+
 session_start();
 if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user_level'] != 6) {
     header("Location: ../login.php");
@@ -15,35 +20,69 @@ $current_page = basename($_SERVER['PHP_SELF']);
 // Fetch project manager details if project_id is set
 $project_manager_name = 'N/A';
 $project_manager_email = 'N/A';
+$project_id = isset($_GET['project_id']) ? (int)$_GET['project_id'] : 0;
 
-if (isset($_GET['project_id']) && !empty($_GET['project_id'])) {
-    $project_id = $_GET['project_id'];
+// Fetch payment details directly
+$gcash_details = null;
+$bank_accounts = [];
+$cheque_details = null;
+
+if ($project_id > 0) {
+    // Get project manager user_id
+    $pm_query = "SELECT p.user_id, u.email, u.firstname, u.lastname 
+                 FROM projects p
+                 JOIN users u ON p.user_id = u.id 
+                 WHERE p.project_id = ? LIMIT 1";
+    $pm_stmt = $con->prepare($pm_query);
+    $pm_stmt->bind_param('i', $project_id);
+    $pm_stmt->execute();
+    $pm_result = $pm_stmt->get_result();
     
-    // Get the project manager's user_id from the project
-    $project_query = $con->prepare("SELECT user_id FROM projects WHERE project_id = ?");
-    $project_query->bind_param('i', $project_id);
-    $project_query->execute();
-    $project_result = $project_query->get_result();
-    
-    if ($project_result && $project_result->num_rows > 0) {
-        $project_data = $project_result->fetch_assoc();
-        $pm_user_id = $project_data['user_id'];
+    if ($pm_result->num_rows > 0) {
+        $pm_data = $pm_result->fetch_assoc();
+        $project_manager_name = trim($pm_data['firstname'] . ' ' . $pm_data['lastname']);
+        $project_manager_email = $pm_data['email'];
+        $pm_user_id = $pm_data['user_id'];
         
-        // Get the project manager's details from users table
-        $pm_query = $con->prepare("SELECT firstname, lastname, email FROM users WHERE id = ?");
-        $pm_query->bind_param('i', $pm_user_id);
-        $pm_query->execute();
-        $pm_result = $pm_query->get_result();
+        // Get GCash details
+        $gcash_query = "SELECT gcash_number, account_name 
+                       FROM gcash_settings 
+                       WHERE user_id = ? AND is_active = 1";
+        $gcash_stmt = $con->prepare($gcash_query);
+        $gcash_stmt->bind_param('i', $pm_user_id);
+        $gcash_stmt->execute();
+        $gcash_result = $gcash_stmt->get_result();
         
-        if ($pm_result && $pm_result->num_rows > 0) {
-            $pm_data = $pm_result->fetch_assoc();
-            $project_manager_name = trim($pm_data['firstname'] . ' ' . $pm_data['lastname']);
-            $project_manager_email = $pm_data['email'];
+        if ($gcash_result->num_rows > 0) {
+            $gcash_details = $gcash_result->fetch_assoc();
         }
+        
+        // Get bank accounts (for both bank transfer and cheque)
+        $bank_query = "SELECT bank_name, account_name, account_number, contact_number 
+                      FROM bank_accounts 
+                      WHERE user_id = ? AND is_active = 1";
+        $bank_stmt = $con->prepare($bank_query);
+        $bank_stmt->bind_param('i', $pm_user_id);
+        $bank_stmt->execute();
+        $bank_result = $bank_stmt->get_result();
+        
+        while ($bank_row = $bank_result->fetch_assoc()) {
+            $bank_accounts[] = $bank_row;
+        }
+        
+        // Use first bank account for cheque details if available
+        if (!empty($bank_accounts)) {
+            $cheque_details = $bank_accounts[0];
+        }
+        
+        $gcash_stmt->close();
+        $bank_stmt->close();
     }
+    $pm_stmt->close();
 }
 
-$success_message = isset($_SESSION['success_message']) ? $_SESSION['success_message'] : '';
+    
+    $success_message = isset($_SESSION['success_message']) ? $_SESSION['success_message'] : '';
 $error_message = isset($_SESSION['error_message']) ? $_SESSION['error_message'] : '';
 unset($_SESSION['success_message'], $_SESSION['error_message']);
 
@@ -509,32 +548,16 @@ function peso($amount) {
                                         <div class="mb-4">
                                             <div class="d-flex justify-content-center mb-3">
                                                 <div class="btn-group" role="group">
-                                                    <input type="radio" class="btn-check" name="budgetType" id="percentageType" autocomplete="off" checked>
-                                                    <label class="btn btn-outline-primary" for="percentageType">Percentage</label>
-
-                                                    <input type="radio" class="btn-check" name="budgetType" id="fixedType" autocomplete="off">
+                                                    <input type="radio" class="btn-check" name="budgetType" id="fixedType" autocomplete="off" checked>
                                                     <label class="btn btn-outline-primary" for="fixedType">Fixed Amount</label>
+
+                                                    <input type="radio" class="btn-check" name="budgetType" id="percentageType" autocomplete="off">
+                                                    <label class="btn btn-outline-primary" for="percentageType">Percentage</label>
                                                 </div>
                                             </div>
 
-                                            <!-- Percentage Options (Default) -->
-                                            <div id="percentageSection">
-                                                <div class="text-muted mb-2 text-center">Select Initial Budget Percentage</div>
-                                                <div class="d-flex flex-wrap justify-content-center gap-2 mb-2" id="percentageOptions">
-                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="20">20%</button>
-                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="30">30%</button>
-                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="40">40%</button>
-                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="50">50%</button>
-                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="60">60%</button>
-                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="70">70%</button>
-                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="80">80%</button>
-                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="90">90%</button>
-                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="100">100%</button>
-                                                </div>
-                                            </div>
-
-                                            <!-- Fixed Amount Input (Initially Hidden) -->
-                                            <div id="fixedAmountSection" style="display: none;">
+                                            <!-- Fixed Amount Input (Default) -->
+                                            <div id="fixedAmountSection" style="display: block;">
                                                 <div class="text-muted mb-2 text-center">Enter Fixed Amount</div>
                                                 <div class="input-group">
                                                     <span class="input-group-text">₱</span>
@@ -556,6 +579,22 @@ function peso($amount) {
                                                     Max: ₱<?php echo number_format($project_budget, 2); ?>
                                                 </div>
                                                 <div id="amountError" class="text-danger small text-center mt-1"></div>
+                                            </div>
+
+                                            <!-- Percentage Options -->
+                                            <div id="percentageSection" style="display: none;">
+                                                <div class="text-muted mb-2 text-center">Select Initial Budget Percentage</div>
+                                                <div class="d-flex flex-wrap justify-content-center gap-2 mb-2" id="percentageOptions">
+                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="20">20%</button>
+                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="30">30%</button>
+                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="40">40%</button>
+                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="50">50%</button>
+                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="60">60%</button>
+                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="70">70%</button>
+                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="80">80%</button>
+                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="90">90%</button>
+                                                    <button type="button" class="btn btn-outline-primary percentage-btn" data-percentage="100">100%</button>
+                                                </div>
                                             </div>
 
                                             <script>
@@ -615,25 +654,51 @@ function peso($amount) {
                                                 <i class="fas fa-info-circle me-1"></i>Please select how you will be making the payment.
                                             </div>
                                             
-                                            <!-- Payment Details Containers -->
-                                            <div id="gcashDetails" class="payment-details mt-3 p-3 border rounded d-none">
-                                                <h6 class="mb-3"><i class="fas fa-mobile-alt me-2"></i>GCash Payment Details</h6>
-                                                <div id="gcashInfo" class="text-center">
-                                                    <div class="spinner-border text-primary spinner-border-sm" role="status">
-                                                        <span class="visually-hidden">Loading...</span>
+                                            <!-- Simple Payment Details Display -->
+                                            <div class="mt-3">
+                                                <?php if ($gcash_details): ?>
+                                                    <div class="p-3 border rounded mb-2">
+                                                        <h6 class="mb-3"><i class="fas fa-mobile-alt me-2"></i>GCash Payment Details</h6>
+                                                        <div>
+                                                            <p class="mb-1"><strong>Account Name:</strong> <?php echo htmlspecialchars($gcash_details['account_name']); ?></p>
+                                                            <p class="mb-0"><strong>GCash Number:</strong> <?php echo htmlspecialchars($gcash_details['gcash_number']); ?></p>
+                                                        </div>
                                                     </div>
-                                                    <span class="ms-2">Loading GCash details...</span>
-                                                </div>
-                                            </div>
-                                            
-                                            <div id="bankTransferDetails" class="payment-details mt-3 p-3 border rounded d-none">
-                                                <h6 class="mb-3"><i class="fas fa-university me-2"></i>Bank Transfer Details</h6>
-                                                <div id="bankTransferInfo" class="text-center">
-                                                    <div class="spinner-border text-primary spinner-border-sm" role="status">
-                                                        <span class="visually-hidden">Loading...</span>
+                                                <?php endif; ?>
+                                                
+                                                <?php if ($cheque_details): ?>
+                                                    <div class="p-3 border rounded mb-2">
+                                                        <h6 class="mb-3"><i class="fas fa-money-check me-2"></i>Cheque Details</h6>
+                                                        <div>
+                                                            <p class="mb-1"><strong>Bank:</strong> <?php echo htmlspecialchars($cheque_details['bank_name']); ?></p>
+                                                            <p class="mb-1"><strong>Account Name:</strong> <?php echo htmlspecialchars($cheque_details['account_name']); ?></p>
+                                                            <p class="mb-0"><strong>Account Number:</strong> <?php echo htmlspecialchars($cheque_details['account_number']); ?></p>
+                                                        </div>
                                                     </div>
-                                                    <span class="ms-2">Loading bank details...</span>
-                                                </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!empty($bank_accounts)): ?>
+                                                    <div class="p-3 border rounded">
+                                                        <h6 class="mb-3"><i class="fas fa-university me-2"></i>Bank Transfer Details</h6>
+                                                        <?php foreach ($bank_accounts as $account): ?>
+                                                            <div class="mb-3 p-2 bg-light rounded">
+                                                                <p class="mb-1"><strong>Bank:</strong> <?php echo htmlspecialchars($account['bank_name']); ?></p>
+                                                                <p class="mb-1"><strong>Account Name:</strong> <?php echo htmlspecialchars($account['account_name']); ?></p>
+                                                                <p class="mb-1"><strong>Account Number:</strong> <?php echo htmlspecialchars($account['account_number']); ?></p>
+                                                                <?php if (!empty($account['contact_number'])): ?>
+                                                                    <p class="mb-0"><strong>Contact Number:</strong> <?php echo htmlspecialchars($account['contact_number']); ?></p>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!$gcash_details && !$cheque_details && empty($bank_accounts)): ?>
+                                                    <div class="alert alert-info">
+                                                        <i class="fas fa-info-circle me-2"></i>
+                                                        Payment details will be provided by the project manager.
+                                                    </div>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
 
@@ -1064,7 +1129,7 @@ function peso($amount) {
                                       <div class="mb-3" style="height: 300px;">
                                           <canvas id="taskProgressChartStep6"></canvas>
                                       </div>
-                                      <div class="text-center">
+                                      <div>
                                           <small class="text-muted">
                                               <i class="fas fa-info-circle me-1"></i>
                                               Progress of all tasks and subtasks from project timeline
@@ -1250,24 +1315,51 @@ function peso($amount) {
                                               </div>
                                     
 
-                                            <div id="gcashDetails2" class="payment-details mt-3 p-3 border rounded d-none">
-                                                <h6 class="mb-3"><i class="fas fa-mobile-alt me-2"></i>GCash Payment Details</h6>
-                                                <div id="gcashInfo2" class="text-center">
-                                                    <div class="spinner-border text-primary spinner-border-sm" role="status">
-                                                        <span class="visually-hidden">Loading...</span>
+                                            <!-- Simple Payment Details Display -->
+                                            <div class="mt-3">
+                                                <?php if ($gcash_details): ?>
+                                                    <div class="p-3 border rounded mb-2">
+                                                        <h6 class="mb-3"><i class="fas fa-mobile-alt me-2"></i>GCash Payment Details</h6>
+                                                        <div>
+                                                            <p class="mb-1"><strong>Account Name:</strong> <?php echo htmlspecialchars($gcash_details['account_name']); ?></p>
+                                                            <p class="mb-0"><strong>GCash Number:</strong> <?php echo htmlspecialchars($gcash_details['gcash_number']); ?></p>
+                                                        </div>
                                                     </div>
-                                                    <span class="ms-2">Loading GCash details...</span>
-                                                </div>
-                                            </div>
-
-                                            <div id="bankTransferDetails2" class="payment-details mt-3 p-3 border rounded d-none">
-                                                <h6 class="mb-3"><i class="fas fa-university me-2"></i>Bank Transfer Details</h6>
-                                                <div id="bankTransferInfo2" class="text-center">
-                                                    <div class="spinner-border text-primary spinner-border-sm" role="status">
-                                                        <span class="visually-hidden">Loading...</span>
+                                                <?php endif; ?>
+                                                
+                                                <?php if ($cheque_details): ?>
+                                                    <div class="p-3 border rounded mb-2">
+                                                        <h6 class="mb-3"><i class="fas fa-money-check me-2"></i>Cheque Details</h6>
+                                                        <div>
+                                                            <p class="mb-1"><strong>Bank:</strong> <?php echo htmlspecialchars($cheque_details['bank_name']); ?></p>
+                                                            <p class="mb-1"><strong>Account Name:</strong> <?php echo htmlspecialchars($cheque_details['account_name']); ?></p>
+                                                            <p class="mb-0"><strong>Account Number:</strong> <?php echo htmlspecialchars($cheque_details['account_number']); ?></p>
+                                                        </div>
                                                     </div>
-                                                    <span class="ms-2">Loading bank details...</span>
-                                                </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!empty($bank_accounts)): ?>
+                                                    <div class="p-3 border rounded">
+                                                        <h6 class="mb-3"><i class="fas fa-university me-2"></i>Bank Transfer Details</h6>
+                                                        <?php foreach ($bank_accounts as $account): ?>
+                                                            <div class="mb-3 p-2 bg-light rounded">
+                                                                <p class="mb-1"><strong>Bank:</strong> <?php echo htmlspecialchars($account['bank_name']); ?></p>
+                                                                <p class="mb-1"><strong>Account Name:</strong> <?php echo htmlspecialchars($account['account_name']); ?></p>
+                                                                <p class="mb-1"><strong>Account Number:</strong> <?php echo htmlspecialchars($account['account_number']); ?></p>
+                                                                <?php if (!empty($account['contact_number'])): ?>
+                                                                    <p class="mb-0"><strong>Contact Number:</strong> <?php echo htmlspecialchars($account['contact_number']); ?></p>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        <?php endforeach; ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                                
+                                                <?php if (!$gcash_details && !$cheque_details && empty($bank_accounts)): ?>
+                                                    <div class="alert alert-info">
+                                                        <i class="fas fa-info-circle me-2"></i>
+                                                        Payment details will be provided by the project manager.
+                                                    </div>
+                                                <?php endif; ?>
                                             </div>
 
                                             <!-- Proof of Payment Upload -->
@@ -1465,7 +1557,6 @@ function peso($amount) {
       <script src="js/client_viewpermits.js"></script>
       <script src="js/billing_handler.js"></script>
       <script src="js/initial_budget_handler.js"></script>
-      <script src="js/payment_method_handler.js"></script>
        
 
             <script>
@@ -1698,8 +1789,8 @@ function peso($amount) {
             }
             
             // Initial state
-            if (percentageSection) percentageSection.style.display = 'block';
-            if (fixedAmountSection) fixedAmountSection.style.display = 'none';
+            if (fixedAmountSection) fixedAmountSection.style.display = 'block';
+            if (percentageSection) percentageSection.style.display = 'none';
             
             // Toggle between percentage and fixed amount
             if (percentageType && fixedType) {
@@ -2089,10 +2180,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-</script>
-
-    <!-- Payment Method Handler -->
-    <script src="js/payment_method_handler.js"></script>
 </body>
 
 </html>

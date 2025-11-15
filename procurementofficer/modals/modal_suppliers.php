@@ -170,7 +170,7 @@
             <h5 class="modal-title" id="addSupplierModalLabel">Add New Supplier</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <form action="add_supplier.php" method="POST" novalidate>
+          <form id="addSupplierForm" novalidate>
             <div class="modal-body">
               <div class="row">
                 <div class="col-md-6">
@@ -234,10 +234,62 @@
               </div>
             </div>
             <div class="modal-footer">
+              <div id="addSupplierFeedback" class="w-100 mb-2"></div>
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" name="add_supplier" class="btn btn-success">Add Supplier</button>
+              <button type="submit" name="add_supplier" class="btn btn-success">
+                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                Add Supplier
+              </button>
             </div>
           </form>
+          <script>
+          // Handle add supplier form submission
+          document.getElementById('addSupplierForm').addEventListener('submit', function(e) {
+              e.preventDefault();
+              
+              const form = this;
+              const submitBtn = form.querySelector('button[type="submit"]');
+              const spinner = submitBtn.querySelector('.spinner-border');
+              const feedbackDiv = document.getElementById('addSupplierFeedback');
+              
+              // Show loading state
+              submitBtn.disabled = true;
+              spinner.classList.remove('d-none');
+              feedbackDiv.innerHTML = '';
+              
+              // Get form data
+              const formData = new FormData(form);
+              formData.append('add_supplier', '1');
+              
+              // Submit via AJAX
+              fetch('add_supplier.php', {
+                  method: 'POST',
+                  body: formData
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      // Show success message
+                      feedbackDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+                      // Reload the page after 1.5 seconds
+                      setTimeout(() => {
+                          window.location.reload();
+                      }, 1500);
+                  } else {
+                      // Show error message
+                      feedbackDiv.innerHTML = '<div class="alert alert-danger">' + (data.message || 'Error adding supplier. Please try again.') + '</div>';
+                      submitBtn.disabled = false;
+                      spinner.classList.add('d-none');
+                  }
+              })
+              .catch(error => {
+                  console.error('Error:', error);
+                  feedbackDiv.innerHTML = '<div class="alert alert-danger">An error occurred. Please try again.</div>';
+                  submitBtn.disabled = false;
+                  spinner.classList.add('d-none');
+              });
+          });
+          </script>
         </div>
       </div>
     </div>

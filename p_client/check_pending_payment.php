@@ -24,13 +24,14 @@ $response = [
 ];
 
 try {
-    // Check if user is logged in and has client role
+    // Check if user is logged in and has client role        
     if (!isset($_SESSION['logged_in']) || $_SESSION['user_level'] != 6) {
         throw new Exception('Unauthorized access');
     }
 
     // Get project ID from query string
     $projectId = isset($_GET['project_id']) ? intval($_GET['project_id']) : 0;
+    
     if ($projectId <= 0) {
         throw new Exception('Invalid project ID');
     }
@@ -79,9 +80,9 @@ echo json_encode($response);
  * Discard any output that might have been generated
  */
 function discard_output() {
-    // Get the current buffer contents and discard it
+    // Get the current buffer contents and discard it        
     $buffer = ob_get_clean();
-    
+
     // If there was any output, log it for debugging
     if (!empty($buffer)) {
         error_log("Unexpected output in check_pending_payment.php: " . $buffer);
