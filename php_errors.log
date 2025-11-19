@@ -64,3 +64,7 @@ Stack trace:
 [19-Nov-2025 21:44:43 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
 [19-Nov-2025 21:44:43 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(125): mysqli->prepare('\r\n        SELEC...')
 #1 {main}
+[19-Nov-2025 22:57:37 Europe/Berlin] PHP Warning:  mkdir(): File exists in C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php on line 79
+[19-Nov-2025 22:57:37 Europe/Berlin] Error in save_payment_method.php: Failed to create upload directory. Please check permissions.
+[19-Nov-2025 22:57:37 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(244): handleFileUpload(Array, 51, 70)
+#1 {main}

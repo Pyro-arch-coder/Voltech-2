@@ -234,16 +234,16 @@ $stmt->execute();
 $stmt->bind_result($project_budget, $initial_budget);
 $stmt->fetch();
 $stmt->close();
-// 2. Get total approved billing requests (subsequent payments after initial)
-$total_approved = 0;
-$stmt = $con->prepare("SELECT COALESCE(SUM(amount),0) FROM billing_requests WHERE project_id = ? AND status = 'approved'");
+// 2. Get total completed payments from approved_payments (only count completed status)
+$total_completed_payments = 0;
+$stmt = $con->prepare("SELECT COALESCE(SUM(amount),0) FROM approved_payments WHERE project_id = ? AND status = 'completed'");
 $stmt->bind_param('i', $project_id);
 $stmt->execute();
-$stmt->bind_result($total_approved);
+$stmt->bind_result($total_completed_payments);
 $stmt->fetch();
 $stmt->close();
-// 3. Calculate total payments (initial + approved requests)
-$total_payments = $initial_budget + $total_approved;
+// 3. Calculate total payments (initial + completed payments only)
+$total_payments = $initial_budget + $total_completed_payments;
 // 4. Calculate remaining budget and usage percentage
 $remaining_budget = $project_budget - $total_payments;
 $budget_percentage = $project_budget > 0 ? min(($total_payments / $project_budget) * 100, 100) : 0;
@@ -2367,14 +2367,15 @@ function peso($amount) {
                                                                 <span class="input-group-text">₱</span>
                                                                 <input type="number" class="form-control" name="budget_amount" id="budgetAmount" 
                                                                     placeholder="<?php echo number_format($total_estimation_cost ?? 0, 2, '.', ''); ?>" 
-                                                                    min="<?php echo max(0, $total_estimation_cost ?? 0); ?>" 
-                                                                    max="999999999" 
+                                                                    min="<?php echo $total_estimation_cost ?? 0; ?>" 
+                                                                    max="<?php echo $project_budget ?? 0; ?>" 
                                                                     step="0.01" 
                                                                     value="<?php echo number_format($total_estimation_cost ?? 0, 2, '.', ''); ?>" 
                                                                     required>
                                                             </div>
                                                             <div class="form-text">
-                                                                Suggested budget based on Step 2 estimation: <strong>₱<?php echo number_format($total_estimation_cost ?? 0, 2); ?></strong>
+                                                                Minimum: <strong>₱<?php echo number_format($total_estimation_cost ?? 0, 2); ?></strong> (Step 2 estimation) | 
+                                                                Maximum: <strong>₱<?php echo number_format($project_budget ?? 0, 2); ?></strong> (Project budget)
                                                             </div>
                                                         </div>
                                                         <div class="d-grid">
@@ -2421,10 +2422,10 @@ function peso($amount) {
                                                         <span class="text-muted"><i class="fas fa-hand-holding-usd me-2 text-success"></i>Initial Payment:</span>
                                                         <span class="fw-medium"><?php echo peso($initial_budget); ?></span>
                                                     </div>
-                                                    <!-- Approved Payments -->
+                                                    <!-- Completed Payments -->
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                                        <span class="text-muted"><i class="fas fa-check-circle me-2 text-success"></i>Approved Payments:</span>
-                                                        <span class="fw-medium"><?php echo peso($total_approved); ?></span>
+                                                        <span class="text-muted"><i class="fas fa-check-circle me-2 text-success"></i>Completed Payments:</span>
+                                                        <span class="fw-medium"><?php echo peso($total_completed_payments); ?></span>
                                                     </div>
                                                     <!-- Total Paid -->
                                                     <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
@@ -2633,6 +2634,26 @@ function peso($amount) {
                  </div>
                  <div class="modal-footer">
                      <button type="button" class="btn btn-danger" data-bs-dismiss="modal">OK</button>
+                 </div>
+             </div>
+         </div>
+     </div>
+     
+     <!-- Budget Exceed Modal -->
+     <div class="modal fade" id="budgetExceedModal" tabindex="-1" aria-labelledby="budgetExceedModalLabel" aria-hidden="true">
+         <div class="modal-dialog modal-dialog-centered">
+             <div class="modal-content">
+                 <div class="modal-header bg-warning text-dark">
+                     <h5 class="modal-title" id="budgetExceedModalLabel">
+                         <i class="fas fa-exclamation-triangle me-2"></i>Budget Exceeded
+                     </h5>
+                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                 </div>
+                 <div class="modal-body">
+                     <p id="budgetExceedMessage">Sorry, you need to lower your request.</p>
+                 </div>
+                 <div class="modal-footer">
+                     <button type="button" class="btn btn-warning" data-bs-dismiss="modal">OK</button>
                  </div>
              </div>
          </div>
@@ -3353,17 +3374,38 @@ function peso($amount) {
                 
                 const formData = new FormData(this);
                 const projectId = formData.get('project_id');
-                const budgetAmount = formData.get('budget_amount');
+                const budgetAmount = parseFloat(formData.get('budget_amount'));
                 
                 if (!projectId || !budgetAmount) {
                     showErrorModal('Please fill in all fields');
                     return;
                 }
                 
-                // Validate budget amount (6-9 digits only)
-                const amountStr = budgetAmount.toString();
-                if (amountStr.length < 6 || amountStr.length > 9) {
-                    showErrorModal('Budget amount must be between 6-9 digits (₱100,000 to ₱999,999,999)');
+                // Get PHP values for validation
+                const step2Estimation = <?php echo $total_estimation_cost ?? 0; ?>;
+                const projectBudget = <?php echo $project_budget ?? 0; ?>;
+                const totalPaid = <?php echo $total_payments ?? 0; ?>;
+                
+                // Validation 1: Budget amount cannot be less than Step 2 estimation
+                if (budgetAmount < step2Estimation) {
+                    showErrorModal('Budget amount cannot be less than Step 2 estimation (₱' + step2Estimation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ').');
+                    return;
+                }
+                
+                // Validation 2: Budget amount cannot exceed project budget
+                if (budgetAmount > projectBudget) {
+                    showErrorModal('Budget amount cannot exceed project budget (₱' + projectBudget.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ').');
+                    return;
+                }
+                
+                // Validation 3: Check if request will cause negative remaining balance (utang)
+                const currentRemainingBalance = projectBudget - totalPaid;
+                const newTotalPaid = totalPaid + budgetAmount;
+                const newRemainingBalance = projectBudget - newTotalPaid;
+                
+                if (newRemainingBalance < 0) {
+                    const excessAmount = Math.abs(newRemainingBalance);
+                    showBudgetExceedModal('Sorry, you need to lower your request. This request will exceed the project budget by ₱' + excessAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' and will result in a negative remaining balance.');
                     return;
                 }
                 
@@ -3604,6 +3646,16 @@ function peso($amount) {
                 case 'pending': return 'bg-warning';
                 default: return 'bg-secondary';
             }
+        }
+        
+        // Function to show budget exceed modal
+        function showBudgetExceedModal(message) {
+            const modalMessage = document.getElementById('budgetExceedMessage');
+            if (modalMessage) {
+                modalMessage.textContent = message;
+            }
+            const modal = new bootstrap.Modal(document.getElementById('budgetExceedModal'));
+            modal.show();
         }
         
         // Load data when step 8 is shown

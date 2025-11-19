@@ -49,14 +49,14 @@ while ($proj = mysqli_fetch_assoc($proj_res)) {
     }
     // Materials
     $mat_total = 0;
-    $mat_query = mysqli_query($con, "SELECT pam.quantity, pam.material_price, m.labor_other, pam.additional_cost
+    $mat_query = mysqli_query($con, "SELECT pam.quantity, pam.material_price, m.labor_other
                                    FROM project_add_materials pam 
                                    JOIN materials m ON pam.material_id = m.id 
                                    WHERE pam.project_id='$pid'");
     while ($mrow = mysqli_fetch_assoc($mat_query)) {
         $material_cost = floatval($mrow['material_price']) * floatval($mrow['quantity']);
         $labor_cost = floatval($mrow['labor_other']) * floatval($mrow['quantity']);
-        $mat_total += $material_cost + $labor_cost + floatval($mrow['additional_cost']);
+        $mat_total += $material_cost + $labor_cost;
     }
     // Equipment (include all, even returned)
     $equip_total = 0;
@@ -83,14 +83,14 @@ while ($proj = mysqli_fetch_assoc($proj_res2)) {
         $emp_total += floatval($erow['total']);
     }
     $mat_total = 0;
-    $mat_query = mysqli_query($con, "SELECT pam.quantity, pam.material_price, m.labor_other, pam.additional_cost
+    $mat_query = mysqli_query($con, "SELECT pam.quantity, pam.material_price, m.labor_other
                                    FROM project_add_materials pam 
                                    JOIN materials m ON pam.material_id = m.id 
                                    WHERE pam.project_id='$pid'");
     while ($mrow = mysqli_fetch_assoc($mat_query)) {
         $material_cost = floatval($mrow['material_price']) * floatval($mrow['quantity']);
         $labor_cost = floatval($mrow['labor_other']) * floatval($mrow['quantity']);
-        $mat_total += $material_cost + $labor_cost + floatval($mrow['additional_cost']);
+        $mat_total += $material_cost + $labor_cost;
     }
     $equip_total = 0;
     $equip_query = mysqli_query($con, "SELECT total FROM project_add_equipment WHERE project_id='$pid'");
@@ -123,17 +123,23 @@ $cat_est_labels = [];
 $cat_est_totals = [];
 $cat_est_query = mysqli_query($con, "SELECT 
     p.category,
-    (
-        (SELECT IFNULL(SUM(total), 0) FROM project_add_employee WHERE project_id = p.project_id) +
-        (SELECT IFNULL(SUM(pam.material_price * pam.quantity + m.labor_other * pam.quantity + pam.additional_cost), 0) 
+ (
+        (SELECT IFNULL(SUM(total), 0) 
+         FROM project_add_employee 
+         WHERE project_id = p.project_id) +
+
+        (SELECT IFNULL(SUM(pam.material_price * pam.quantity + m.labor_other * pam.quantity), 0)
          FROM project_add_materials pam 
          JOIN materials m ON pam.material_id = m.id 
          WHERE pam.project_id = p.project_id) +
-        (SELECT IFNULL(SUM(total), 0) FROM project_add_equipment WHERE project_id = p.project_id)
-    ) as total 
-    FROM projects p 
-    WHERE p.user_id = '$userid' 
-    GROUP BY p.category");
+
+        (SELECT IFNULL(SUM(total), 0) 
+         FROM project_add_equipment 
+         WHERE project_id = p.project_id)
+    ) AS total
+FROM projects p
+WHERE p.user_id = '$userid'
+GROUP BY p.category;");
 while ($row = mysqli_fetch_assoc($cat_est_query)) {
     $cat_est_labels[] = $row['category'];
     $cat_est_totals[] = round($row['total'], 2);
@@ -162,14 +168,14 @@ while ($proj = mysqli_fetch_assoc($proj_res)) {
         $emp_total += floatval($erow['total']);
     }
     $mat_total = 0;
-    $mat_query = mysqli_query($con, "SELECT pam.quantity, pam.material_price, m.labor_other, pam.additional_cost
+    $mat_query = mysqli_query($con, "SELECT pam.quantity, pam.material_price, m.labor_other
                                    FROM project_add_materials pam 
                                    JOIN materials m ON pam.material_id = m.id 
                                    WHERE pam.project_id='$pid'");
     while ($mrow = mysqli_fetch_assoc($mat_query)) {
         $material_cost = floatval($mrow['material_price']) * floatval($mrow['quantity']);
         $labor_cost = floatval($mrow['labor_other']) * floatval($mrow['quantity']);
-        $mat_total += $material_cost + $labor_cost + floatval($mrow['additional_cost']);
+        $mat_total += $material_cost + $labor_cost;
     }
     $equip_total = 0;
     $equip_query = mysqli_query($con, "SELECT total FROM project_add_equipment WHERE project_id='$pid'");

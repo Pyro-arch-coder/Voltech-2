@@ -212,17 +212,12 @@ if ($total_unpaid > 0 && $completed_payments >= $total_unpaid) {
 // For backward compatibility, set latest_request_amount to total_unpaid
 $latest_request_amount = $total_unpaid;
 
-// 3. Get total approved billing requests (subsequent payments after initial)
-$total_approved = 0;
-$stmt = $con->prepare("SELECT COALESCE(SUM(amount),0) FROM billing_requests WHERE project_id = ? AND status = 'approved'");
-$stmt->bind_param('i', $project_id);
-$stmt->execute();
-$stmt->bind_result($total_approved);
-$stmt->fetch();
-$stmt->close();
+// 3. Get total completed payments from approved_payments (only count completed status)
+// Note: $completed_payments is already fetched above (lines 188-199)
+$total_completed_payments = $completed_payments;
 
-// 3. Calculate total payments (initial + approved requests)
-$total_payments = $initial_budget + $total_approved;
+// 3. Calculate total payments (initial + completed payments only)
+$total_payments = $initial_budget + $total_completed_payments;
 
 // 4. Calculate remaining budget and usage percentage
 $remaining_budget = $project_budget - $total_payments;
@@ -1262,12 +1257,12 @@ function peso($amount) {
                                             </span>
                                             <span class="fw-medium"><?php echo peso($initial_budget); ?></span>
                                             </div>
-                                            <!-- Approved Payments -->
+                                            <!-- Completed Payments -->
                                             <div class="d-flex justify-content-between align-items-center mb-2">
                                             <span class="text-muted">
-                                                <i class="fas fa-check-circle me-2 text-success"></i>Approved Payments:
+                                                <i class="fas fa-check-circle me-2 text-success"></i>Completed Payments:
                                             </span>
-                                            <span class="fw-medium"><?php echo peso($total_approved); ?></span>
+                                            <span class="fw-medium"><?php echo peso($total_completed_payments); ?></span>
                                             </div>
                                             <!-- Total Paid -->
                                             <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">

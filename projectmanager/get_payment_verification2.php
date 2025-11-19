@@ -36,6 +36,7 @@ try {
             users u ON ap.created_by = u.id
         WHERE 
             pop.project_id = ?
+            AND COALESCE(ap.status, pop.status) = 'pending'
         ORDER BY 
             pop.upload_date DESC
     ");
@@ -50,20 +51,16 @@ try {
             'id' => $row['id'],
             'project_id' => $row['project_id'],
             'file_name' => $row['file_name'],
-            'file_path' => $row['file_path'],
+            'file_path' => '../' . $row['file_path'],
             'upload_date' => $row['upload_date'],
             'status' => $row['status'],
             'payment_type' => $row['payment_type'],
             'amount' => $row['amount'],
-            'payer_name' => $row['payer_name'],
-            'payment_date' => $row['payment_date']
+            'payer_name' => $row['payer_name']
         ];
     }
     
-    echo json_encode([
-        'success' => true,
-        'data' => $payments
-    ]);
+    echo json_encode($payments);
     
 } catch (Exception $e) {
     http_response_code(500);
