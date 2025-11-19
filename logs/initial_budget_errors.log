@@ -6557,3 +6557,347 @@
     [tmp_name] => C:\xampp\tmp\php3F8B.tmp
 )
 
+[2025-11-19 10:20:08] === New Request ===
+[2025-11-19 10:20:08] POST data: Array
+(
+    [project_id] => 37
+    [payment_method] => cheque
+    [percentage] => 50
+)
+
+[2025-11-19 10:20:08] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => download (3).png
+            [full_path] => download (3).png
+            [type] => image/png
+            [tmp_name] => C:\xampp\tmp\php72F.tmp
+            [error] => 0
+            [size] => 2075
+        )
+
+)
+
+[2025-11-19 10:20:08] SESSION data: Array
+(
+    [csrf_token] => 005e370fa1510584eb2c988196da959f37e9f0fc1a87d948343cfce16ed0ca4b
+    [last_activity] => 1763543879
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-11-19 10:20:08] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 37
+            [payment_method] => cheque
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-11-19 10:20:08] POST data: Array
+(
+    [project_id] => 37
+    [payment_method] => cheque
+    [percentage] => 50
+)
+
+[2025-11-19 10:20:08] File upload details: Array
+(
+    [name] => download (3).png
+    [size] => 2075
+    [type] => image/png
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php72F.tmp
+)
+
+[2025-11-19 10:20:08] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 207
+[2025-11-19 10:20:08] Stack trace: #0 {main}
+[2025-11-19 10:20:24] === New Request ===
+[2025-11-19 10:20:24] POST data: Array
+(
+    [project_id] => 37
+    [payment_method] => cheque
+    [percentage] => 50
+)
+
+[2025-11-19 10:20:24] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation37.pdf
+            [full_path] => project_materials_estimation37.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php4736.tmp
+            [error] => 0
+            [size] => 121739
+        )
+
+)
+
+[2025-11-19 10:20:24] SESSION data: Array
+(
+    [csrf_token] => 005e370fa1510584eb2c988196da959f37e9f0fc1a87d948343cfce16ed0ca4b
+    [last_activity] => 1763543879
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-11-19 10:20:24] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 37
+            [payment_method] => cheque
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-11-19 10:20:24] POST data: Array
+(
+    [project_id] => 37
+    [payment_method] => cheque
+    [percentage] => 50
+)
+
+[2025-11-19 10:20:24] File upload details: Array
+(
+    [name] => project_materials_estimation37.pdf
+    [size] => 121739
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php4736.tmp
+)
+
+[2025-11-19 10:20:24] Error: You do not have permission to update this project in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 207
+[2025-11-19 10:20:24] Stack trace: #0 {main}
+[2025-11-19 10:25:23] === New Request ===
+[2025-11-19 10:25:23] POST data: Array
+(
+    [project_id] => 37
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-11-19 10:25:23] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation37.pdf
+            [full_path] => project_materials_estimation37.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpD6C2.tmp
+            [error] => 0
+            [size] => 121739
+        )
+
+)
+
+[2025-11-19 10:25:23] SESSION data: Array
+(
+    [csrf_token] => 005e370fa1510584eb2c988196da959f37e9f0fc1a87d948343cfce16ed0ca4b
+    [last_activity] => 1763543879
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-11-19 10:25:23] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 37
+            [payment_method] => cash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-11-19 10:25:23] POST data: Array
+(
+    [project_id] => 37
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-11-19 10:25:23] File upload details: Array
+(
+    [name] => project_materials_estimation37.pdf
+    [size] => 121739
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpD6C2.tmp
+)
+
+[2025-11-19 10:25:23] Error: Failed to update project. Please check if the budget value is different from current value. in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 210
+[2025-11-19 10:25:23] Stack trace: #0 {main}
+[2025-11-19 10:27:07] === New Request ===
+[2025-11-19 10:27:07] POST data: Array
+(
+    [project_id] => 37
+    [payment_method] => bank_transfer
+    [percentage] => 50
+)
+
+[2025-11-19 10:27:07] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation37.pdf
+            [full_path] => project_materials_estimation37.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php6CA5.tmp
+            [error] => 0
+            [size] => 121739
+        )
+
+)
+
+[2025-11-19 10:27:07] SESSION data: Array
+(
+    [csrf_token] => 005e370fa1510584eb2c988196da959f37e9f0fc1a87d948343cfce16ed0ca4b
+    [last_activity] => 1763543879
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-11-19 10:27:07] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 37
+            [payment_method] => bank_transfer
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-11-19 10:27:07] POST data: Array
+(
+    [project_id] => 37
+    [payment_method] => bank_transfer
+    [percentage] => 50
+)
+
+[2025-11-19 10:27:07] File upload details: Array
+(
+    [name] => project_materials_estimation37.pdf
+    [size] => 121739
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php6CA5.tmp
+)
+
+[2025-11-19 10:27:07] Error: Failed to update project. Please check if the budget value is different from current value. in C:\xampp\htdocs\Voltech-2\p_client\initial_budget_handler.php on line 210
+[2025-11-19 10:27:07] Stack trace: #0 {main}
+[2025-11-19 10:28:49] === New Request ===
+[2025-11-19 10:28:49] POST data: Array
+(
+    [project_id] => 37
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-11-19 10:28:49] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => download (3).png
+            [full_path] => download (3).png
+            [type] => image/png
+            [tmp_name] => C:\xampp\tmp\phpFDE5.tmp
+            [error] => 0
+            [size] => 2075
+        )
+
+)
+
+[2025-11-19 10:28:49] SESSION data: Array
+(
+    [csrf_token] => 005e370fa1510584eb2c988196da959f37e9f0fc1a87d948343cfce16ed0ca4b
+    [last_activity] => 1763543879
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-11-19 10:28:49] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 37
+            [payment_method] => cash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-11-19 10:28:49] POST data: Array
+(
+    [project_id] => 37
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-11-19 10:28:49] File upload details: Array
+(
+    [name] => download (3).png
+    [size] => 2075
+    [type] => image/png
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpFDE5.tmp
+)
+
+[2025-11-19 10:28:49] Budget update debug - Current budget: 300000.00, Current initial: 0.00, Percentage: 50, Calculated: 150000

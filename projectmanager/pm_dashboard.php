@@ -140,14 +140,12 @@ while ($row = mysqli_fetch_assoc($cat_est_query)) {
 }
 
 // --- Prepare project data for each category using the same logic as Estimate Expense Project Comparison ---
-$categories = ['House', 'Renovation', 'Building'];
+$categories = ['Renovation', 'Building'];
 $projects_by_category = [
-    'House' => [],
     'Renovation' => [],
     'Building' => []
 ];
 $totals_by_category = [
-    'House' => 0,
     'Renovation' => 0,
     'Building' => 0
 ];

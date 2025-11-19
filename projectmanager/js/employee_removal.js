@@ -33,11 +33,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Send AJAX request
                 fetch('project_add_functions.php', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    credentials: 'same-origin',  // Include cookies for session
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 })
                 .then(response => {
                     console.log('Server response status:', response.status);
-                    return response.json();
+                    console.log('Response headers:', response.headers.get('content-type'));
+                    
+                    // Check if response is actually JSON
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        return response.text().then(text => {
+                            console.error('Non-JSON response:', text.substring(0, 200));
+                            throw new Error('Server returned non-JSON response. Check console for details.');
+                        });
+                    }
+                    
+                    return response.json();     
                 })
                 .then(data => {
                     console.log('Server response data:', data);
@@ -46,7 +61,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.location.reload();
                     } else {
                         console.error('Server error:', data.error);
-                        alert('Error removing employee: ' + (data.error || 'Unknown error'));
+                        
+                        // Handle authentication errors specifically
+                        if (data.error && data.error.includes('Authentication required')) {
+                            alert('Your session has expired. Please log in again.');
+                            window.location.href = '../login.php';
+                        } else {
+                            alert('Error removing employee: ' + (data.error || 'Unknown error'));
+                        }
                     }
                 })
                 .catch(error => {

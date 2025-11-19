@@ -518,7 +518,7 @@ function peso($amount) {
                                 <div class="card h-100 shadow" style="min-height: 400px;">
                                     <div class="card-header bg-light py-3">
                                         <h6 class="mb-0">
-                                            <i class="fas fa-hand-holding-usd me-2"></i>Giving Initial Budget
+                                            <i class="fas fa-hand-holding-usd me-2"></i>Giving Initial Budget(Downpayment)
                                         </h6>
                                     </div>
                                     <div class="card-body d-flex flex-column">

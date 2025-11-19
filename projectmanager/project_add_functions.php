@@ -1,8 +1,24 @@
 <?php
-if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user_level'] != 3) {
-    header("Location: ../login.php");
-    exit();
+// Check if this is an AJAX request
+$is_ajax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
+
+// Check authentication - for AJAX requests, return JSON error instead of redirect
+if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user_level'] != 3) {
+    if ($is_ajax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Authentication required. Please log in again.']);
+        exit();
+    } else {
+        header("Location: ../login.php");
+        exit();
+    }
+}
+
 require_once '../config.php';
 
 // Add Equipment to Project
@@ -82,35 +98,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_project_employ
     exit();
 }
 
-// Remove estimation employee from project
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_estimation_employee'])) {
-    header('Content-Type: application/json');
+// Remove estimation employee from project      
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_estimation_employee'])) {        
+    ob_start();
     
+    // Set JSON header first
+    header('Content-Type: application/json');   
+
     $employee_id = intval($_POST['employee_id']);
-    $project_id = intval($_POST['project_id']);
-    
+    $project_id = intval($_POST['project_id']); 
+
     // Debug logging
     error_log("Removing estimation employee: employee_id=$employee_id, project_id=$project_id");
     
-    if (!$employee_id || !$project_id) {
-        echo json_encode(['success' => false, 'error' => 'Missing employee_id or project_id']);
+    // Check database connection
+    if (!$con || $con->connect_error) {
+        ob_end_clean();
+        echo json_encode(['success' => false, 'error' => 'Database connection failed']);            
         exit();
     }
     
+    if (!$employee_id || !$project_id) {        
+        ob_end_clean();
+        echo json_encode(['success' => false, 'error' => 'Missing employee_id or project_id']);        
+        exit();
+    }
+
     // Delete from project_estimation_employee table
-    $query = "DELETE FROM project_estimation_employee WHERE id='$employee_id' AND project_id='$project_id'";
-    $result = mysqli_query($con, $query);
-    
+    $query = "DELETE FROM project_estimation_employee WHERE id='$employee_id' AND project_id='$project_id'";                                       
+    $result = mysqli_query($con, $query);       
+
     if (!$result) {
-        echo json_encode(['success' => false, 'error' => mysqli_error($con)]);
+        $error = mysqli_error($con);
+        error_log("SQL Error: " . $error);
+        ob_end_clean();
+        echo json_encode(['success' => false, 'error' => 'Database error: ' . $error]);                
         exit();
     }
-    
+
     $affected_rows = mysqli_affected_rows($con);
-    error_log("Affected rows: $affected_rows");
-    
+    error_log("Affected rows: $affected_rows"); 
+
+    // Clear any buffered output and send JSON
+    ob_end_clean();
     // Return success response
-    echo json_encode(['success' => true, 'affected_rows' => $affected_rows]);
+    echo json_encode(['success' => true, 'affected_rows' => $affected_rows]);                      
     exit();
 }
 // Add Material to Project

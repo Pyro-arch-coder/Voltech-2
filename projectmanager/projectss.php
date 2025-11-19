@@ -14,7 +14,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
 // Default divisions per category
 $default_divisions = [
-    'House' => ['Foundation', 'Roof', 'Walls', 'Windows', 'Flooring', 'Plumbing', 'Electrical', 'Painting'],
     'Building' => ['Floor', 'Layout', 'Roof', 'Windows', 'Sample'],
     'Renovation' => ['Demolition', 'Structural Repairs', 'Painting', 'Finishing']
 ];
@@ -829,7 +828,6 @@ if ($userid) {
                                 <label>Category*</label>
                                 <select class="form-control" name="category" required>
                                     <option value="" disabled selected>Select Category</option>
-                                    <option value="House">House</option>
                                     <option value="Building">Building</option>
                                     <option value="Renovation">Renovation</option>
                                 </select>
@@ -837,7 +835,11 @@ if ($userid) {
 
                             <div class="form-group">
                                 <label>Size (m²)*</label>
-                                <input type="number" step="0.01" class="form-control" name="size" required>
+                                <input type="number" step="1" class="form-control" name="size" min="20" required oninput="validateSize(this.value)" onkeypress="return validateSizeInput(event)">
+                                <div id="sizeFeedback" class="invalid-feedback">
+                                    Size must be at least 20 sqm and cannot be negative.
+                                </div>
+                                <small id="sizeWarning" class="text-warning" style="display: none;">Warning: Size should be at least 20 sqm.</small>
                             </div>
                         </div>
                     </div>
@@ -1115,6 +1117,71 @@ if ($userid) {
 <?php endif; ?>
 
     <script>
+        // Size validation function
+        function validateSize(value) {
+            const sizeInput = document.querySelector('input[name="size"]');
+            const sizeFeedback = document.getElementById('sizeFeedback');
+            const sizeWarning = document.getElementById('sizeWarning');
+            
+            // Convert to number
+            const size = parseInt(value);
+            
+            // Clear previous validation states
+            sizeInput.classList.remove('is-invalid', 'is-valid');
+            sizeFeedback.style.display = 'none';
+            sizeWarning.style.display = 'none';
+            
+            // Check if value is negative or invalid
+            if (isNaN(size) || size < 0) {
+                sizeInput.value = ''; // Clear negative values
+                sizeInput.classList.add('is-invalid');
+                sizeFeedback.style.display = 'block';
+                sizeFeedback.textContent = 'Negative values are not allowed. Size must be at least 20 sqm.';
+                return;
+            }
+            
+            // Check if value is less than 20
+            if (size < 20 && size > 0) {
+                sizeInput.classList.add('is-invalid');
+                sizeFeedback.style.display = 'block';
+                sizeFeedback.textContent = 'Size must be at least 20 sqm.';
+                sizeWarning.style.display = 'block';
+                sizeWarning.textContent = 'Warning: Minimum allowed size is 20 sqm.';
+            } else if (size >= 20) {
+                sizeInput.classList.add('is-valid');
+                sizeWarning.style.display = 'none';
+            }
+        }
+        
+        function validateSizeInput(event) {
+            const char = String.fromCharCode(event.which || event.keyCode);
+            const value = event.target.value;
+            
+            // Allow: backspace, delete, tab, escape, enter
+            if ([8, 9, 13, 27, 46].indexOf(event.which) !== -1 ||
+                // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                (event.which === 65 && (event.ctrlKey === true || event.metaKey === true)) ||
+                (event.which === 67 && (event.ctrlKey === true || event.metaKey === true)) ||
+                (event.which === 86 && (event.ctrlKey === true || event.metaKey === true)) ||
+                (event.which === 88 && (event.ctrlKey === true || event.metaKey === true))) {
+                return;
+            }
+            
+            // Ensure that it is a number and stop the keypress
+            if ((event.which < 48 || event.which > 57) && event.which !== 0) {
+                event.preventDefault();
+                return false;
+            }
+            
+            // Prevent starting with 0 (unless it's just 0, which will be caught by validation)
+            if (value.length === 0 && char === '0') {
+                event.preventDefault();
+                return false;
+            }
+            
+            return true;
+        }
+        
         // Function to validate project dates
         function validateProjectDates() {
             const startDate = new Date(document.querySelector('input[name="start_date"]').value);

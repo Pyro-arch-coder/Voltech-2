@@ -176,6 +176,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // 2. Update project's initial budget
+            // First, get current budget and initial_budget for debugging
+            $currentStmt = $con->prepare("SELECT budget, initial_budget FROM projects WHERE project_id = ?");
+            $currentStmt->bind_param('i', $projectId);
+            $currentStmt->execute();
+            $currentResult = $currentStmt->get_result();
+            $currentData = $currentResult->fetch_assoc();
+            $currentBudget = $currentData['budget'];
+            $currentInitialBudget = $currentData['initial_budget'];
+            $calculatedInitialBudget = $currentBudget * $percentage / 100;
+            
+            logError("Budget update debug - Current budget: $currentBudget, Current initial: $currentInitialBudget, Percentage: $percentage, Calculated: $calculatedInitialBudget");
+            
             $stmt = $con->prepare("
                 UPDATE projects 
                 SET initial_budget = (budget * ? / 100)
@@ -197,16 +209,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($checkResult->num_rows === 0) {
                     throw new Exception('Project with ID ' . $projectId . ' not found in database');
                 } else {
-                    // Project exists but update didn't affect any rows - likely a permissions issue
-                    $checkStmt = $con->prepare("SELECT user_id FROM projects WHERE project_id = ? AND user_id = ?");
-                    $checkStmt->bind_param('ii', $projectId, $userId);
+                    // Project exists but update didn't affect any rows - check client permission
+                    $userEmail = $_SESSION['email'];
+                    $checkStmt = $con->prepare("SELECT project_id FROM projects WHERE project_id = ? AND client_email = ?");
+                    $checkStmt->bind_param('is', $projectId, $userEmail);
                     $checkStmt->execute();
                     $checkResult = $checkStmt->get_result();
                     
                     if ($checkResult->num_rows === 0) {
                         throw new Exception('You do not have permission to update this project');
                     } else {
-                        throw new Exception('Failed to update project. Please check if the budget value is different from current value.');
+                        throw new Exception("Failed to update project. The calculated initial budget ($calculatedInitialBudget) is the same as the current value ($currentInitialBudget). Please try a different percentage.");
                     }
                 }
             }

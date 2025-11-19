@@ -178,9 +178,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($checkResult->num_rows === 0) {
                     throw new Exception('Project with ID ' . $projectId . ' not found in database');
                 } else {
-                    // Project exists but update didn't affect any rows - likely a permissions issue
-                    $checkStmt = $con->prepare("SELECT user_id FROM projects WHERE project_id = ? AND user_id = ?");
-                    $checkStmt->bind_param('ii', $projectId, $userId);
+                    // Project exists but update didn't affect any rows - check client permission
+                    $userEmail = $_SESSION['email'];
+                    $checkStmt = $con->prepare("SELECT project_id FROM projects WHERE project_id = ? AND client_email = ?");
+                    $checkStmt->bind_param('is', $projectId, $userEmail);
                     $checkStmt->execute();
                     $checkResult = $checkStmt->get_result();
                     

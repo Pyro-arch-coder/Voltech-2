@@ -82,13 +82,13 @@
                                     </div>
                                     <div class="invalid-feedback">Please enter a valid price (greater than 0).</div>
                                 </div>
-                                <input type="hidden" min="0" max="999999" class="form-control" name="low_stock_threshold" value="10">
-                                <div class="form-group mb-3">
+                                <input type="hidden" min="0" max="999999" class="form-control" name="low_stock_threshold" value="10" style="display:none;">
+                                <div class="form-group mb-3" style="display:none;">
                                     <label>Lead Time (Days)</label>
                                     <input type="number" min="0" max="365" class="form-control" name="lead_time" value="0">
                                     <div class="invalid-feedback">Lead time must be between 0 and 365 days.</div>
                                 </div>
-                                <div class="form-group mb-3">
+                                <div class="form-group mb-3" style="display:none;">
                                     <label>Labor/Other Cost</label>
                                     <div class="input-group">
                                         <span class="input-group-text">₱</span>
@@ -134,7 +134,7 @@
                                     <label>Specification</label>
                                     <textarea class="form-control" name="specification" id="edit_specification" rows="2" maxlength="500" placeholder="Enter material specifications"></textarea>
                                 </div>
-                                <div class="form-group mb-3">
+                                <div class="form-group mb-3" style="display:none;">
                                     <label>Quantity</label>
                                     <input type="number" min="0" max="999999" class="form-control" name="quantity" id="edit_quantity" value="0">
                                     <div class="invalid-feedback">Quantity must be between 0 and 999,999.</div>
@@ -211,17 +211,17 @@
                                     </div>
                                     <div class="invalid-feedback">Please enter a valid price (greater than 0).</div>
                                 </div>
-                                <div class="form-group mb-3">
+                                <div class="form-group mb-3" style="display:none;">
                                     <label>Low Stock Threshold</label>
                                     <input type="number" min="0" max="999999" class="form-control" name="low_stock_threshold" id="edit_low_stock_threshold" value="10">
                                     <div class="invalid-feedback">Low stock threshold must be between 0 and 999,999.</div>
                                 </div>
-                                <div class="form-group mb-3">
+                                <div class="form-group mb-3" style="display:none;">
                                     <label>Lead Time (Days)</label>
                                     <input type="number" min="0" max="365" class="form-control" name="lead_time" id="edit_lead_time" value="0">
                                     <div class="invalid-feedback">Lead time must be between 0 and 365 days.</div>
                                 </div>
-                                <div class="form-group mb-3">
+                                <div class="form-group mb-3" style="display:none;">
                                     <label>Labor/Other Cost</label>
                                     <div class="input-group">
                                         <span class="input-group-text">₱</span>
@@ -274,7 +274,7 @@
                         <div class="col-md-6">
                             <h5 class="fw-bold">Pricing & Inventory</h5>
                             <hr>
-                            <div class="mb-2">
+                            <div class="mb-2" style="display:none;">
                                 <span class="fw-bold">Quantity:</span>
                                 <span id="view_quantity" class="ms-2"></span>
                                 <span id="view_unit"></span>
@@ -283,15 +283,15 @@
                                 <span class="fw-bold">Material Price:</span>
                                 <span id="view_material_price" class="ms-2"></span>
                             </div>
-                            <div class="mb-2">
+                            <div class="mb-2" style="display:none;">
                                 <span class="fw-bold">Labor/Other Cost:</span>
                                 <span id="view_labor_other" class="ms-2"></span>
                             </div>
-                            <div class="mb-2">
+                            <div class="mb-2" style="display:none;">
                                 <span class="fw-bold">Low Stock Threshold:</span>
                                 <span id="view_low_stock_threshold" class="ms-2"></span>
                             </div>
-                            <div class="mb-2">
+                            <div class="mb-2" style="display:none;">
                                 <span class="fw-bold">Lead Time:</span>
                                 <span id="view_lead_time" class="ms-2"></span> days
                             </div>

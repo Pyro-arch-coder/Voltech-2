@@ -660,10 +660,6 @@ addForecastStyles();
                                 </button>
                                 <ul class="dropdown-menu" aria-labelledby="categoryFilter">
                                     <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => ''])); ?>">All Categories</a></li>
-                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'House'])); ?>">House</a></li>
-                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'House Electrical'])); ?>">House Electrical</a></li>
-                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'House Renovation'])); ?>">House Renovation</a></li>
-                                    <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'House Electrical/Renovation'])); ?>">House Electrical/Renovation</a></li>
                                     <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'Building'])); ?>">Building</a></li>
                                     <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'Building Electrical'])); ?>">Building Electrical</a></li>
                                     <li><a class="dropdown-item" href="?<?php echo http_build_query(array_merge($_GET, ['category' => 'Building Renovation'])); ?>">Building Renovation</a></li>
@@ -708,7 +704,7 @@ addForecastStyles();
                                                 <td><?php echo htmlspecialchars($project['project']); ?></td>
                                                 <td><?php echo htmlspecialchars($project['location']); ?></td>
                                                 <td><?php echo htmlspecialchars($project['category'] ?? ''); ?></td>
-                                                <td class="text-end"><?php echo number_format($project['size'], 2); ?></td>
+                                                <td class="text-end"><?php echo number_format($project['size'], 0); ?></td>
                                                 <td><?php echo $project['start_date'] ? date('M d, Y', strtotime($project['start_date'])) : 'Not set'; ?></td>
                                                 <td><?php echo $project['deadline'] ? date('M d, Y', strtotime($project['deadline'])) : 'Not set'; ?></td>
                                                 <td>
@@ -833,10 +829,10 @@ addForecastStyles();
                                     <thead class="table-light">
                                         <tr>
                                             <th class="text-center">Material</th>
-                                            <th class="text-center">Quantity</th>
+                                            
                                             <th class="text-center">Unit</th>
                                             <th class="text-center">Unit Price</th>
-                                            <th class="text-center">Total</th>
+    
                                         </tr>
                                     </thead>
                                     <tbody id="suggestedMaterialsList">
@@ -972,7 +968,7 @@ addForecastStyles();
                                     <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
                                     <input type="email" class="form-control" id="email" name="email" required oninput="checkEmailExists(this.value)">
                                     <div id="emailFeedback" class="invalid-feedback">
-                                        An account with this email already exists. Please select "Existing Client" instead.
+                                        Please fill out this field.
                                     </div>
                                     <div id="emailChecking" class="text-muted small mt-1 d-none">
                                         <i class="fas fa-spinner fa-spin"></i> Checking email availability...
@@ -1008,9 +1004,13 @@ addForecastStyles();
                                 <div class="col-md-6 mb-3">
                                     <label for="size" class="form-label">Size (Floor sqm) <span class="text-danger">*</span></label>
                                     <div class="input-group">
-                                        <input type="number" class="form-control" id="size" name="size" step="0.01" min="0" required>
+                                        <input type="number" class="form-control" id="size" name="size" min="20" step="1" required oninput="validateSize(this.value)" onkeypress="return validateSizeInput(event)">
                                         <span class="input-group-text">sqm</span>
                                     </div>
+                                    <div id="sizeFeedback" class="invalid-feedback">
+                                        Size must be at least 20 sqm.
+                                    </div>
+                                    <small id="sizeWarning" class="text-warning" style="display: none;">Warning: Size should be at least 20 sqm.</small>
                                 </div>
 
                                 <!-- Region -->
@@ -1099,10 +1099,6 @@ addForecastStyles();
                                     <label for="category" class="form-label">Category <span class="text-danger">*</span></label>
                                     <select class="form-control" id="category" name="category" required>
                                         <option value="" selected disabled>Select Category</option>
-                                        <option value="House">House</option>
-                                        <option value="House Electrical">House Electrical</option>
-                                        <option value="House Renovation">House Renovation</option>
-                                        <option value="House Electrical/Renovation">House Electrical/Renovation</option>
                                         <option value="Building">Building</option>
                                         <option value="Building Electrical">Building Electrical</option>
                                         <option value="Building Renovation">Building Renovation</option>
@@ -1332,25 +1328,36 @@ addForecastStyles();
                 materialsListEl.innerHTML = '';
                 
                 // Add each suggested material to the list
+                let grandTotal = 0;
                 data.suggestions.forEach(material => {
-                    const totalCost = (material.material_price * material.quantity + parseFloat(material.additional_cost || 0)).toFixed(2);
+                    // Always use 1 as quantity and unit price as total
+                    const fixedQuantity = 1;
+                    const fixedTotal = parseFloat(material.material_price) || 0;
+                    grandTotal += fixedTotal;
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${material.material_name}</td>
-                        <td>${parseFloat(material.quantity).toFixed(2)}</td>
                         <td>${material.unit || 'pcs'}</td>
-                        <td>₱${parseFloat(material.material_price).toFixed(2)}</td>
-                        <td>₱${totalCost}</td>
+                        <td>₱${fixedTotal.toFixed(2)}</td>
                     `;
-                    // Store material_id as a data attribute for database operations (required for foreign key constraint)
                     row.dataset.materialId = material.material_id;
                     row.style.cursor = 'pointer';
                     row.title = 'Click to add this material';
                     row.addEventListener('click', () => {
-                        addSuggestedMaterial(projectId, material);
+                        addSuggestedMaterial(projectId, {
+                            ...material,
+                            quantity: fixedQuantity
+                        });
                     });
                     materialsListEl.appendChild(row);
                 });
+                // Add grand total row at the end
+                const totalRow = document.createElement('tr');
+                totalRow.innerHTML = `
+                    <td colspan="4" style="text-align:right;font-weight:bold;">Grand Total</td>
+                    <td style="font-weight:bold;">₱${grandTotal.toFixed(2)}</td>
+                `;
+                materialsListEl.appendChild(totalRow);
                 
                 // Show the materials container
                 containerEl.classList.remove('d-none');
@@ -2118,6 +2125,70 @@ addForecastStyles();
         });
     </script>
     <script>
+            // Size validation function
+    function validateSize(value) {
+        const sizeInput = document.getElementById('size');
+        const sizeFeedback = document.getElementById('sizeFeedback');
+        const sizeWarning = document.getElementById('sizeWarning');
+        
+        // Convert to number
+        const size = parseFloat(value);
+        
+        // Clear previous validation states
+        sizeInput.classList.remove('is-invalid', 'is-valid');
+        sizeFeedback.style.display = 'none';
+        sizeWarning.style.display = 'none';
+        
+        // Check if value is negative or invalid
+        if (isNaN(size) || size < 0) {
+            sizeInput.value = ''; // Clear negative values
+            sizeInput.classList.add('is-invalid');
+            sizeFeedback.style.display = 'block';
+            return;
+        }
+        
+        // Check if value is less than 20
+        if (size < 20 && size > 0) {
+            sizeInput.classList.add('is-invalid');
+            sizeFeedback.style.display = 'block';
+            
+            sizeWarning.style.display = 'block';
+            sizeWarning.textContent = 'Minimum allowed size is 20 sqm.';
+        } else if (size >= 20) {
+            sizeInput.classList.add('is-valid');
+            sizeWarning.style.display = 'none';
+        }
+    }
+    
+    function validateSizeInput(event) {
+        const char = String.fromCharCode(event.which || event.keyCode);
+        const value = event.target.value;
+        
+        // Allow: backspace, delete, tab, escape, enter
+        if ([8, 9, 13, 27, 46].indexOf(event.which) !== -1 ||
+            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            (event.which === 65 && (event.ctrlKey === true || event.metaKey === true)) ||
+            (event.which === 67 && (event.ctrlKey === true || event.metaKey === true)) ||
+            (event.which === 86 && (event.ctrlKey === true || event.metaKey === true)) ||
+            (event.which === 88 && (event.ctrlKey === true || event.metaKey === true))) {
+            return;
+        }
+        
+        // Ensure that it is a number and stop the keypress
+        if ((event.which < 48 || event.which > 57) && event.which !== 0) {
+            event.preventDefault();
+            return false;
+        }
+        
+        // Prevent starting with 0 (unless it's just 0, which will be caught by validation)
+        if (value.length === 0 && char === '0') {
+            event.preventDefault();
+            return false;
+        }
+        
+        return true;
+    }
+    
             // Project name validation function
     function checkProjectNameExists(projectName) {
         if (!projectName || projectName.trim().length < 3) {
@@ -2161,11 +2232,54 @@ addForecastStyles();
             const emailFeedback = document.getElementById('emailFeedback');
             const emailChecking = document.getElementById('emailChecking');
             
-            // Basic email format validation
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                emailInput.classList.remove('is-invalid');
-                emailChecking.classList.add('d-none');
+            // Clear previous validation states
+            emailInput.classList.remove('is-invalid', 'is-valid');
+            emailFeedback.classList.remove('d-block');
+            emailChecking.classList.add('d-none');
+            
+            // Check if email is empty
+            if (!email || email.trim() === '') {
+                emailInput.classList.add('is-invalid');
+                emailFeedback.textContent = 'Please fill out this field.';
+                emailFeedback.classList.add('d-block');
+                return;
+            }
+            
+            // Comprehensive email format validation
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(email.trim())) {
+                emailInput.classList.add('is-invalid');
+                emailFeedback.textContent = 'Please enter a valid email address (e.g., user@example.com).';
+                emailFeedback.classList.add('d-block');
+                return;
+            }
+            
+            // Additional format checks
+            const emailTrimmed = email.trim();
+            
+            // Check for consecutive dots
+            if (emailTrimmed.includes('..')) {
+                emailInput.classList.add('is-invalid');
+                emailFeedback.textContent = 'Email address cannot contain consecutive dots.';
+                emailFeedback.classList.add('d-block');
+                return;
+            }
+            
+            // Check for dot at start or end of local part
+            const localPart = emailTrimmed.split('@')[0];
+            if (localPart.startsWith('.') || localPart.endsWith('.')) {
+                emailInput.classList.add('is-invalid');
+                emailFeedback.textContent = 'Email address cannot start or end with a dot.';
+                emailFeedback.classList.add('d-block');
+                return;
+            }
+            
+            // Check domain format
+            const domain = emailTrimmed.split('@')[1];
+            if (!domain || !domain.includes('.') || domain.startsWith('.') || domain.endsWith('.')) {
+                emailInput.classList.add('is-invalid');
+                emailFeedback.textContent = 'Please enter a valid domain name (e.g., example.com).';
+                emailFeedback.classList.add('d-block');
                 return;
             }
             
@@ -2174,7 +2288,7 @@ addForecastStyles();
             
             // Check email existence using the integrated backend
             const formData = new FormData();
-            formData.append('email', email);
+            formData.append('email', emailTrimmed);
             formData.append('action', 'check_email');
             
             fetch('projects.php', {
@@ -2189,8 +2303,8 @@ addForecastStyles();
                     emailFeedback.textContent = `This email is already registered to ${data.user.name}. Please select "Existing Client" instead.`;
                     emailFeedback.classList.add('d-block');
                 } else {
-                    // Email is available
-                    emailInput.classList.remove('is-invalid');
+                    // Email is available and valid
+                    emailInput.classList.add('is-valid');
                     emailFeedback.classList.remove('d-block');
                 }
             })
@@ -2333,7 +2447,7 @@ addForecastStyles();
             // Category change handler
             categorySelect.addEventListener('change', function() {
                 const category = this.value;
-                const isOneWeek = ['House Electrical', 'House Renovation', 'Building Electrical', 'Building Renovation'].includes(category);
+                const isOneWeek = ['Building Electrical', 'Building Renovation'].includes(category);
                 
                 // Show/hide appropriate date pickers
                 if (isOneWeek) {

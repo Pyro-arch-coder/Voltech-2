@@ -574,7 +574,7 @@ function peso($amount) {
                                              <div class="card-header bg-info text-white py-2">
                                                  <div class="d-flex align-items-center">
                                                      <i class="fas fa-users me-2"></i>
-                                                     <h6 class="mb-0">Labor Budget</h6>
+                                                     <h6 class="mb-0">Labor Costs</h6>
                                                  </div>
                                              </div>
                                              <div class="card-body text-center py-3">
@@ -596,6 +596,14 @@ function peso($amount) {
                                                  }
                                                  ?>
                                                  <h3 class="text-info fw-bold mb-0" id="laborTotal">₱<?php echo number_format($labor_total, 2); ?></h3>
+                                                 <?php if ($labor_total > $labor_budget): ?>
+                                                 <div class="mt-2">
+                                                     <span class="badge bg-danger">
+                                                         <i class="fas fa-exclamation-triangle me-1"></i>
+                                                         Over Budget by ₱<?php echo number_format($labor_total - $labor_budget, 2); ?>
+                                                     </span>
+                                                 </div>
+                                                 <?php endif; ?>
                                              </div>
                                          </div>
                                      </div>
@@ -1121,18 +1129,54 @@ function peso($amount) {
                                     document.querySelectorAll('.price-input').forEach(input => {
                                         const row = input.closest('tr');
                                         const name = row ? row.getAttribute('data-name') : '';
-                                        if (name !== 'VAT') {
-                                            total += parseFloat(input.value) || 0;
+                                        if (name && name.toLowerCase() !== 'vat') {
+                                            const price = parseFloat(input.value) || 0;
+                                            total += price;
                                         }
                                     });
                                     document.getElementById('overheadTotal').textContent = '₱' + total.toFixed(2);
-                                    const overheadSummaryEl = document.getElementById('overheadSummary');
-                                    if (overheadSummaryEl) {
-                                        overheadSummaryEl.textContent = '₱' + total.toFixed(2);
+                                    calculateVAT();
+                                }
+                                
+                                function updateLaborBudgetStatus() {
+                                    const laborTotalElement = document.getElementById('laborTotal');
+                                    const laborBudgetElement = document.getElementById('laborBudget');
+                                    const laborCard = laborTotalElement.closest('.card-body');
+                                    
+                                    if (!laborTotalElement || !laborBudgetElement) return;
+                                    
+                                    // Extract numeric values from the text (remove ₱ and commas)
+                                    const laborTotalText = laborTotalElement.textContent.replace(/₱|,/g, '');
+                                    const laborBudgetText = laborBudgetElement.textContent.replace(/₱|,/g, '');
+                                    
+                                    const laborTotal = parseFloat(laborTotalText) || 0;
+                                    const laborBudget = parseFloat(laborBudgetText) || 0;
+                                    
+                                    // Remove existing status badge if any
+                                    const existingBadge = laborCard.querySelector('.badge');
+                                    if (existingBadge) {
+                                        existingBadge.remove();
                                     }
                                     
-                                    // Update VAT calculation
-                                    calculateVAT();
+                                    // Add over-budget warning if needed
+                                    if (laborTotal > laborBudget) {
+                                        const overBudgetAmount = laborTotal - laborBudget;
+                                        const warningDiv = document.createElement('div');
+                                        warningDiv.className = 'mt-2';
+                                        warningDiv.innerHTML = `<span class="badge bg-danger">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            Over Budget by ₱${overBudgetAmount.toFixed(2)}
+                                        </span>`;
+                                        laborCard.appendChild(warningDiv);
+                                        
+                                        // Change card header to danger color
+                                        const cardHeader = laborCard.closest('.card').querySelector('.card-header');
+                                        cardHeader.className = 'card-header bg-danger text-white py-2';
+                                    } else {
+                                        // Reset card header to normal color
+                                        const cardHeader = laborCard.closest('.card').querySelector('.card-header');
+                                        cardHeader.className = 'card-header bg-info text-white py-2';
+                                    }
                                 }
                                 
                                 function calculateVAT() {
@@ -1217,6 +1261,10 @@ function peso($amount) {
                                             updateOverheadTotal();
                                         }
                                         calculateVAT();
+                                        // Update labor budget status
+                                        if (typeof updateLaborBudgetStatus === 'function') {
+                                            updateLaborBudgetStatus();
+                                        }
                                         // Initial sync of Step 3 total from Step 2 card if available
                                         const totalCostElement = document.getElementById('totalProjectCost');
                                         const step3TotalEl = document.getElementById('step3TotalEstimation');
@@ -1264,6 +1312,25 @@ function peso($amount) {
                                                 });
                                             });
                                             matObserver.observe(materialsTotalElement, {
+                                                childList: true,
+                                                characterData: true,
+                                                subtree: true
+                                            });
+                                        }
+                                        
+                                        // Also observe laborTotal changes
+                                        const laborTotalElement = document.getElementById('laborTotal');
+                                        if (laborTotalElement) {
+                                            const laborObserver = new MutationObserver(function(mutations) {
+                                                mutations.forEach(function(mutation) {
+                                                    if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                                                        // Labor total has changed, update status and recalculate VAT
+                                                        updateLaborBudgetStatus();
+                                                        calculateVAT();
+                                                    }
+                                                });
+                                            });
+                                            laborObserver.observe(laborTotalElement, {
                                                 childList: true,
                                                 characterData: true,
                                                 subtree: true

@@ -13,7 +13,7 @@ if (!$start || !$end) die('Date range required');
 
 // Project analytics (from projects table)
 $project_count = 0;
-$category_counts = ['House' => 0, 'Renovation' => 0, 'Building' => 0];
+$category_counts = ['Renovation' => 0, 'Building' => 0];
 $total_budget = 0;
 $proj_query = mysqli_query($con, "SELECT category, budget FROM projects WHERE user_id='$userid'");
 while ($row = mysqli_fetch_assoc($proj_query)) {

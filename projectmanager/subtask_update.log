@@ -277,3 +277,69 @@ Updating subtask 9 to status: 1
 Update successful. Rows affected: 0
 No rows updated. Value might be the same.
 Sending response: {"success":true,"rows_affected":0,"subtask_id":9,"is_completed":1}
+[2025-11-21 10:35:48] {"subtask_id":"18","is_completed":"1"}
+Updating subtask 18 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/1 subtasks = 100% (100% per subtask)
+Updated task 163 progress to 100% and status to 'Completed' (1/1 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":18,"is_completed":1,"new_progress":100}
+[2025-11-21 10:35:48] {"subtask_id":"18","is_completed":"1"}
+Updating subtask 18 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":18,"is_completed":1}
+[2025-11-21 10:41:09] {"subtask_id":"18","is_completed":"0"}
+Updating subtask 18 to status: 0
+Update successful. Rows affected: 1
+Fixed percentage calculation: 0/1 subtasks = 0% (100% per subtask)
+Updated task 163 progress to 0% and status to 'Not Started' (0/1 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":18,"is_completed":0,"new_progress":0}
+[2025-11-21 10:41:09] {"subtask_id":"18","is_completed":"0"}
+Updating subtask 18 to status: 0
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":18,"is_completed":0}
+[2025-11-21 10:41:12] {"subtask_id":"18","is_completed":"1"}
+Updating subtask 18 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/1 subtasks = 100% (100% per subtask)
+Updated task 163 progress to 100% and status to 'Completed' (1/1 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":18,"is_completed":1,"new_progress":100}
+[2025-11-21 10:41:12] {"subtask_id":"18","is_completed":"1"}
+Updating subtask 18 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":18,"is_completed":1}
+[2025-11-21 10:53:45] {"subtask_id":"19","is_completed":"1"}
+Updating subtask 19 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/1 subtasks = 100% (100% per subtask)
+Updated task 156 progress to 100% and status to 'Completed' (1/1 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":19,"is_completed":1,"new_progress":100}
+[2025-11-21 10:53:45] {"subtask_id":"19","is_completed":"1"}
+Updating subtask 19 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":19,"is_completed":1}
+[2025-11-21 10:53:54] {"subtask_id":"19","is_completed":"0"}
+Updating subtask 19 to status: 0
+Update successful. Rows affected: 1
+Fixed percentage calculation: 0/1 subtasks = 0% (100% per subtask)
+Updated task 156 progress to 0% and status to 'Not Started' (0/1 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":19,"is_completed":0,"new_progress":0}
+[2025-11-21 10:53:54] {"subtask_id":"19","is_completed":"0"}
+Updating subtask 19 to status: 0
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":19,"is_completed":0}
+[2025-11-21 10:54:01] {"subtask_id":"19","is_completed":"1"}
+Updating subtask 19 to status: 1
+Update successful. Rows affected: 1
+Fixed percentage calculation: 1/1 subtasks = 100% (100% per subtask)
+Updated task 156 progress to 100% and status to 'Completed' (1/1 subtasks completed)
+Sending response: {"success":true,"rows_affected":1,"subtask_id":19,"is_completed":1,"new_progress":100}
+[2025-11-21 10:54:01] {"subtask_id":"19","is_completed":"1"}
+Updating subtask 19 to status: 1
+Update successful. Rows affected: 0
+No rows updated. Value might be the same.
+Sending response: {"success":true,"rows_affected":0,"subtask_id":19,"is_completed":1}
