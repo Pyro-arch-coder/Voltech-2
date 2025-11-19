@@ -64,10 +64,17 @@ if (!file_exists($requestedFile)) {
 $fileSize = filesize($requestedFile);
 $fileType = mime_content_type($requestedFile);
 
-// Set headers for file viewing
+// Check if download is requested
+$isDownload = isset($_GET['download']) && $_GET['download'] == '1';
+
+// Set headers for file viewing or downloading
 header('Content-Type: ' . $fileType);
 header('Content-Length: ' . $fileSize);
-header('Content-Disposition: inline; filename="' . $file_name . '"');
+if ($isDownload) {
+    header('Content-Disposition: attachment; filename="' . $file_name . '"');
+} else {
+    header('Content-Disposition: inline; filename="' . $file_name . '"');
+}
 header('Cache-Control: private, max-age=0, must-revalidate');
 header('Pragma: public');
 

@@ -1,23 +1,31 @@
 <?php
+session_start();
 require_once('../fpdf.php');
 
 // Database connection
 include_once "../config.php";
+
+// Check if user is logged in
+if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in']) {
+    die('Unauthorized access.');
+}
 
 $project_id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_GET['project_id']) ? intval($_GET['project_id']) : 0);
 if (!$project_id) {
     die('Invalid project ID.');
 }
 
+$user_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
+if (!$user_id) {
+    die('User ID not found in session.');
+}
+
 // Fetch project details
 $project = $con->query("SELECT * FROM projects WHERE project_id='$project_id'")->fetch_assoc();
 if (!$project) die('Project not found.');
 
-// Calculate project days
-$start = new DateTime($project['start_date']);
-$end = new DateTime($project['deadline']);
-$interval = $start->diff($end);
-$project_days = $interval->days + 1;
+// Get project_days from database (manual entry, no auto-calculation)
+$project_days = isset($project['project_days']) && is_numeric($project['project_days']) ? (int)$project['project_days'] : 0;
 
 // Start transaction
 $con->begin_transaction();
@@ -30,15 +38,14 @@ try {
         throw new Exception("Failed to clear existing project_add_materials: " . $con->error);
     }
 
-    // Insert fresh rows from current estimation (map labor_other -> additional_cost)
-    $ins_sql = "INSERT INTO project_add_materials (project_id, material_id, material_name, unit, material_price, quantity, additional_cost, added_at)
+    // Insert fresh rows from current estimation
+    $ins_sql = "INSERT INTO project_add_materials (project_id, material_id, material_name, unit, material_price, quantity, added_at)
                 SELECT pem.project_id,
                        pem.material_id,
                        COALESCE(m.material_name, pem.material_name),
                        COALESCE(m.unit, pem.unit),
                        COALESCE(m.material_price, 0),
                        COALESCE(pem.quantity, 1),
-                       COALESCE(m.labor_other, 0),
                        NOW()
                 FROM project_estimating_materials pem
                 LEFT JOIN materials m ON pem.material_id = m.id
@@ -129,9 +136,12 @@ try {
     }
     
     // Move employees from project_estimation_employee to project_add_employee
+    // Include project_days and total from database (manual values, not calculated)
     $move_employees = $con->prepare("INSERT INTO project_add_employee 
-                                    (project_id, employee_id, position, daily_rate, total, status, added_at)
-                                    SELECT project_id, employee_id, position, daily_rate, total, 'Working', NOW()
+                                    (project_id, employee_id, position, daily_rate, project_days, total, status, added_at)
+                                    SELECT project_id, employee_id, position, daily_rate, 
+                                           COALESCE(project_days, 0) as project_days, 
+                                           total, 'Working', NOW()
                                     FROM project_estimation_employee
                                     WHERE project_id = ?");
     if (!$move_employees) {
@@ -264,7 +274,8 @@ if (!empty($employees)) {
         $type = $emp['company_type'] ?? '';
         $daily_rate = isset($emp['daily_rate']) && is_numeric($emp['daily_rate']) ? (float)$emp['daily_rate'] : 0;
         $days = isset($emp['project_days']) && is_numeric($emp['project_days']) ? (float)$emp['project_days'] : 0;
-        $row_total = isset($emp['total']) && is_numeric($emp['total']) ? (float)$emp['total'] : ($daily_rate * $days);
+        // Use total from database (manual value, not calculated)
+        $row_total = isset($emp['total']) && is_numeric($emp['total']) ? (float)$emp['total'] : 0;
 
         $pdf->Cell($emp_col_widths[0],7,$idx++,1);
         $pdf->Cell($emp_col_widths[1],7,$name,1);
@@ -337,4 +348,56 @@ $pdf->Cell(0,6,'ENGR. ROMEO MATIAS',0,1,'L');
 $pdf->SetFont('Arial','',9);
 $pdf->Cell(0,6,'General Manager',0,1,'L');
 
-$pdf->Output('D', 'project_materials_estimation'.$project_id.'.pdf'); 
+// Calculate total estimated cost (grand total with labor)
+$total_estimated_cost = $mat_total + $labor_total + $overhead_total_display + ($vat_amount_pdf ?: $vat_amount);
+
+// Create uploads/cost_estimates directory if it doesn't exist
+$upload_dir = __DIR__ . '/uploads/cost_estimates/';
+if (!is_dir($upload_dir)) {
+    mkdir($upload_dir, 0777, true);
+}
+
+// Generate unique filename
+$file_name = 'project_materials_estimation_' . $project_id . '_' . time() . '.pdf';
+$file_path = $upload_dir . $file_name;
+
+// Prepare relative path for database
+$relative_file_path = 'uploads/cost_estimates/' . $file_name;
+
+// Save PDF to file first
+$pdf->Output('F', $file_path);
+
+// Insert record into cost_estimate_files table
+try {
+    $insert_stmt = $con->prepare("
+        INSERT INTO cost_estimate_files 
+        (project_id, user_id, file_name, file_path, upload_date, status, cost_type, estimated_cost) 
+        VALUES (?, ?, ?, ?, NOW(), 'pending', 'Materials Estimation', ?)
+    ");
+    
+    if (!$insert_stmt) {
+        throw new Exception('Failed to prepare insert statement: ' . $con->error);
+    }
+    
+    $insert_stmt->bind_param('iissd', $project_id, $user_id, $file_name, $relative_file_path, $total_estimated_cost);
+    
+    if (!$insert_stmt->execute()) {
+        throw new Exception('Failed to insert cost estimate file record: ' . $insert_stmt->error);
+    }
+    
+    $insert_stmt->close();
+} catch (Exception $e) {
+    // Log error but don't stop PDF output
+    error_log('Error saving cost estimate file record: ' . $e->getMessage());
+}
+
+// Read the saved file and output to browser for download
+if (file_exists($file_path)) {
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: attachment; filename="project_materials_estimation'.$project_id.'.pdf"');
+    header('Content-Length: ' . filesize($file_path));
+    readfile($file_path);
+    exit;
+} else {
+    die('Error: PDF file could not be saved.');
+} 

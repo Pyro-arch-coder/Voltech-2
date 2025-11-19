@@ -10,7 +10,7 @@ if (!isset($_POST['payment_id']) || !isset($_POST['action'])) {
 }
 
 $paymentId = intval($_POST['payment_id']);
-$action = $_POST['action'] === 'approve' ? 'approved' : 'rejected';
+$action = $_POST['action'] === 'approve' ? 'completed' : 'rejected';
 $currentUserId = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 $currentTime = date('Y-m-d H:i:s');
 
@@ -126,41 +126,27 @@ try {
     $adminName = $currentUser['firstname'] . ' ' . $currentUser['lastname'];
     $clientName = $data['client_firstname'] . ' ' . $data['client_lastname'];
 
-    if ($action === 'approved') {
+    if ($action === 'completed') {
         // If approving, update the status in all related tables
         
-        // 3. Update billing_requests table for the same project
-        $stmt = $con->prepare("
-            UPDATE billing_requests 
-            SET payment_status = ?
-            WHERE project_id = ? 
-            AND payment_status = 'processing'
-        ");
-        $stmt->bind_param('si', $action, $projectId);
-        $stmt->execute();
+        // Note: billing_requests table uses 'status' column, not 'payment_status'
+        // The payment tracking is handled by approved_payments table
+        // No need to update billing_requests here
 
         // 4. Update proof_of_payments table
         $stmt = $con->prepare("
             UPDATE proof_of_payments 
-            SET status = ?,
-                updated_at = ?
+            SET status = ?
             WHERE project_id = ?
         ");
-        $stmt->bind_param('ssi', $action, $currentTime, $projectId);
+        $stmt->bind_param('si', $action, $projectId);
         $stmt->execute();
     } else {
-        // If rejecting, remove the payment records and reset billing requests
+        // If rejecting, remove the payment records
         
-        // 3. Set billing_requests back to 'pending' and clear approval data
-        $pendingStatus = 'pending';
-        $stmt = $con->prepare("
-            UPDATE billing_requests 
-            SET payment_status = ?,
-            WHERE project_id = ? 
-            AND payment_status = 'processing'
-        ");
-        $stmt->bind_param('si', $pendingStatus, $projectId);
-        $stmt->execute();
+        // Note: billing_requests table uses 'status' column, not 'payment_status'
+        // The payment tracking is handled by approved_payments table
+        // No need to update billing_requests here
 
         // 4. Delete from approved_payments
         $stmt = $con->prepare("DELETE FROM approved_payments WHERE project_id = ?");
@@ -175,7 +161,7 @@ try {
 
     // Prepare notification message
     $message = "Your payment for project \"{$projectTitle}\" has been {$action} by {$adminName}.";
-    $notifType = ($action === 'approved') ? 'payment_approved' : 'payment_rejected';
+    $notifType = ($action === 'completed') ? 'payment_approved' : 'payment_rejected';
     
     // Insert notification
     $notifStmt = $con->prepare("

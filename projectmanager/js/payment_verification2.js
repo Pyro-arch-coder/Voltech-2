@@ -11,7 +11,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
-                updatePaymentVerificationUI(data);
+                if (data.success && Array.isArray(data.data)) {
+                    updatePaymentVerificationUI(data.data);
+                } else if (Array.isArray(data)) {
+                    // Handle legacy format (direct array)
+                    updatePaymentVerificationUI(data);
+                } else {
+                    updatePaymentVerificationUI([]);
+                }
             })
             .catch(error => {
                 console.error('Error fetching payment verification:', error);
@@ -31,6 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const paymentAmount = document.querySelector('.payment-amount2');
         const verifyBtn = document.getElementById('verifyPaymentBtn2');
         const rejectBtn = document.getElementById('rejectPaymentBtn2');
+        const actionButtons2 = document.getElementById('actionButtons2');
         
         if (!paymentData || !paymentData.length) {
             paymentViewer.innerHTML = `
@@ -128,28 +136,57 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Update image viewer
-        if (latestPayment.file_path) {
+        if (latestPayment.file_path && latestPayment.file_name) {
             const fileExt = latestPayment.file_path.split('.').pop().toLowerCase();
             const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExt);
+            
+            // Use view_proof_file.php endpoint for secure file access
+            const viewUrl = `view_proof_file.php?file_path=${encodeURIComponent(latestPayment.file_path)}&file_name=${encodeURIComponent(latestPayment.file_name)}`;
+            const downloadUrl = viewUrl + '&download=1';
+            
+            // Format upload date for display
+            let uploadDateDisplay = 'N/A';
+            if (latestPayment.upload_date) {
+                const uploadDate = new Date(latestPayment.upload_date);
+                uploadDateDisplay = uploadDate.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
             
             if (isImage) {
                 paymentViewer.innerHTML = `
                     <div class="text-center">
-                        <img src="${latestPayment.file_path}" class="img-fluid" alt="Payment Proof" style="max-height: 300px;">
-                        <p class="mt-2 text-muted">${latestPayment.file_name || 'Payment Proof'} (Uploaded on ${latestPayment.upload_date})</p>
-                        <a href="${latestPayment.file_path}" class="btn btn-sm btn-outline-primary mt-2" target="_blank" download>
-                            <i class="fas fa-download me-1"></i> Download
-                        </a>
+                        <img src="${viewUrl}" class="img-fluid" alt="Payment Proof" style="max-height: 300px; cursor: pointer;" onclick="window.open('${viewUrl}', '_blank')">
+                        <p class="mt-2 text-muted small">${latestPayment.file_name || 'Payment Proof'}</p>
+                        <p class="text-muted small mb-2">Uploaded: ${uploadDateDisplay}</p>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <a href="${viewUrl}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                <i class="fas fa-eye me-1"></i> View
+                            </a>
+                            <a href="${downloadUrl}" class="btn btn-sm btn-outline-success" download="${latestPayment.file_name}">
+                                <i class="fas fa-download me-1"></i> Download
+                            </a>
+                        </div>
                     </div>
                 `;
             } else {
                 paymentViewer.innerHTML = `
                     <div class="d-flex flex-column align-items-center justify-content-center h-100">
                         <i class="fas fa-file-pdf fa-3x text-danger mb-3"></i>
-                        <p class="mb-2">${latestPayment.file_name || 'Payment Proof'} (Uploaded on ${latestPayment.upload_date})</p>
-                        <a href="${latestPayment.file_path}" class="btn btn-sm btn-outline-primary" target="_blank" download>
-                            <i class="fas fa-download me-1"></i> Download File
-                        </a>
+                        <p class="mb-1 fw-bold">${latestPayment.file_name || 'Payment Proof'}</p>
+                        <p class="text-muted small mb-3">Uploaded: ${uploadDateDisplay}</p>
+                        <div class="d-flex gap-2">
+                            <a href="${viewUrl}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                <i class="fas fa-eye me-1"></i> View
+                            </a>
+                            <a href="${downloadUrl}" class="btn btn-sm btn-outline-success" download="${latestPayment.file_name}">
+                                <i class="fas fa-download me-1"></i> Download
+                            </a>
+                        </div>
                     </div>
                 `;
             }

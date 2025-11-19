@@ -121,16 +121,28 @@ try {
     $amount = floatval($_POST['amount']);
     $user_id = $_SESSION['user_id'];
     
-    // Check if there are any processing payments for this project
+    // Check if there are any pending/processing payments for this project in approved_payments table
     $check_processing = $con->prepare("
-        SELECT 1 FROM billing_requests 
+        SELECT 1 FROM approved_payments 
         WHERE project_id = ? 
-        AND (is_paid = 1 OR payment_status = 'processing')
+        AND status IN ('pending', 'processing')
         LIMIT 1
     ");
+    if (!$check_processing) {
+        throw new Exception('Failed to prepare check_processing statement: ' . $con->error);
+    }
+    
     $check_processing->bind_param('i', $project_id);
-    $check_processing->execute();
-    $has_processing = $check_processing->get_result()->num_rows > 0;
+    if (!$check_processing->execute()) {
+        throw new Exception('Failed to execute check_processing query: ' . $check_processing->error);
+    }
+    
+    $result = $check_processing->get_result();
+    if (!$result) {
+        throw new Exception('Failed to get check_processing result: ' . $check_processing->error);
+    }
+    
+    $has_processing = $result->num_rows > 0;
     $check_processing->close();
     
     if ($has_processing) {
@@ -247,6 +259,10 @@ try {
             ) VALUES (?, ?, ?, ?, 'pending', NOW())
         ");
         
+        if (!$stmt) {
+            throw new Exception('Failed to prepare proof_of_payment INSERT statement: ' . $con->error);
+        }
+        
         $stmt->bind_param(
             'iiss',
             $project_id,
@@ -260,13 +276,9 @@ try {
         }
         $stmt->close();
 
-        // Update all billing_requests for this project to mark them as paid and set status to processing
-        $updateStmt = $con->prepare("UPDATE billing_requests SET is_paid = 1, payment_status = 'processing' WHERE project_id = ? AND is_paid = 0");
-        $updateStmt->bind_param('i', $project_id);
-        if (!$updateStmt->execute()) {
-            throw new Exception('Failed to update billing requests: ' . $updateStmt->error);
-        }
-        $updateStmt->close();
+        // Note: billing_requests table uses 'status' column, not 'is_paid' or 'payment_status'
+        // The payment tracking is handled by the approved_payments table
+        // No need to update billing_requests here
 
         // Get project manager's user_id from projects table
         $pmStmt = $con->prepare("
@@ -316,7 +328,12 @@ try {
     // Send JSON error response
     if (!headers_sent()) {
         header('HTTP/1.1 500 Internal Server Error');
-        sendJsonResponse(false, 'An error occurred while processing your request. Please try again.');
+        // Enable debug mode to see actual errors
+        $debug_mode = true;
+        $responseMessage = $debug_mode 
+            ? 'Error: ' . $e->getMessage() . ' (File: ' . basename($e->getFile()) . ', Line: ' . $e->getLine() . ')'
+            : 'An error occurred while processing your request. Please try again.';
+        sendJsonResponse(false, $responseMessage);
     } else {
         // If headers were already sent, output a simple JSON string
         die(json_encode([

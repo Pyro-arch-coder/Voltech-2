@@ -172,6 +172,43 @@ $stmt->bind_result($total_paid, $total_unpaid);
 $stmt->fetch();
 $stmt->close();
 
+// 2a. Get pending payments from approved_payments table
+$pending_payments = 0;
+$stmt = $con->prepare("
+    SELECT COALESCE(SUM(amount), 0) as pending_amount
+    FROM approved_payments 
+    WHERE project_id = ? AND status = 'pending'
+");
+$stmt->bind_param('i', $project_id);
+$stmt->execute();
+$stmt->bind_result($pending_payments);
+$stmt->fetch();
+$stmt->close();
+
+// 2b. Get completed payments from approved_payments table
+$completed_payments = 0;
+$stmt = $con->prepare("
+    SELECT COALESCE(SUM(amount), 0) as completed_amount
+    FROM approved_payments 
+    WHERE project_id = ? AND status = 'completed'
+");
+$stmt->bind_param('i', $project_id);
+$stmt->execute();
+$stmt->bind_result($completed_payments);
+$stmt->fetch();
+$stmt->close();
+
+// Add pending payments to total_paid (these are "Paid but Pending")
+$total_paid = $total_paid + $pending_payments;
+
+// Subtract pending payments from total_unpaid (so they don't show in "Need to Pay")
+$total_unpaid = max(0, $total_unpaid - $pending_payments);
+
+// If all payments are completed (no pending and total_unpaid is covered by completed payments), set total_unpaid to 0
+if ($total_unpaid > 0 && $completed_payments >= $total_unpaid) {
+    $total_unpaid = 0;
+}
+
 // For backward compatibility, set latest_request_amount to total_unpaid
 $latest_request_amount = $total_unpaid;
 
@@ -1315,8 +1352,31 @@ function peso($amount) {
                                               </div>
                                     
 
-                                            <!-- Simple Payment Details Display -->
+                                            <!-- Dynamic Payment Details Display (for GCash and Bank Transfer) -->
                                             <div class="mt-3">
+                                                <!-- GCash Details Container -->
+                                                <div id="gcashDetails2" class="d-none">
+                                                    <div id="gcashInfo2">
+                                                        <div class="text-center py-3">
+                                                            <div class="spinner-border text-primary" role="status">
+                                                                <span class="visually-hidden">Loading...</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Bank Transfer Details Container -->
+                                                <div id="bankTransferDetails2" class="d-none">
+                                                    <div id="bankTransferInfo2">
+                                                        <div class="text-center py-3">
+                                                            <div class="spinner-border text-primary" role="status">
+                                                                <span class="visually-hidden">Loading...</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Static Payment Details Display (for Cash and Cheque) -->
                                                 <?php if ($gcash_details): ?>
                                                     <div class="p-3 border rounded mb-2">
                                                         <h6 class="mb-3"><i class="fas fa-mobile-alt me-2"></i>GCash Payment Details</h6>
@@ -1372,11 +1432,17 @@ function peso($amount) {
                                                     <div class="form-text">Accepted formats: PDF, JPG, PNG (Max 5MB)</div>
                                                 </div>
                                                 <?php
-                                                // Check if there are any pending payments
+                                                // Check if there are any pending payments and if all are not completed
+                                                // Disable payment if:
+                                                // 1. No unpaid amount (total_unpaid = 0)
+                                                // 2. OR all payments are completed (no pending payments and completed payments cover the unpaid amount)
                                                 $has_pending_payments = ($total_unpaid > 0);
-                                                $button_class = $has_pending_payments ? 'btn-primary' : 'btn-secondary';
-                                                $disabled_attr = $has_pending_payments ? '' : 'disabled';
-                                                $tooltip = $has_pending_payments ? '' : 'data-bs-toggle="tooltip" data-bs-placement="top" title="No pending payments to process"';
+                                                $all_payments_completed = ($total_unpaid == 0 && $completed_payments > 0);
+                                                $can_pay = $has_pending_payments && !$all_payments_completed;
+                                                
+                                                $button_class = $can_pay ? 'btn-primary' : 'btn-secondary';
+                                                $disabled_attr = $can_pay ? '' : 'disabled';
+                                                $tooltip = $can_pay ? '' : ($all_payments_completed ? 'data-bs-toggle="tooltip" data-bs-placement="top" title="All payments have been completed"' : 'data-bs-toggle="tooltip" data-bs-placement="top" title="No pending payments to process"');
                                                 ?>
                                                 <button type="button" class="btn <?php echo $button_class; ?> w-100" id="savePaymentMethodBtn" <?php echo $disabled_attr; ?> <?php echo $tooltip; ?>>
                                                     <i class="fas fa-save me-1"></i> Save Payment Method & Upload Proof
@@ -1557,6 +1623,8 @@ function peso($amount) {
       <script src="js/client_viewpermits.js"></script>
       <script src="js/billing_handler.js"></script>
       <script src="js/initial_budget_handler.js"></script>
+      <script src="js/cost_estimate_viewer.js"></script>
+      <script src="js/payment_method_handler.js"></script>
        
 
             <script>
@@ -2147,39 +2215,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // View Cost Estimate functionality
-document.addEventListener('DOMContentLoaded', function() {
-    // Get project_id from URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const projectId = urlParams.get('project_id');
-    
-    // Handle View Cost Estimate button (next to Approve Budget)
-    const viewCostEstimateBtn = document.getElementById('viewCostEstimateBtn');
-    if (viewCostEstimateBtn) {
-        viewCostEstimateBtn.addEventListener('click', function() {
-            if (projectId) {
-                // Open the cost estimation PDF in a new tab
-                const exportUrl = `client_export_estimation_materials.php?project_id=${encodeURIComponent(projectId)}`;
-                window.open(exportUrl, '_blank');
-            } else {
-                alert('Project ID not found. Please refresh the page and try again.');
-            }
-        });
-    }
-    
-    // Handle View Cost Estimate button (next to Approve Billing)
-    const viewCostEstimateBillingBtn = document.getElementById('viewCostEstimateBillingBtn');
-    if (viewCostEstimateBillingBtn) {
-        viewCostEstimateBillingBtn.addEventListener('click', function() {
-            if (projectId) {
-                // Open the cost estimation PDF in a new tab
-                const exportUrl = `client_export_estimation_materials.php?project_id=${encodeURIComponent(projectId)}`;
-                window.open(exportUrl, '_blank');
-            } else {
-                alert('Project ID not found. Please refresh the page and try again.');
-            }
-        });
-    }
-});
+
 </body>
 
 </html>

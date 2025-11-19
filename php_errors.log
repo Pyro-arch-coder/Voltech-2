@@ -18,3 +18,49 @@ Stack trace:
 [09-Sep-2025 04:17:04 Europe/Berlin] Error in save_payment_method.php: Unknown column 'billing_request_id' in 'field list'
 [09-Sep-2025 04:17:04 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(183): mysqli->prepare('\n            IN...')
 #1 {main}
+[19-Nov-2025 21:27:04 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:27:04 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(125): mysqli->prepare('\r\n        SELEC...')
+#1 {main}
+[19-Nov-2025 21:27:49 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:27:49 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(125): mysqli->prepare('\r\n        SELEC...')
+#1 {main}
+[19-Nov-2025 21:29:02 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:29:02 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(125): mysqli->prepare('\r\n        SELEC...')
+#1 {main}
+[19-Nov-2025 21:29:37 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:29:37 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(125): mysqli->prepare('\r\n        SELEC...')
+#1 {main}
+[19-Nov-2025 21:30:04 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:30:04 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(154): mysqli->prepare('\r\n        SELEC...')
+#1 {main}
+[19-Nov-2025 21:30:04 Europe/Berlin] File: C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php Line: 154
+[19-Nov-2025 21:30:38 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:30:38 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(157): mysqli->prepare('\r\n        SELEC...')
+#1 {main}
+[19-Nov-2025 21:30:38 Europe/Berlin] File: C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php Line: 157
+[19-Nov-2025 21:33:07 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:33:07 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(168): mysqli->prepare('\r\n        SELEC...')
+#1 {main}
+[19-Nov-2025 21:33:07 Europe/Berlin] File: C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php Line: 168
+[19-Nov-2025 21:33:07 Europe/Berlin] Detailed Error: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:33:07 Europe/Berlin] File: C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php
+[19-Nov-2025 21:33:07 Europe/Berlin] Line: 168
+[19-Nov-2025 21:33:49 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:33:49 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(168): mysqli->prepare('\r\n        SELEC...')
+#1 {main}
+[19-Nov-2025 21:33:49 Europe/Berlin] File: C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php Line: 168
+[19-Nov-2025 21:33:49 Europe/Berlin] Detailed Error: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:33:49 Europe/Berlin] File: C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php
+[19-Nov-2025 21:33:49 Europe/Berlin] Line: 168
+[19-Nov-2025 21:42:08 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:42:08 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(125): mysqli->prepare('\r\n        SELEC...')
+#1 {main}
+[19-Nov-2025 21:42:36 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:42:36 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(125): mysqli->prepare('\r\n        SELEC...')
+#1 {main}
+[19-Nov-2025 21:42:56 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:42:56 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(125): mysqli->prepare('\r\n        SELEC...')
+#1 {main}
+[19-Nov-2025 21:44:43 Europe/Berlin] Error in save_payment_method.php: Unknown column 'is_paid' in 'where clause'
+[19-Nov-2025 21:44:43 Europe/Berlin] Stack trace: #0 C:\xampp\htdocs\Voltech-2\p_client\save_payment_method.php(125): mysqli->prepare('\r\n        SELEC...')
+#1 {main}

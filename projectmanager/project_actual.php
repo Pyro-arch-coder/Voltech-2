@@ -90,30 +90,9 @@ if (mysqli_num_rows($project_query) == 0) {
 // Fetch project data
 $project = mysqli_fetch_assoc($project_query);
 
-// Calculate project working days (excluding Sundays) - Global calculation for use in tables
-$start_date = $project['start_date'];
-$end_date = $project['deadline'];
-$start = new DateTime($start_date);
-$end = new DateTime($end_date);
-$interval = $start->diff($end);
-$days = $interval->days + 1; // Total days including start and end
-
-// Calculate number of Sundays in the date range
-$sundays = 0;
-$period = new DatePeriod(
-    $start,
-    new DateInterval('P1D'),
-    $end->modify('+1 day') // Include end date in calculation
-);
-
-foreach ($period as $date) {
-    if ($date->format('N') == 7) { // 7 = Sunday
-        $sundays++;
-    }
-}
-
-// Calculate working days (excluding Sundays)
-$project_days = $days - $sundays;
+// Get project_days from database (manual entry, no auto-calculation)
+// If project_days field exists in projects table, use it; otherwise default to 0
+$project_days = isset($project['project_days']) && is_numeric($project['project_days']) ? (int)$project['project_days'] : 0;
 
 // Handle project status update (Finish/Cancel)
 if (isset($_POST['update_project_status'])) {
@@ -317,7 +296,7 @@ if (isset($_POST['update_project_status'])) {
                 // Get materials total (joining project_add_materials with materials table to get labor_other)
                 $mat_query = "
                    SELECT SUM(
-                    (pam.material_price * pam.quantity) + pam.additional_cost + (COALESCE(m.labor_other, 0) * pam.quantity)
+                    (pam.material_price * pam.quantity) + (COALESCE(m.labor_other, 0) * pam.quantity)
                     ) as total 
                     FROM project_add_materials pam
                     JOIN materials m ON pam.material_id = m.id 
@@ -359,38 +338,12 @@ if (isset($_POST['update_project_status'])) {
                 error_log("Equipment Total: " . $equip_total);
                 error_log("Equipment Query: " . $equip_query);
                 
-                // Calculate project days for expense calculation
-                $project_query_for_days = mysqli_query($con, "SELECT start_date, deadline FROM projects WHERE project_id='$project_id'");
+                // Get project_days from database (manual entry, no auto-calculation)
+                $project_query_for_days = mysqli_query($con, "SELECT COALESCE(project_days, 0) as project_days FROM projects WHERE project_id='$project_id'");
                 $project_days_data = mysqli_fetch_assoc($project_query_for_days);
+                $project_days_for_expense = isset($project_days_data['project_days']) && is_numeric($project_days_data['project_days']) ? (int)$project_days_data['project_days'] : 0;
                 
-                if ($project_days_data) {
-                    $start_date = $project_days_data['start_date'];
-                    $end_date = $project_days_data['deadline'];
-                    $start = new DateTime($start_date);
-                    $end = new DateTime($end_date);
-                    $interval = $start->diff($end);
-                    $days = $interval->days + 1; // Total days including start and end
-                    
-                    // Calculate number of Sundays in the date range
-                    $sundays = 0;
-                    $period = new DatePeriod(
-                        $start,
-                        new DateInterval('P1D'),
-                        $end->modify('+1 day') // Include end date in calculation
-                    );
-                    
-                    foreach ($period as $date) {
-                        if ($date->format('N') == 7) { // 7 = Sunday
-                            $sundays++;
-                        }
-                    }
-                    // Calculate working days (excluding Sundays)
-                    $project_days_for_expense = $days - $sundays;
-                } else {
-                    $project_days_for_expense = 0;
-                }
-                
-                error_log("Project Days Calculated for Expense: " . $project_days_for_expense);
+                error_log("Project Days from Database: " . $project_days_for_expense);
                 
                 // Calculate employee costs for expense
                 $emp_total_for_expense = 0;
@@ -627,33 +580,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['return_project_materi
 }
 
 // Handle additional cost saving
-if (isset($_POST['save_additional_cost']) && isset($_POST['add_cost_row_id'])) {
-  $row_id = intval($_POST['add_cost_row_id']);
-  $additional_cost = floatval($_POST['additional_cost']);
-  $project_id = intval($_GET['id']);
-  
-  try {
-      // Get material name for success message
-      $mat_query = mysqli_query($con, "SELECT material_name FROM project_add_materials WHERE id='$row_id'");
-      $mat_row = mysqli_fetch_assoc($mat_query);
-      $material_name = mysqli_real_escape_string($con, $mat_row['material_name']);
-      
-      // Update only the additional_cost column
-      $result = mysqli_query($con, "UPDATE project_add_materials SET 
-        additional_cost = '$additional_cost'
-        WHERE id='$row_id'");
-        
-      if ($result) {
-          // Redirect with success message
-          header("Location: project_actual.php?id=$project_id&cost_success=1&material_name=" . urlencode($material_name) . "#materials");
-      } else {
-          throw new Exception("Failed to update additional cost: " . mysqli_error($con));
-      }
-  } catch (Exception $e) {
-      header("Location: project_actual.php?id=$project_id&cost_error=" . urlencode($e->getMessage()) . "#materials");
-  }
-  exit();
-}
 
 // Fetch unique units for dropdown
 $units_result = mysqli_query($con, "SELECT DISTINCT unit FROM materials WHERE unit IS NOT NULL AND unit != '' ORDER BY unit ASC");
@@ -679,7 +605,8 @@ while ($row = mysqli_fetch_assoc($employees_result)) {
 // Fetch project employees and calculate total
 $proj_emps = [];
 $emp_total = 0;
-$emp_query = mysqli_query($con, "SELECT pae.*, e.first_name, e.last_name, p.title, p.daily_rate 
+$emp_query = mysqli_query($con, "SELECT pae.*, e.first_name, e.last_name, p.title, p.daily_rate, 
+    COALESCE(pae.project_days, 0) as project_days
     FROM project_add_employee pae 
     LEFT JOIN employees e ON pae.employee_id = e.employee_id 
     LEFT JOIN positions p ON e.position_id = p.position_id 
@@ -716,7 +643,7 @@ $mat_query = mysqli_query($con, "
 
 // Calculate totals from all materials (not just current page)
 $all_mats_query = mysqli_query($con, "
-    SELECT (m.labor_other + m.material_price) * pam.quantity + pam.additional_cost as row_total,
+    SELECT (m.labor_other + m.material_price) * pam.quantity  as row_total,
            m.labor_other * pam.quantity as labor_cost
     FROM project_add_materials pam
     LEFT JOIN materials m ON pam.material_id = m.id 
@@ -731,7 +658,7 @@ while ($row = mysqli_fetch_assoc($mat_query)) {
 $mat_total = 0;
 $material_labor_total = 0;
 $all_mats_result = mysqli_query($con, "
-    SELECT (m.labor_other + m.material_price) * pam.quantity + pam.additional_cost as row_total,
+    SELECT (m.labor_other + m.material_price) * pam.quantity as row_total,
            m.labor_other * pam.quantity as labor_cost
     FROM project_add_materials pam
     LEFT JOIN materials m ON pam.material_id = m.id 
@@ -1199,7 +1126,8 @@ if ($userid) {
                                     $proj_emps = [];
                                     $emp_query = mysqli_query($con, "
                                         SELECT pae.*, e.first_name, e.last_name, e.contact_number, e.company_type, e.position_id, 
-                                              p.title as position_title, p.daily_rate 
+                                              p.title as position_title, p.daily_rate,
+                                              COALESCE(pae.project_days, 0) as project_days
                                         FROM project_add_employee pae 
                                         JOIN employees e ON pae.employee_id = e.employee_id 
                                         LEFT JOIN positions p ON e.position_id = p.position_id 
@@ -1216,11 +1144,12 @@ if ($userid) {
                                     if (count($proj_emps) > 0): 
                                         $i = 1; 
                                         foreach ($proj_emps as $emp): 
-                                            $emp_totals += $emp['daily_rate'] * $project_days;
+                                            // Use total from database (already calculated and stored)
+                                            $emp_totals += floatval($emp['total'] ?? 0);
                                         endforeach; 
                                 ?>
                                     <div class="d-flex justify-content-between mb-2">
-                                        <span class="text-dark">Employee Cost (<?php echo $project_days; ?> days):</span>
+                                        <span class="text-dark">Employee Cost:</span>
                                         <span class="fw-bold text-primary">₱<?php echo number_format($emp_totals, 2); ?></span>
                                     </div>
                                 <?php endif; ?>
@@ -1685,7 +1614,8 @@ if ($userid) {
                                             
                                             // Fetch project employees with pagination
                                             $proj_emps = [];
-                                            $emp_query = mysqli_query($con, "SELECT pae.*, e.first_name, e.last_name, e.contact_number, e.company_type, e.position_id, p.title as position_title, p.daily_rate 
+                                            $emp_query = mysqli_query($con, "SELECT pae.*, e.first_name, e.last_name, e.contact_number, e.company_type, e.position_id, p.title as position_title, p.daily_rate,
+                                                                        COALESCE(pae.project_days, 0) as project_days
                                                                         FROM project_add_employee pae 
                                                                         JOIN employees e ON pae.employee_id = e.employee_id 
                                                                         LEFT JOIN positions p ON e.position_id = p.position_id 
@@ -1700,7 +1630,10 @@ if ($userid) {
                                                 $i = 1; 
                                                 $emp_total = 0;
                                                 foreach ($proj_emps as $emp): 
-                                                    $emp_total += $emp['daily_rate'] * $project_days;
+                                                    // Use total from database (already calculated and stored)
+                                                    $emp_total += floatval($emp['total'] ?? 0);
+                                                    // Get project_days for display
+                                                    $emp_project_days = isset($emp['project_days']) && is_numeric($emp['project_days']) ? (int)$emp['project_days'] : $project_days;
                                             ?>
                                             <tr>
                                                 <td><?php echo $i++; ?></td>
@@ -1708,8 +1641,8 @@ if ($userid) {
                                                 <td><?php echo htmlspecialchars($emp['position_title'] ?? $emp['position']); ?></td>
                                                 <td><?php echo htmlspecialchars($emp['company_type']); ?></td>
                                                 <td>₱<?php echo number_format($emp['daily_rate'], 2); ?></td>
-                                                <td><?php echo $project_days; ?></td>
-                                                <td style="font-weight:bold;color:#222;">₱<?php echo number_format($emp['daily_rate'] * $project_days, 2); ?></td>
+                                                <td><?php echo $emp_project_days; ?></td>
+                                                <td style="font-weight:bold;color:#222;">₱<?php echo number_format(floatval($emp['total'] ?? 0), 2); ?></td>
                                                <!-- <td>
                                                     <form method="post" style="display:inline;">
                                                         <input type="hidden" name="row_id" value="<?php echo $emp['id']; ?>">
@@ -1820,7 +1753,6 @@ if ($userid) {
                                                 <th>Labor/Other</th>
                                                 <th>Quantity</th>
                                                 <th>Supplier</th>
-                                                <th>Additional Cost</th>
                                                 <th>Total</th>
                                                 <!-- <th>Action</th> -->
                                             </tr>
@@ -1835,18 +1767,8 @@ if ($userid) {
                                                 <td><?php echo number_format($mat['labor_other'], 2); ?></td>
                                                 <td><?php echo $mat['quantity']; ?></td>
                                                 <td><?php echo isset($mat['supplier_name']) && $mat['supplier_name'] ? htmlspecialchars($mat['supplier_name']) : 'N/A'; ?></td>
-                                                <td>
-                                                    <?php $add_cost = isset($mat['additional_cost']) ? floatval($mat['additional_cost']) : 0; ?>
-                                                    <span class="text-primary">₱<?php echo number_format($add_cost, 2); ?></span>
-                                                    <button type="button" class="btn btn-link btn-sm p-0 ms-1 <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>" 
-                                                        data-bs-toggle="modal" data-bs-target="#addCostModal<?php echo $mat['id']; ?>" 
-                                                        title="Add/Edit Additional Cost"
-                                                        <?php echo ($project['status'] === 'Finished' || $project['status'] === 'Overdue Finished') ? 'disabled' : ''; ?>>
-                                                        <i class="fas fa-plus-circle"></i>
-                                                    </button>
-                                                </td>
                                                 <td style="font-weight:bold;color:#222;">₱<?php 
-                                                    $row_total = (($mat['labor_other'] + $mat['material_price']) * $mat['quantity']) + $mat['additional_cost'];
+                                                    $row_total = (($mat['labor_other'] + $mat['material_price']) * $mat['quantity']);
                                                     echo number_format($row_total, 2); 
                                                 ?></td>
                                                 <!-- <td>
@@ -1859,42 +1781,17 @@ if ($userid) {
                                                     </button>
                                                 </td> -->
                                             </tr>
-                                            <!-- Add/Edit Additional Cost Modal -->
-                                            <div class="modal fade" id="addCostModal<?php echo $mat['id']; ?>" tabindex="-1" aria-labelledby="addCostModalLabel<?php echo $mat['id']; ?>" aria-hidden="true">
-                                              <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content">
-                                                  <form method="post">
-                                                    <div class="modal-header">
-                                                      <h5 class="modal-title" id="addCostModalLabel<?php echo $mat['id']; ?>">Add/Edit Additional Cost</h5>
-                                                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                      <input type="hidden" name="add_cost_row_id" value="<?php echo $mat['id']; ?>">
-                                                      <div class="form-group mb-3">
-                                                        <label for="additionalCostInput<?php echo $mat['id']; ?>">Additional Cost (₱)</label>
-                                                        <input type="number" step="0.01" min="0" class="form-control" id="additionalCostInput<?php echo $mat['id']; ?>" name="additional_cost" value="<?php echo $add_cost; ?>" required>
-                                                        <div class="form-text">Enter any extra cost incurred for this material (e.g. rush fee, extra delivery, etc).</div>
-                                                      </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                      <button type="submit" name="save_additional_cost" class="btn btn-success">Save</button>
-                                                    </div>
-                                                  </form>
-                                                </div>
-                                              </div>
-                                            </div>
                                             <?php endforeach; else: ?>
                                             <tr><td colspan="10" class="text-center">No materials added</td></tr>
                                             <?php endif; ?>
                                         </tbody>
                                         <tfoot>
                                             <tr>
-                                                <th colspan="8" class="text-right">Total</th>
+                                                <th colspan="7" class="text-right">Total</th>
                                                 <th colspan="2" style="font-weight:bold;color:#222;">₱<?php
                                                     $total_cost = 0;
                                                     foreach ($proj_mats as $mat) {
-                                                       $row_total = (($mat['labor_other'] + $mat['material_price']) * $mat['quantity']) + $mat['additional_cost'];
+                                                       $row_total = (($mat['labor_other'] + $mat['material_price']) * $mat['quantity']);
                                                        $total_cost += $row_total;
                                                     }
                                                     echo number_format($total_cost, 2);
@@ -1974,13 +1871,8 @@ if ($userid) {
                                   </thead>
                                   <tbody>
                               <?php
-                                // Compute project days once (already computed above, reuse if possible)
-                                $start_date = $project['start_date'];
-                                $end_date = $project['deadline'];
-                                $start = new DateTime($start_date);
-                                $end = new DateTime($end_date);
-                                $interval = $start->diff($end);
-                                $project_days = $interval->days + 1;
+                                // Use project_days from database (manual entry, no auto-calculation)
+                                // Already set above, reuse the same variable
                                 
                                 // Initialize equipment total
                                 $eq_total = 0;
