@@ -419,16 +419,7 @@ function updateTableRowTotal(input) {
 
 
 // Export Cost Estimation PDF
-function setupExportCostEstimation() {
-    const exportBtn = document.getElementById('exportCostEstimationBtn');
-    if (exportBtn) {
-        exportBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            const projectId = new URLSearchParams(window.location.search).get('project_id');
-            window.open('export_estimation_materials.php?project_id=' + projectId, '_blank');
-        });
-    }
-}
+
 
 function showAlert(message, type) {
     const container = document.querySelector('.container-fluid');

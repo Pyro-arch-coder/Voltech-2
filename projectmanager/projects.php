@@ -825,14 +825,12 @@ addForecastStyles();
                         </div>
                         <div id="suggestedMaterialsContainer" class="d-none">
                             <div class="table-responsive">
-                                <table class="table table-sm table-hover">
+                                <table class="table table-sm table-hover" style="table-layout: fixed; width: 100%;">
                                     <thead class="table-light">
                                         <tr>
-                                            <th class="text-center">Material</th>
-                                            
-                                            <th class="text-center">Unit</th>
-                                            <th class="text-center">Unit Price</th>
-    
+                                            <th class="text-center" style="width: 50%;">Material</th>
+                                            <th class="text-center" style="width: 25%;">Unit</th>
+                                            <th class="text-center" style="width: 25%;">Unit Price</th>
                                         </tr>
                                     </thead>
                                     <tbody id="suggestedMaterialsList">
@@ -1354,8 +1352,8 @@ addForecastStyles();
                 // Add grand total row at the end
                 const totalRow = document.createElement('tr');
                 totalRow.innerHTML = `
-                    <td colspan="4" style="text-align:right;font-weight:bold;">Grand Total</td>
-                    <td style="font-weight:bold;">₱${grandTotal.toFixed(2)}</td>
+                    <td style="text-align:right;font-weight:bold;" colspan="2">Grand Total</td>
+                    <td style="font-weight:bold; text-align: right;">₱${grandTotal.toFixed(2)}</td>
                 `;
                 materialsListEl.appendChild(totalRow);
                 
@@ -1397,14 +1395,20 @@ addForecastStyles();
             // Get all materials from the table (from Add Now button)
             const materialRows = document.querySelectorAll('#suggestedMaterialsList tr');
             materialRows.forEach(row => {
+                // Skip rows without materialId (like grand total row)
+                if (!row.dataset.materialId) {
+                    return;
+                }
+                
                 const cells = row.cells;
-                if (cells.length >= 5) { // Updated to expect 5 columns (without ID)
+                // Table has 3 columns: material_name, unit, price
+                if (cells.length >= 3) {
                     materialsToSave.push({
                         material_id: parseInt(row.dataset.materialId) || 0, // Get material_id from data attribute (required for foreign key constraint)
-                        material_name: cells[0].textContent.trim(), // Material name is now in the first column
-                        quantity: parseFloat(cells[1].textContent) || 1,
-                        unit: cells[2].textContent.trim() || 'pcs',
-                        material_price: parseFloat(cells[3].textContent.replace('₱', '').replace(/,/g, '')) || 0
+                        material_name: cells[0].textContent.trim(), // Material name is in the first column
+                        quantity: 1, // Fixed quantity as per the table structure
+                        unit: cells[1].textContent.trim() || 'pcs', // Unit is in the second column
+                        material_price: parseFloat(cells[2].textContent.replace('₱', '').replace(/,/g, '')) || 0 // Price is in the third column
                     });
                 }
             });

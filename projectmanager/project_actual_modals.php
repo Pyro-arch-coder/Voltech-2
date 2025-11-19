@@ -367,6 +367,99 @@ if ($employees_result) {
   </div>
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const finishBtn = document.getElementById('finishProjectBtn');
+    const finishModal = document.getElementById('finishProjectModal');
+    
+    if (finishBtn && finishModal) {
+        // Check validation before opening modal
+        finishBtn.addEventListener('click', function(e) {
+            const profitLoss = this.getAttribute('data-profit-loss') === '1';
+            const allTasksCompleted = this.getAttribute('data-all-tasks-completed') === '1';
+            const canFinishDate = this.getAttribute('data-can-finish-date') === '1';
+            const finishReason = this.getAttribute('data-finish-reason') || '';
+            const durationMonths = parseInt(this.getAttribute('data-duration-months') || 0);
+            const durationDays = parseInt(this.getAttribute('data-duration-days') || 0);
+            const daysRemaining = parseInt(this.getAttribute('data-days-remaining') || 0);
+            
+            // Check profit/loss first
+            if (profitLoss) {
+                e.preventDefault();
+                e.stopPropagation();
+                alert('Cannot finish project: Project is at a loss');
+                return false;
+            }
+            
+            // Check task completion
+            if (!allTasksCompleted) {
+                e.preventDefault();
+                e.stopPropagation();
+                alert('Cannot finish project: Not all tasks are completed (100%). Please complete all tasks first.');
+                return false;
+            }
+            
+            // Check date restrictions
+            if (!canFinishDate) {
+                e.preventDefault();
+                e.stopPropagation();
+                let message = '';
+                if (durationMonths >= 3 || durationDays >= 90) {
+                    message = `Cannot finish project: Can only finish 5 days before deadline. ${daysRemaining} day(s) remaining.`;
+                } else if (durationDays <= 7) {
+                    message = `Cannot finish project: Can only finish 1 day before deadline. ${daysRemaining} day(s) remaining.`;
+                } else {
+                    message = `Cannot finish project: Must reach deadline date. ${daysRemaining} day(s) remaining.`;
+                }
+                alert(message);
+                return false;
+            }
+            
+            // If all validations pass, allow modal to open normally
+        });
+        
+        // Also validate on form submission as backup
+        const finishForm = document.getElementById('finishProjectForm');
+        if (finishForm) {
+            finishForm.addEventListener('submit', function(e) {
+                const profitLoss = finishBtn.getAttribute('data-profit-loss') === '1';
+                const allTasksCompleted = finishBtn.getAttribute('data-all-tasks-completed') === '1';
+                const canFinishDate = finishBtn.getAttribute('data-can-finish-date') === '1';
+                const durationMonths = parseInt(finishBtn.getAttribute('data-duration-months') || 0);
+                const durationDays = parseInt(finishBtn.getAttribute('data-duration-days') || 0);
+                const daysRemaining = parseInt(finishBtn.getAttribute('data-days-remaining') || 0);
+                
+                if (profitLoss) {
+                    e.preventDefault();
+                    alert('Cannot finish project: Project is at a loss');
+                    return false;
+                }
+                
+                if (!allTasksCompleted) {
+                    e.preventDefault();
+                    alert('Cannot finish project: Not all tasks are completed (100%). Please complete all tasks first.');
+                    return false;
+                }
+                
+                if (!canFinishDate) {
+                    e.preventDefault();
+                    let message = '';
+                    if (durationMonths >= 3 || durationDays >= 90) {
+                        message = `Cannot finish project: Can only finish 5 days before deadline. ${daysRemaining} day(s) remaining.`;
+                    } else if (durationDays <= 7) {
+                        message = `Cannot finish project: Can only finish 1 day before deadline. ${daysRemaining} day(s) remaining.`;
+                    } else {
+                        message = `Cannot finish project: Must reach deadline date. ${daysRemaining} day(s) remaining.`;
+                    }
+                    alert(message);
+                    return false;
+                }
+            });
+        }
+    }
+});
+</script>
+
 <!-- Cancel Project Confirmation Modal -->
 <div class="modal fade" id="cancelProjectModal" tabindex="-1" aria-labelledby="cancelProjectModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">

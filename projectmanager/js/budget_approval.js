@@ -4,11 +4,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const budgetError = document.getElementById('budgetError');
 
     const minFromAttr = budgetInput ? parseInt(budgetInput.getAttribute('data-min-budget') || '0', 10) : 0;
-    const MIN_BUDGET = (Number.isFinite(minFromAttr) && minFromAttr > 0) ? minFromAttr : 100000;
+    let MIN_BUDGET = (Number.isFinite(minFromAttr) && minFromAttr > 0) ? minFromAttr : 100000;
     const MAX_BUDGET = 100000000;
     const MAX_LENGTH = 9; // 9 digits max
 
     if (requestBudgetBtn && budgetInput) {
+        window.setBudgetMinValue = function(newMin) {
+            if (!Number.isFinite(newMin) || newMin <= 0) return;
+            MIN_BUDGET = Math.round(newMin);
+            budgetInput.setAttribute('data-min-budget', MIN_BUDGET.toString());
+            if (!budgetInput.readOnly && !budgetInput.dataset.userEdited) {
+                budgetInput.value = MIN_BUDGET.toString();
+            }
+            budgetInput.dispatchEvent(new Event('input'));
+        };
         // Validate on input
         budgetInput.addEventListener('input', function() {
             let value = this.value.replace(/[^0-9]/g, ''); // numbers only

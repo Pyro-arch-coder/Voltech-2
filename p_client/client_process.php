@@ -2158,7 +2158,7 @@ document.addEventListener('DOMContentLoaded', function() {
         viewCostEstimateBtn.addEventListener('click', function() {
             if (projectId) {
                 // Open the cost estimation PDF in a new tab
-                const exportUrl = `../projectmanager/export_estimation_materials.php?project_id=${encodeURIComponent(projectId)}`;
+                const exportUrl = `client_export_estimation_materials.php?project_id=${encodeURIComponent(projectId)}`;
                 window.open(exportUrl, '_blank');
             } else {
                 alert('Project ID not found. Please refresh the page and try again.');
@@ -2172,7 +2172,7 @@ document.addEventListener('DOMContentLoaded', function() {
         viewCostEstimateBillingBtn.addEventListener('click', function() {
             if (projectId) {
                 // Open the cost estimation PDF in a new tab
-                const exportUrl = `../projectmanager/export_estimation_materials.php?project_id=${encodeURIComponent(projectId)}`;
+                const exportUrl = `client_export_estimation_materials.php?project_id=${encodeURIComponent(projectId)}`;
                 window.open(exportUrl, '_blank');
             } else {
                 alert('Project ID not found. Please refresh the page and try again.');

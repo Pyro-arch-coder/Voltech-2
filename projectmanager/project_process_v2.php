@@ -308,6 +308,29 @@ function peso($amount) {
             align-items: center;
             justify-content: center;
         }
+        #totalProjectCard {
+            transition: background 0.4s ease, transform 0.3s ease;
+        }
+        #totalProjectCard.over-forecast-card {
+            background: linear-gradient(135deg, #c0392b, #e74c3c);
+            transform: translateY(-2px);
+        }
+        #totalProjectCost {
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+        }
+        #totalProjectCost.over-forecast-text {
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.35);
+        }
+        .forecast-warning {
+            opacity: 0;
+            transform: translateY(-6px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .forecast-warning.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 <body>
     <div class="d-flex" id="wrapper">
@@ -702,42 +725,44 @@ function peso($amount) {
                                      </div>
                                      
                                      <!-- Total Cost Card -->
-                                     <div class="col-12">
-                                         <div class="card border-0 shadow-sm bg-gradient-primary text-white">
-                                             <div class="card-body text-center p-3">
-                                                 <div class="d-flex flex-column flex-md-row align-items-center justify-content-between">
-                                                     <h5 class="mb-2 mb-md-0">
-                                                         <i class="fas fa-calculator me-2"></i>
-                                                         Total Project Estimation
-                                                     </h5>
-                                                     <h2 class="fw-bold mb-0" id="totalProjectCost">
-                                                         ₱<?php 
-                                                         // Ensure VAT card variable exists
-                                                         if (!isset($vat_total)) {
-                                                             $vat_total = 0;
-                                                         }
-                                                         $total_cost = $materials_total + $labor_total + $overhead_total + $vat_total;
-                                                         echo number_format($total_cost, 2);
-                                                         ?>
-                                                     </h2>
-                                                 </div>
-                                                 <div class="mt-2 small">
-                                                     <span class="badge bg-light text-dark me-1">
-                                                         <i class="fas fa-boxes me-1"></i> Materials: <span id="materialsBadge">₱<?php echo number_format($materials_total, 2); ?></span>
-                                                     </span>
-                                                     <span class="badge bg-light text-dark me-1">
-                                                         <i class="fas fa-users me-1"></i> Labor Budget: <span id="laborBadge">₱<?php echo number_format($labor_budget, 2); ?></span>
-                                                     </span>
-                                                     <span class="badge bg-light text-dark me-1">
-                                                         <i class="fas fa-calculator me-1"></i> Overhead: <span id="overheadBadge">₱<?php echo number_format($overhead_total, 2); ?></span>
-                                                     </span>
-                                                     <span class="badge bg-light text-dark">
-                                                         <i class="fas fa-receipt me-1"></i> VAT: <span id="vatBadge">₱<?php echo number_format($vat_total, 2); ?></span>
-                                                     </span>
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     </div>
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm bg-gradient-primary text-white" id="totalProjectCard">
+                                    <div class="card-body text-center p-3">
+                                        <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+                                            <h5 class="mb-0 d-flex align-items-center gap-2">
+                                                <i class="fas fa-calculator"></i>
+                                                <span>Total Project Estimation</span>
+                                                <span class="forecast-warning badge bg-warning text-dark d-flex align-items-center gap-1 d-none" id="forecastWarning">
+                                                    <i class="fas fa-exclamation-triangle"></i>Over Forecasted Budget
+                                                </span>
+                                            </h5>
+                                            <h2 class="fw-bold mb-0" id="totalProjectCost">
+                                                ₱<?php 
+                                                if (!isset($vat_total)) {
+                                                    $vat_total = 0;
+                                                }
+                                                $total_cost = $materials_total + $labor_total + $overhead_total + $vat_total;
+                                                echo number_format($total_cost, 2);
+                                                ?>
+                                            </h2>
+                                        </div>
+                                        <div class="mt-2 small">
+                                            <span class="badge bg-light text-dark me-1">
+                                                <i class="fas fa-boxes me-1"></i> Materials: <span id="materialsBadge">₱<?php echo number_format($materials_total, 2); ?></span>
+                                            </span>
+                                            <span class="badge bg-light text-dark me-1">
+                                                <i class="fas fa-users me-1"></i> Labor Budget: <span id="laborBadge">₱<?php echo number_format($labor_budget, 2); ?></span>
+                                            </span>
+                                            <span class="badge bg-light text-dark me-1">
+                                                <i class="fas fa-calculator me-1"></i> Overhead: <span id="overheadBadge">₱<?php echo number_format($overhead_total, 2); ?></span>
+                                            </span>
+                                            <span class="badge bg-light text-dark">
+                                                <i class="fas fa-receipt me-1"></i> VAT: <span id="vatBadge">₱<?php echo number_format($vat_total, 2); ?></span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                                  </div>
                                  
                                  <!-- Project Materials Section -->
@@ -906,36 +931,13 @@ function peso($amount) {
                                                 </thead>
                                                 <tbody>
                                                     <?php
-                                                    $project_days = 1; // Default value, will be calculated based on project duration
+                                                    $project_days = 0; // Default value set to 0 for manual entry
                                                     $emp_total = 0;
                                                     $proj_emps = [];
                                                     
                                                     if ($project_id) {
-                                                        // Calculate project working days (excluding Sundays)
-                                                        $start_date = $project['start_date'] ?? date('Y-m-d');
-                                                        $end_date = $project['deadline'] ?? date('Y-m-d', strtotime('+1 day'));
-                                                        
-                                                        $start = new DateTime($start_date);
-                                                        $end = new DateTime($end_date);
-                                                        $interval = $start->diff($end);
-                                                        $days = $interval->days + 1; // Total days including start and end
-                                                        
-                                                        // Calculate number of Sundays in the date range
-                                                        $sundays = 0;
-                                                        $period = new DatePeriod(
-                                                            $start,
-                                                            new DateInterval('P1D'),
-                                                            $end->modify('+1 day') // Include end date in calculation
-                                                        );
-                                                        
-                                                        foreach ($period as $date) {
-                                                            if ($date->format('N') == 7) { // 7 = Sunday
-                                                                $sundays++;
-                                                            }
-                                                        }
-                                                        
-                                                        // Calculate working days (excluding Sundays)
-                                                        $project_days = $days - $sundays;
+                                                        // Project days are now manually entered
+                                                        // No automatic calculation of project days
                                                         
                                                         // Fetch estimation employees for this project
                                                         $emp_query = $con->prepare("SELECT pee.*, e.first_name, e.last_name, e.company_type
@@ -957,7 +959,7 @@ function peso($amount) {
                                                         $i = 1;
                                                         foreach ($proj_emps as $emp): 
                                                             $emp_cost = $emp['daily_rate'] * $project_days;
-                                                            $emp_total += $emp_cost;
+                                                            $emp_total += $emp['total'];
                                                     ?>
                                                     <tr>
                                                         <td><?php echo $i++; ?></td>
@@ -967,8 +969,17 @@ function peso($amount) {
                                                         <td><?php echo htmlspecialchars($emp['position'] ?? 'N/A'); ?></td>
                                                         <td><?php echo htmlspecialchars($emp['company_type'] ?? 'N/A'); ?></td>
                                                         <td>₱<?php echo number_format($emp['daily_rate'] ?? 0, 2); ?></td>
-                                                        <td><?php echo $project_days; ?></td>
-                                                        <td style="font-weight:bold;color:#222;">₱<?php echo number_format($emp_cost, 2); ?></td>
+                                                        <td>
+                                                            <input type="number" 
+                                                                   class="form-control form-control-sm project-days-input" 
+                                                                   value="<?php echo isset($emp['project_days']) ? $emp['project_days'] : '0'; ?>" 
+                                                                   min="0" 
+                                                                   data-record-id="<?php echo $emp['id']; ?>" 
+                                                                   style="width: 80px;"
+                                                                   onchange="updateEmployeeTotal(this)"
+                                                                   onkeydown="if(event.key === 'Enter') { event.preventDefault(); this.blur(); }">
+                                                        </td>
+                                                        <td>₱<?php echo number_format($emp['total'] ?? 0, 2); ?></td>
                                                         <td>
                                                             <button type="button" class="btn btn-sm btn-danger remove-employee" 
                                                                     data-id="<?php echo $emp['id'] ?? ''; ?>"
@@ -988,7 +999,7 @@ function peso($amount) {
                                                 </tbody>
                                                 <tfoot>
                                                     <tr>
-                                                        <th colspan="5" class="text-end">Total</th>
+                                                        <th colspan="5" class="text-end">Grand Total</th>
                                                         <th colspan="2" style="font-weight:bold;color:#222;">₱<?php echo number_format($emp_total, 2); ?></th>
                                                     </tr>
                                                 </tfoot>
@@ -1025,7 +1036,8 @@ function peso($amount) {
                                                         'Misc. Items',
                                                         'Profit',
                                                         'Overhead & Supervision',
-                                                        'Accommodation (Food, Housing)'
+                                                        'Accommodation (Food, Housing)',
+                                                        'VAT'
                                                     ];
                                                     
                                                     // Get project-specific prices if project_id is valid
@@ -1051,8 +1063,10 @@ function peso($amount) {
                                                         echo '<tr data-name="' . htmlspecialchars($name) . '">';
                                                         echo '<td>' . $counter++ . '</td>';
                                                         echo '<td>' . htmlspecialchars($name) . '</td>';
+                                                        $is_vat_row = ($name === 'VAT');
+                                                        $readOnlyAttr = $is_vat_row ? ' readonly style="background-color:#f8f9fa; cursor:not-allowed;" title="VAT is automatically calculated as 12% of the project estimation"' : '';
                                                         echo '<td class="editable-price">';
-                                                        echo '<input type="number" class="form-control form-control-sm price-input" value="' . $price . '" step="0.01" min="0" oninput="debouncedUpdateOverheadPrice(\'' . htmlspecialchars($name, ENT_QUOTES) . '\', this)" onchange="updateOverheadPrice(\'' . htmlspecialchars($name, ENT_QUOTES) . '\', this)" onkeydown="if(event.key === \'Enter\') { event.preventDefault(); this.blur(); }">';
+                                                        echo '<input type="number" class="form-control form-control-sm price-input' . ($is_vat_row ? ' vat-price-input' : '') . '" value="' . $price . '" step="0.01" min="0" oninput="debouncedUpdateOverheadPrice(\'' . htmlspecialchars($name, ENT_QUOTES) . '\', this)" onchange="updateOverheadPrice(\'' . htmlspecialchars($name, ENT_QUOTES) . '\', this)" onkeydown="if(event.key === \'Enter\') { event.preventDefault(); this.blur(); }"' . $readOnlyAttr . '>';
                                                         echo '</td>';
                                                         echo '</tr>';
                                                     }
@@ -1101,12 +1115,12 @@ function peso($amount) {
                                             // Update total if needed
                                             updateOverheadTotal();
                                         } else {
-                                            alert('Error updating price: ' + (data.message || 'Unknown error'));
+                                           
                                         }
                                     })
                                     .catch(error => {
                                         console.error('Error:', error);
-                                        alert('Error updating price');
+                                       
                                     });
                                 }
                                 // Debounced saver: updates UI immediately and saves after a short pause
@@ -1179,6 +1193,70 @@ function peso($amount) {
                                     }
                                 }
                                 
+                                const FORECASTED_COST = <?php echo isset($forecasted_cost) ? (float)$forecasted_cost : 0; ?>;
+                                let vatSaveTimer = null;
+                                function scheduleVatSave(inputElement) {
+                                    if (!inputElement) return;
+                                    if (vatSaveTimer) {
+                                        clearTimeout(vatSaveTimer);
+                                    }
+                                    vatSaveTimer = setTimeout(() => {
+                                        updateOverheadPrice('VAT', inputElement);
+                                    }, 400);
+                                }
+
+                                function formatCurrency(value) {
+                                    const number = Number(value) || 0;
+                                    return '₱' + number.toLocaleString('en-PH', {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    });
+                                }
+
+                                function updateBudgetSuggestion(totalProjectCost) {
+                                    const budgetInput = document.getElementById('budgetAmount');
+                                    if (!budgetInput) return;
+                                    const minValue = parseFloat(totalProjectCost) || 0;
+                                    const minValueFormatted = minValue.toFixed(2);
+                                    budgetInput.dataset.minBudget = minValueFormatted;
+                                    budgetInput.setAttribute('placeholder', minValueFormatted);
+                                    if (budgetInput.min !== undefined) {
+                                        budgetInput.setAttribute('min', minValueFormatted);
+                                    }
+                                    if (!budgetInput.readOnly && budgetInput.dataset.userEdited !== '1') {
+                                        budgetInput.value = minValueFormatted;
+                                    }
+                                    const budgetMessage = document.getElementById('budgetMessage');
+                                    if (budgetMessage) {
+                                        budgetMessage.innerHTML = `Suggested budget based on Step 2 estimation: <strong>${formatCurrency(minValue)}</strong>`;
+                                    }
+                                }
+
+                                function updateForecastWarning() {
+                                    const warning = document.getElementById('forecastWarning');
+                                    const totalEl = document.getElementById('totalProjectCost');
+                                    const card = document.getElementById('totalProjectCard');
+                                    if (!warning || !totalEl || !card) return;
+                                    if (!FORECASTED_COST || FORECASTED_COST <= 0) {
+                                        warning.classList.add('d-none');
+                                        totalEl.classList.remove('over-forecast-text');
+                                        card.classList.remove('over-forecast-card');
+                                        return;
+                                    }
+                                    warning.classList.remove('d-none');
+                                    const totalValue = parseFloat(totalEl.textContent.replace(/[^0-9.-]+/g, '')) || 0;
+                                    if (totalValue > FORECASTED_COST) {
+                                        warning.classList.add('show');
+                                        totalEl.classList.add('over-forecast-text');
+                                        card.classList.add('over-forecast-card');
+                                        warning.setAttribute('title', `Forecasted Budget: ${formatCurrency(FORECASTED_COST)}`);
+                                    } else {
+                                        warning.classList.remove('show');
+                                        totalEl.classList.remove('over-forecast-text');
+                                        card.classList.remove('over-forecast-card');
+                                    }
+                                }
+
                                 function calculateVAT() {
                                     // Calculate total project estimation (materials + labor budget + overhead excluding VAT)
                                     const materialsTotal = parseFloat(document.getElementById('materialsTotal').textContent.replace('₱', '').replace(/,/g, '')) || 0;
@@ -1205,53 +1283,171 @@ function peso($amount) {
                                     const vatInput = document.querySelector('tr[data-name="VAT"] .price-input');
                                     if (vatInput) {
                                         vatInput.value = vatAmount.toFixed(2);
+                                        scheduleVatSave(vatInput);
                                     }
                                     // Update VAT card and badge
                                     const vatSummaryEl = document.getElementById('vatSummary');
                                     if (vatSummaryEl) {
-                                        vatSummaryEl.textContent = '₱' + vatAmount.toFixed(2);
+                                        vatSummaryEl.textContent = formatCurrency(vatAmount);
                                     }
                                     const vatBadgeEl = document.getElementById('vatBadge');
                                     if (vatBadgeEl) {
-                                        vatBadgeEl.textContent = '₱' + vatAmount.toFixed(2);
+                                        vatBadgeEl.textContent = formatCurrency(vatAmount);
                                     }
                                     // Keep Overhead totals excluding VAT (already updated by updateOverheadTotal)
                                     const overheadBadgeExcl = document.getElementById('overheadBadge');
                                     if (overheadBadgeExcl) {
-                                        overheadBadgeExcl.textContent = '₱' + overheadTotal.toFixed(2);
+                                        overheadBadgeExcl.textContent = formatCurrency(overheadTotal);
                                     }
                                         
                                     // Update total project cost
                                     const totalProjectCost = totalProjectEstimation + vatAmount;
                                     const totalCostElement = document.getElementById('totalProjectCost');
                                     if (totalCostElement) {
-                                        totalCostElement.textContent = '₱' + totalProjectCost.toFixed(2);
+                                        totalCostElement.textContent = formatCurrency(totalProjectCost);
                                     }
+                                    updateForecastWarning();
+                                    updateBudgetSuggestion(totalProjectCost);
                                     // Also mirror into Step 3 card if present
                                     const step3TotalEl = document.getElementById('step3TotalEstimation');
                                     if (step3TotalEl) {
-                                        step3TotalEl.textContent = '₱' + totalProjectCost.toFixed(2);
+                                        step3TotalEl.textContent = formatCurrency(totalProjectCost);
+                                    }
+                                }
+                                
+                                // Function to update employee total via AJAX
+                                function updateEmployeeTotal(input) {
+                                    const row = input.closest('tr');
+                                    if (!row) return;
+                                    
+                                    const recordId = input.dataset.recordId;
+                                    if (!recordId) {
+                                        console.error('Record ID not found');
+                                        return;
+                                    }
+                                    
+                                    const projectDays = parseInt(input.value) || 0;
+                                    
+                                    // Show loading state
+                                    const totalCell = row.querySelector('td:nth-child(7)');
+                                    const originalTotal = totalCell.textContent;
+                                    totalCell.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                                    
+                                    // Send AJAX request to update project days and get new total
+                                    fetch('update_employee_project_days.php', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/x-www-form-urlencoded',
+                                        },
+                                        body: `record_id=${recordId}&project_days=${projectDays}`
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            // Update the total cell with the new value
+                                            totalCell.textContent = '₱' + parseFloat(data.total).toFixed(2);
+                                            
+                                            // Update the grand total
+                                            updateGrandTotal();
+                                            // Refresh the page so all related totals and summaries are updated
+                                            window.location.reload();
+                                        } else {
+                                            alert(data.message || 'Failed to update employee data');
+                                            totalCell.textContent = originalTotal;
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
+                                        alert('An error occurred while updating the employee data');
+                                        totalCell.textContent = originalTotal;
+                                    });
+                                }
+                                
+                                // Function to update the grand total
+                                function updateGrandTotal() {
+                                    let grandTotal = 0;
+                                    document.querySelectorAll('table tbody tr').forEach(row => {
+                                        const totalCell = row.querySelector('td:nth-child(7)');
+                                        if (totalCell) {
+                                            const totalText = totalCell.textContent.replace(/[^0-9.-]+/g, '');
+                                            grandTotal += parseFloat(totalText) || 0;
+                                        }
+                                    });
+                                    
+                                    const totalRow = document.querySelector('table tfoot tr:first-child th:last-child');
+                                    if (totalRow) {
+                                        totalRow.textContent = '₱' + grandTotal.toFixed(2);
                                     }
                                 }
                                 
                                 // Add event listeners after the page loads
                                 document.addEventListener('DOMContentLoaded', function() {
-                                    // Handle Enter key press
+                                    // Handle Enter key press for price inputs and project days
                                     document.addEventListener('keydown', function(e) {
-                                        if (e.target.classList.contains('price-input') && e.key === 'Enter') {
+                                        if ((e.target.classList.contains('price-input') || e.target.classList.contains('project-days-input')) && e.key === 'Enter') {
                                             e.preventDefault();
                                             e.target.blur(); // This will trigger the onchange event
                                         }
                                     });
                                     
-                                    // Prevent form submission when pressing Enter in price inputs
-                                    document.querySelectorAll('.price-input').forEach(input => {
+                                    // Handle project days input changes
+                                    document.querySelectorAll('.project-days-input').forEach(input => {
+                                        input.addEventListener('change', function() {
+                                            updateEmployeeTotal(this);
+                                        });
+                                        
+                                        // Also handle blur event in case the user clicks away
+                                        input.addEventListener('blur', function() {
+                                            if (this.value === '') {
+                                                this.value = '0';
+                                                updateEmployeeTotal(this);
+                                            }
+                                        });
+                                    });
+                                    
+                                    const budgetInputField = document.getElementById('budgetAmount');
+                                    if (budgetInputField) {
+                                        budgetInputField.addEventListener('input', function() {
+                                            this.dataset.userEdited = '1';
+                                        });
+                                    }
+                                    
+                                    // Prevent form submission when pressing Enter in inputs
+                                    document.querySelectorAll('.price-input, .project-days-input').forEach(input => {
                                         input.addEventListener('keypress', function(e) {
                                             if (e.key === 'Enter') {
                                                 e.preventDefault();
                                                 return false;
                                             }
                                         });
+                                        
+                                        // For project days, update the total when changed
+                                        if (input.classList.contains('project-days-input')) {
+                                            input.addEventListener('change', function() {
+                                                const row = this.closest('tr');
+                                                if (row) {
+                                                    const dailyRate = parseFloat(row.querySelector('td:nth-child(5)').textContent.replace('₱', '').replace(/,/g, '')) || 0;
+                                                    const days = parseFloat(this.value) || 0;
+                                                    const total = dailyRate * days;
+                                                    const totalCell = row.querySelector('td:nth-child(7)');
+                                                    if (totalCell) {
+                                                        totalCell.textContent = '₱' + total.toFixed(2);
+                                                        
+                                                        // Update the grand total
+                                                        let grandTotal = 0;
+                                                        document.querySelectorAll('table tbody tr').forEach(row => {
+                                                            const totalText = row.querySelector('td:nth-child(7)')?.textContent || '₱0';
+                                                            grandTotal += parseFloat(totalText.replace('₱', '').replace(/,/g, '')) || 0;
+                                                        });
+                                                        
+                                                        const totalRow = document.querySelector('table tfoot tr:first-child th:last-child');
+                                                        if (totalRow) {
+                                                            totalRow.textContent = '₱' + grandTotal.toFixed(2);
+                                                        }
+                                                    }
+                                                }
+                                            });
+                                        }
                                     });
                                     
                                     // Initialize VAT calculation on page load
@@ -1261,6 +1457,7 @@ function peso($amount) {
                                             updateOverheadTotal();
                                         }
                                         calculateVAT();
+                                        updateForecastWarning();
                                         // Update labor budget status
                                         if (typeof updateLaborBudgetStatus === 'function') {
                                             updateLaborBudgetStatus();
@@ -1367,9 +1564,20 @@ function peso($amount) {
                                             <div class="card-body d-flex align-items-center justify-content-between p-3">
                                                 <h5 class="mb-0 d-flex align-items-center">
                                                     <i class="fas fa-calculator me-2"></i>
+                                                    <?php 
+                                                                // Fetch total_estimation_cost from projects table
+                                                                $total_estimation_cost = 0;
+                                                                $stmt = $con->prepare("SELECT total_estimation_cost FROM projects WHERE project_id = ?");
+                                                                $stmt->bind_param('i', $project_id);
+                                                                $stmt->execute();
+                                                                $stmt->bind_result($total_estimation_cost);
+                                                                $stmt->fetch();
+                                                                $stmt->close();
+                                                            
+                                                                ?>
                                                     Total Project Estimation (Step 2)
                                                 </h5>
-                                                <h2 class="fw-bold mb-0" id="step3TotalEstimation">₱0.00</h2>
+                                                <h2 class="fw-bold mb-0">₱<?php echo number_format($total_estimation_cost ?? 0, 2); ?></h2>
                                             </div>
                                         </div>
                                     </div>
@@ -1412,31 +1620,32 @@ function peso($amount) {
                                                             <div class="input-group mb-2">
                                                                 <span class="input-group-text">₱</span>
                                                                 <?php 
-                                                                // Determine Total Project Estimation to use as dynamic minimum
-                                                                if (!isset($vat_total)) { $vat_total = 0; }
-                                                                $computed_total_cost = 0;
-                                                                if (isset($materials_total) || isset($labor_total) || isset($overhead_total) || isset($vat_total)) {
-                                                                    $computed_total_cost = floatval(($materials_total ?? 0) + ($labor_total ?? 0) + ($overhead_total ?? 0) + ($vat_total ?? 0));
-                                                                }
-                                                                if (!isset($total_cost) || $total_cost <= 0) {
-                                                                    $total_cost = $computed_total_cost;
-                                                                }
-                                                                $min_budget = max(0, (float)$total_cost);
-                                                                $min_budget_int = (int)floor($min_budget);
+                                                                // Fetch total_estimation_cost from projects table
+                                                                $total_estimation_cost = 0;
+                                                                $stmt = $con->prepare("SELECT total_estimation_cost FROM projects WHERE project_id = ?");
+                                                                $stmt->bind_param('i', $project_id);
+                                                                $stmt->execute();
+                                                                $stmt->bind_result($total_estimation_cost);
+                                                                $stmt->fetch();
+                                                                $stmt->close();
+                                                                
+                                                                $min_budget = max(0, (float)$total_estimation_cost);
+                                                                $min_budget_value = number_format($min_budget, 2, '.', '');
+                                                                $min_budget_display = number_format($min_budget, 2);
                                                                 ?>
                                                                 <input type="text" 
                                                                     class="form-control form-control-lg" 
                                                                     name="budget" 
                                                                     id="budgetAmount" 
-                                                                    placeholder="<?php echo $min_budget_int; ?>" 
+                                                                    placeholder="<?php echo $min_budget_value; ?>" 
                                                                     inputmode="numeric" 
                                                                     aria-describedby="budgetMessage"
-                                                                    data-min-budget="<?php echo $min_budget_int; ?>"
-                                                                    value="<?php echo $min_budget_int; ?>"
+                                                                    data-min-budget="<?php echo $min_budget_value; ?>" 
+                                                                    value="<?php echo $min_budget_value; ?>" 
                                                                     <?php if ($pending || $approved) echo 'readonly'; ?>>
                                                             </div>
                                                             <div class="form-text text-muted" id="budgetMessage">
-                                                                Enter a budget amount (₱<?php echo number_format($min_budget_int, 0); ?> – ₱<?php echo number_format(100000000, 0); ?>)
+                                                                Suggested budget based on Step 2 estimation: <strong>₱<?php echo $min_budget_display; ?></strong>
                                                             </div>
                                                             <div class="invalid-feedback d-block text-danger" id="budgetError" style="display:none;"></div>
                                                         </div>
@@ -2142,14 +2351,31 @@ function peso($amount) {
                                                 <div class="card-body">
                                                     <form id="budgetRequestForm">
                                                         <input type="hidden" name="project_id" value="<?php echo htmlspecialchars($project_id); ?>">
+                                                        <?php 
+                                                        // Fetch total_estimation_cost from projects table
+                                                        $total_estimation_cost = 0;
+                                                        $stmt = $con->prepare("SELECT total_estimation_cost FROM projects WHERE project_id = ?");
+                                                        $stmt->bind_param('i', $project_id);
+                                                        $stmt->execute();
+                                                        $stmt->bind_result($total_estimation_cost);
+                                                        $stmt->fetch();
+                                                        $stmt->close();
+                                                        ?>
                                                         <div class="mb-3">
                                                             <label class="form-label fw-bold">Budget Amount (₱)</label>
                                                             <div class="input-group">
                                                                 <span class="input-group-text">₱</span>
                                                                 <input type="number" class="form-control" name="budget_amount" id="budgetAmount" 
-                                                                    placeholder="Enter budget amount (6-9 digits)" min="100000" max="999999999" step="100" required>
+                                                                    placeholder="<?php echo number_format($total_estimation_cost ?? 0, 2, '.', ''); ?>" 
+                                                                    min="<?php echo max(0, $total_estimation_cost ?? 0); ?>" 
+                                                                    max="999999999" 
+                                                                    step="0.01" 
+                                                                    value="<?php echo number_format($total_estimation_cost ?? 0, 2, '.', ''); ?>" 
+                                                                    required>
                                                             </div>
-                                                            <div class="form-text">Enter amount between ₱100,000 to ₱999,999,999 (6-9 digits only)</div>
+                                                            <div class="form-text">
+                                                                Suggested budget based on Step 2 estimation: <strong>₱<?php echo number_format($total_estimation_cost ?? 0, 2); ?></strong>
+                                                            </div>
                                                         </div>
                                                         <div class="d-grid">
                                                             <button type="submit" class="btn btn-primary" id="submitBudgetBtn">

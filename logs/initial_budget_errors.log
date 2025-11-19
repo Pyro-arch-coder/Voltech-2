@@ -6901,3 +6901,71 @@
 )
 
 [2025-11-19 10:28:49] Budget update debug - Current budget: 300000.00, Current initial: 0.00, Percentage: 50, Calculated: 150000
+[2025-11-19 19:49:44] === New Request ===
+[2025-11-19 19:49:44] POST data: Array
+(
+    [project_id] => 51
+    [payment_method] => gcash
+    [percentage] => 50
+)
+
+[2025-11-19 19:49:44] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => project_materials_estimation51.pdf
+            [full_path] => project_materials_estimation51.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php1A67.tmp
+            [error] => 0
+            [size] => 122459
+        )
+
+)
+
+[2025-11-19 19:49:44] SESSION data: Array
+(
+    [csrf_token] => 9d83c2353c21be1c7ee8a340eb781d35494f6b39ac490985888537f64bc2ad69
+    [last_activity] => 1763578131
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-11-19 19:49:44] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 51
+            [payment_method] => gcash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-11-19 19:49:44] POST data: Array
+(
+    [project_id] => 51
+    [payment_method] => gcash
+    [percentage] => 50
+)
+
+[2025-11-19 19:49:44] File upload details: Array
+(
+    [name] => project_materials_estimation51.pdf
+    [size] => 122459
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php1A67.tmp
+)
+
+[2025-11-19 19:49:44] Budget update debug - Current budget: 18176.00, Current initial: 0.00, Percentage: 50, Calculated: 9088

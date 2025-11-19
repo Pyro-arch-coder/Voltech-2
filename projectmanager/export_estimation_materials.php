@@ -73,35 +73,25 @@ try {
         $labor_total = floatval($labor_row['total']);
     }
     
-    // Recompute overhead totals (exclude VAT) and VAT dynamically
+    // Overhead totals (exclude VAT) and fetch VAT directly from DB
     $overhead_ex_vat = 0;
     $overhead_ex_vat_query = $con->query("SELECT COALESCE(SUM(price), 0) as total FROM overhead_costs WHERE project_id = '$project_id' AND name <> 'VAT'");
     if ($overhead_ex_vat_row = $overhead_ex_vat_query->fetch_assoc()) {
         $overhead_ex_vat = floatval($overhead_ex_vat_row['total']);
     }
 
-    $base_total = $mat_total + $labor_total + $overhead_ex_vat;
-    $vat_amount = $base_total * 0.12;
+    $vat_amount = 0;
+    $vat_fetch = $con->prepare("SELECT price FROM overhead_costs WHERE project_id = ? AND name = 'VAT' LIMIT 1");
+    if (!$vat_fetch) { throw new Exception("Prepare failed: " . $con->error); }
+    $vat_fetch->bind_param("i", $project_id);
+    if (!$vat_fetch->execute()) { throw new Exception("Failed to fetch VAT: " . $con->error); }
+    $vat_fetch->bind_result($vat_amount_db);
+    if ($vat_fetch->fetch()) {
+        $vat_amount = (float)$vat_amount_db;
+    }
+    $vat_fetch->close();
 
-    // Ensure a VAT row exists and is updated to the computed amount
-    $has_vat = false;
-    $check_vat = $con->query("SELECT id FROM overhead_costs WHERE project_id = '$project_id' AND name = 'VAT' LIMIT 1");
-    if ($check_vat && $check_vat->num_rows > 0) {
-        $has_vat = true;
-    }
-    if ($has_vat) {
-        $upd_vat = $con->prepare("UPDATE overhead_costs SET price = ? WHERE project_id = ? AND name = 'VAT'");
-        if (!$upd_vat) { throw new Exception("Prepare failed: " . $con->error); }
-        $upd_vat->bind_param("di", $vat_amount, $project_id);
-        if (!$upd_vat->execute()) { throw new Exception("Failed to update VAT: " . $con->error); }
-        $upd_vat->close();
-    } else {
-        $ins_vat = $con->prepare("INSERT INTO overhead_costs (project_id, name, price) VALUES (?, 'VAT', ?)");
-        if (!$ins_vat) { throw new Exception("Prepare failed: " . $con->error); }
-        $ins_vat->bind_param("id", $project_id, $vat_amount);
-        if (!$ins_vat->execute()) { throw new Exception("Failed to insert VAT: " . $con->error); }
-        $ins_vat->close();
-    }
+    $base_total = $mat_total + $overhead_ex_vat;
 
     // After normalizing VAT, snapshot overhead costs to overhead_cost_actual
     $overhead_query = $con->query("SELECT * FROM overhead_costs WHERE project_id = '$project_id'");
@@ -161,6 +151,39 @@ try {
     die('Error: ' . $e->getMessage());
 }
 
+// Fetch employees for PDF (project estimation employees)
+$employees = [];
+$emp_total = 0;
+$emp_sql = "SELECT pee.*, e.first_name, e.last_name, e.company_type
+            FROM project_estimation_employee pee
+            JOIN employees e ON pee.employee_id = e.employee_id
+            WHERE pee.project_id = '$project_id'
+            ORDER BY e.last_name, e.first_name";
+$emp_res = $con->query($emp_sql);
+if ($emp_res) {
+    while ($row = $emp_res->fetch_assoc()) {
+        $employees[] = $row;
+        $emp_total += isset($row['total']) ? (float)$row['total'] : 0;
+    }
+}
+
+// Fetch overhead costs for PDF (including VAT row)
+$overheads = [];
+$overhead_total_display = 0;
+$vat_amount_pdf = 0;
+$ov_res = $con->query("SELECT name, price FROM overhead_costs WHERE project_id = '$project_id' ORDER BY id ASC");
+if ($ov_res) {
+    while ($row = $ov_res->fetch_assoc()) {
+        $price = isset($row['price']) ? (float)$row['price'] : 0;
+        if (strcasecmp($row['name'], 'VAT') === 0) {
+            $vat_amount_pdf = $price;
+            continue; // Exclude VAT from overhead list/total
+        }
+        $overheads[] = $row;
+        $overhead_total_display += $price;
+    }
+}
+
 // Create PDF instance
 $pdf = new FPDF();
 $pdf->AddPage();
@@ -217,6 +240,88 @@ foreach($materials as $mat) {
 $pdf->Cell(array_sum(array_slice($col_widths,0,7)),7,'Total',1);
 $pdf->Cell($col_widths[7],7,number_format($mat_total,2),1);
 $pdf->Ln(12);
+
+// Employees (Project Team) section
+if (!empty($employees)) {
+    $pdf->SetFont('Arial','B',13);
+    $pdf->Cell(0,8,'Project Team (Labor Costs)',0,1);
+    // Column widths sum to 190mm (page width 210 - margins 10 each side)
+    $emp_col_widths = [10, 50, 35, 30, 25, 20, 20];
+    $pdf->SetFont('Arial','B',10);
+    $pdf->Cell($emp_col_widths[0],7,'#',1);
+    $pdf->Cell($emp_col_widths[1],7,'Name',1);
+    $pdf->Cell($emp_col_widths[2],7,'Position',1);
+    $pdf->Cell($emp_col_widths[3],7,'Type',1);
+    $pdf->Cell($emp_col_widths[4],7,'Daily Rate',1);
+    $pdf->Cell($emp_col_widths[5],7,'Days',1);
+    $pdf->Cell($emp_col_widths[6],7,'Total',1);
+    $pdf->Ln();
+    $pdf->SetFont('Arial','',10);
+    $idx = 1;
+    foreach ($employees as $emp) {
+        $name = trim(($emp['first_name'] ?? '') . ' ' . ($emp['last_name'] ?? ''));
+        $position = $emp['position'] ?? '';
+        $type = $emp['company_type'] ?? '';
+        $daily_rate = isset($emp['daily_rate']) && is_numeric($emp['daily_rate']) ? (float)$emp['daily_rate'] : 0;
+        $days = isset($emp['project_days']) && is_numeric($emp['project_days']) ? (float)$emp['project_days'] : 0;
+        $row_total = isset($emp['total']) && is_numeric($emp['total']) ? (float)$emp['total'] : ($daily_rate * $days);
+
+        $pdf->Cell($emp_col_widths[0],7,$idx++,1);
+        $pdf->Cell($emp_col_widths[1],7,$name,1);
+        $pdf->Cell($emp_col_widths[2],7,$position,1);
+        $pdf->Cell($emp_col_widths[3],7,$type,1);
+        $pdf->Cell($emp_col_widths[4],7,number_format($daily_rate,2),1);
+        $pdf->Cell($emp_col_widths[5],7,$days,1);
+        $pdf->Cell($emp_col_widths[6],7,number_format($row_total,2),1);
+        $pdf->Ln();
+    }
+    $pdf->Cell(array_sum(array_slice($emp_col_widths,0,6)),7,'Total',1);
+    $pdf->Cell($emp_col_widths[6],7,number_format($emp_total,2),1);
+    $pdf->Ln(12);
+}
+
+// Overhead Costs section
+if (!empty($overheads)) {
+    $pdf->SetFont('Arial','B',13);
+    $pdf->Cell(0,8,'Overhead Costs',0,1);
+    $ov_col_widths = [10, 130, 50]; // sum = 190
+    $pdf->SetFont('Arial','B',10);
+    $pdf->Cell($ov_col_widths[0],7,'#',1);
+    $pdf->Cell($ov_col_widths[1],7,'Name',1);
+    $pdf->Cell($ov_col_widths[2],7,'Price',1);
+    $pdf->Ln();
+    $pdf->SetFont('Arial','',10);
+    $idx = 1;
+    foreach ($overheads as $ov) {
+        $name = $ov['name'] ?? '';
+        $price = isset($ov['price']) && is_numeric($ov['price']) ? (float)$ov['price'] : 0;
+        $pdf->Cell($ov_col_widths[0],7,$idx++,1);
+        $pdf->Cell($ov_col_widths[1],7,$name,1);
+        $pdf->Cell($ov_col_widths[2],7,number_format($price,2),1);
+        $pdf->Ln();
+    }
+    $pdf->Cell($ov_col_widths[0] + $ov_col_widths[1],7,'Total Overhead Costs',1);
+    $pdf->Cell($ov_col_widths[2],7,number_format($overhead_total_display,2),1);
+    $pdf->Ln(12);
+}
+
+// Cost Summary (Grand total excludes labor per export requirements)
+$pdf->SetFont('Arial','B',13);
+$pdf->Cell(0,8,'Cost Summary',0,1);
+$grand_total_no_labor = $mat_total + $overhead_total_display + ($vat_amount_pdf ?: $vat_amount);
+$summary_labels = [
+    'Materials Total' => $mat_total,
+    'Labor Total' => $labor_total,
+    'Overhead Total (ex VAT)' => $overhead_total_display,
+    'VAT (12%)' => ($vat_amount_pdf ?: $vat_amount),
+    'Grand Total' => $grand_total_no_labor
+];
+$pdf->SetFont('Arial','',11);
+foreach ($summary_labels as $label => $amount) {
+    $pdf->Cell(100,8,$label,0,0,'L');
+    $pdf->Cell(0,8,'P ' . number_format($amount,2),0,1,'R');
+}
+$pdf->Ln(8);
 
 // Responsive signature section (no fixed SetY)
 $pdf->Ln(20); // Add some space after the tables

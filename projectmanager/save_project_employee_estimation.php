@@ -75,6 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['project_id'], $_POST[
     // Calculate projected total for new employees (pre-validation)
     $projected_total = $current_labor_total;
     $new_employees_data = []; // Store employee data for later use
+    
+    // Get project_days from form input, default to 0 if not provided
+    $project_days = isset($_POST['project_days']) ? (int)$_POST['project_days'] : 0;
+    
     foreach ($employee_ids as $employee_id) {
         $employee_id = (int)$employee_id;
 
@@ -111,42 +115,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['project_id'], $_POST[
                 $position_title = $pos_row['title'];
                 $daily_rate = $pos_row['daily_rate'];
 
-                // Calculate project duration in days (excluding Sundays) - same logic as below
-                $project_days = 1; // Default to 1 day if not found
-                $project_query = $con->prepare("SELECT start_date, deadline FROM projects WHERE project_id = ?");
-                $project_query->bind_param("i", $project_id);
-                $project_query->execute();
-                $project_result = $project_query->get_result();
-
-                if ($project_row = $project_result->fetch_assoc()) {
-                    $start_date = new DateTime($project_row['start_date']);
-                    $end_date = new DateTime($project_row['deadline']);
-                    $interval = $start_date->diff($end_date);
-                    $days = $interval->days + 1; // Total days including start and end
-
-                    // Calculate number of Sundays in the date range
-                    $sundays = 0;
-                    $period = new DatePeriod(
-                        $start_date,
-                        new DateInterval('P1D'),
-                        $end_date->modify('+1 day') // Include end date in calculation
-                    );
-
-                    foreach ($period as $date) {
-                        if ($date->format('N') == 7) { // 7 = Sunday
-                            $sundays++;
-                        }
-                    }
-
-                    // Calculate working days (excluding Sundays)
-                    $project_days = max(1, $days - $sundays); // Ensure at least 1 day
-                } // Close the if ($project_row) block
+                // Use the manually entered project_days (default to 0 if not provided)
+                $project_days = max(0, $project_days); // Ensure project_days is not negative
 
                 // Calculate total for this employee
                 $employee_total = $daily_rate * $project_days;
                 $projected_total += $employee_total;
 
-                // Store employee data for later use to avoid recalculating
+                // Store employee data for later use
                 $new_employees_data[] = [
                     'employee_id' => $employee_id,
                     'position_title' => $position_title,

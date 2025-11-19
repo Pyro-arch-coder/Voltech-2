@@ -140,6 +140,89 @@ if (isset($_POST['update_project_status'])) {
             $deadline = $project_data['deadline'];
             $check_stmt->close();
             
+            // If marking as Finished, validate requirements
+            if ($status === 'Finished') {
+                // Get project start date for duration calculation
+                $start_query = "SELECT start_date FROM projects WHERE project_id = ?";
+                $start_stmt = $con->prepare($start_query);
+                $start_stmt->bind_param('i', $project_id);
+                $start_stmt->execute();
+                $start_result = $start_stmt->get_result();
+                $start_data = $start_result->fetch_assoc();
+                $start_stmt->close();
+                
+                $start_date = new DateTime($start_data['start_date']);
+                $deadline_date = new DateTime($deadline);
+                $today = new DateTime();
+                
+                // Calculate project duration
+                $duration_months = $start_date->diff($deadline_date)->m + ($start_date->diff($deadline_date)->y * 12);
+                $duration_days = $start_date->diff($deadline_date)->days;
+                
+                // Check if all tasks are completed
+                $task_check_query = "SELECT COUNT(*) as total, SUM(CASE WHEN progress = 100 THEN 1 ELSE 0 END) as completed 
+                                    FROM project_timeline WHERE project_id = ?";
+                $task_check_stmt = $con->prepare($task_check_query);
+                $task_check_stmt->bind_param('i', $project_id);
+                $task_check_stmt->execute();
+                $task_check_result = $task_check_stmt->get_result();
+                $task_data = $task_check_result->fetch_assoc();
+                $task_check_stmt->close();
+                
+                $total_tasks = intval($task_data['total'] ?? 0);
+                $completed_tasks = intval($task_data['completed'] ?? 0);
+                
+                // Validate tasks completion
+                if ($total_tasks == 0) {
+                    throw new Exception('Cannot finish project: No tasks found. Please add tasks to the project.');
+                }
+                
+                if ($completed_tasks < $total_tasks) {
+                    // Fetch the list of incomplete tasks for clearer feedback
+                    $incomplete_list = [];
+                    $incomplete_stmt = $con->prepare("SELECT task_name, progress FROM project_timeline WHERE project_id = ? AND (progress IS NULL OR progress < 100)");
+                    $incomplete_stmt->bind_param('i', $project_id);
+                    $incomplete_stmt->execute();
+                    $incomplete_result = $incomplete_stmt->get_result();
+                    while ($row = $incomplete_result->fetch_assoc()) {
+                        $percent = is_null($row['progress']) ? 0 : intval($row['progress']);
+                        $incomplete_list[] = $row['task_name'] . " ({$percent}%)";
+                    }
+                    $incomplete_stmt->close();
+                    $task_message = '';
+                    if (!empty($incomplete_list)) {
+                        $task_message = ' Incomplete tasks: ' . implode(', ', $incomplete_list) . '.';
+                    }
+                    throw new Exception('Cannot finish project: Not all tasks are completed (100%). Please complete all tasks first.' . $task_message);
+                }
+                
+                
+                
+                // Validate date restrictions
+                $min_finish_date = clone $deadline_date;
+                if ($duration_months >= 3 || $duration_days >= 90) {
+                    // For projects 3 months or more, allow 5 days before deadline
+                    $min_finish_date->modify('-5 days');
+                } elseif ($duration_days <= 7) {
+                    // For projects 7 days or less, allow 1 day before deadline
+                    $min_finish_date->modify('-1 day');
+                } else {
+                    // For other projects, must reach deadline
+                    $min_finish_date = clone $deadline_date;
+                }
+                
+                if ($today < $min_finish_date) {
+                    $days_remaining = $today->diff($min_finish_date)->days;
+                    if ($duration_months >= 3 || $duration_days >= 90) {
+                        throw new Exception("Cannot finish project: Can only finish 5 days before deadline. {$days_remaining} day(s) remaining.");
+                    } elseif ($duration_days <= 7) {
+                        throw new Exception("Cannot finish project: Can only finish 1 day before deadline. {$days_remaining} day(s) remaining.");
+                    } else {
+                        throw new Exception("Cannot finish project: Must reach deadline date. {$days_remaining} day(s) remaining.");
+                    }
+                }
+            }
+            
             // If marking as Finished and current status is Overdue, update to Overdue Finished
             if ($status === 'Finished' && $current_status === 'Overdue') {
                 $status = 'Overdue Finished';
@@ -255,8 +338,10 @@ if (isset($_POST['update_project_status'])) {
                 
 
                 
-                // Get equipment total
-                $equip_query = "SELECT SUM(total) as total FROM project_add_equipment WHERE project_id=?";
+                // Get equipment total (exclude damaged equipment)
+                $equip_query = "SELECT SUM(total) as total FROM project_add_equipment 
+                                WHERE project_id=? 
+                                AND LOWER(COALESCE(status, '')) NOT IN ('damage', 'damaged')";
                 $equip_stmt = $con->prepare($equip_query);
                 if ($equip_stmt === false) {
                     throw new Exception('Failed to prepare equipment query: ' . $con->error);
@@ -2193,25 +2278,17 @@ if ($userid) {
                     </script>
                 </div>
                 
-                <!-- Check if project is at a loss -->
+                <!-- Initialize tooltip for finish button if disabled -->
                 <script>
                 document.addEventListener('DOMContentLoaded', function() {
                     const finishBtn = document.getElementById('finishProjectBtn');
-                    const isAtLoss = <?php echo ($profit_loss < 0) ? 'true' : 'false'; ?>;
                     
-                    if (finishBtn && isAtLoss) {
-                        // Disable the button
-                        finishBtn.disabled = true;
-                        finishBtn.title = 'Cannot finish project: Project is at a loss';
-                        finishBtn.innerHTML = '<i class="fas fa-exclamation-circle"></i> Cannot Finish (Project at Loss)';
-                        finishBtn.classList.remove('btn-success');
-                        finishBtn.classList.add('btn-secondary');
-                        
-                        // Add tooltip
-                        new bootstrap.Tooltip(finishBtn, {
-                            title: 'Project is currently at a loss. Please review your expenses and budget.',
+                    if (finishBtn && finishBtn.disabled) {
+                        // Initialize Bootstrap tooltip for disabled button
+                        const tooltip = new bootstrap.Tooltip(finishBtn, {
                             placement: 'top',
-                            trigger: 'hover'
+                            trigger: 'hover',
+                            html: true
                         });
                     }
                 });
@@ -2220,20 +2297,115 @@ if ($userid) {
                 </div>
                 <div class="row mt-4">
                         <div class="col-12 text-end">
-                            <?php if ($project['status'] !== 'Finished' && $project['status'] !== 'Cancelled' && $project['status'] !== 'Overdue Finished'): ?>
-                              <button type="button" class="btn btn-danger me-2" id="cancelProjectBtn" data-bs-toggle="modal" data-bs-target="#cancelProjectModal">
-                                <i class="fas fa-times-circle"></i> Cancel Project
-                              </button>
-                              <button type="button" class="btn btn-success me-2" id="finishProjectBtn" data-bs-toggle="modal" data-bs-target="#finishProjectModal" 
-                                <?php 
+                            <?php if ($project['status'] !== 'Finished' && $project['status'] !== 'Cancelled' && $project['status'] !== 'Overdue Finished'): 
+                                // Fetch tasks to check completion status
+                                $task_check_query = "SELECT id, task_name, progress FROM project_timeline WHERE project_id = ?";
+                                $task_check_stmt = $con->prepare($task_check_query);
+                                $task_check_stmt->bind_param('i', $project_id);
+                                $task_check_stmt->execute();
+                                $task_check_result = $task_check_stmt->get_result();
+                                $tasks_for_validation = [];
+                                while ($task_row = $task_check_result->fetch_assoc()) {
+                                    $tasks_for_validation[] = $task_row;
+                                }
+                                $task_check_stmt->close();
+                                
+                                // Check if all tasks are completed
+                                $all_tasks_completed = true;
+                                $incomplete_tasks = [];
+                                if (count($tasks_for_validation) > 0) {
+                                    foreach ($tasks_for_validation as $task) {
+                                        if ((int)$task['progress'] < 100) {
+                                            $all_tasks_completed = false;
+                                            $incomplete_tasks[] = $task['task_name'];
+                                        }
+                                    }
+                                } else {
+                                    $all_tasks_completed = false; // No tasks means can't finish
+                                }
+                                $incomplete_task_text = '';
+                                if (!$all_tasks_completed && count($incomplete_tasks) > 0) {
+                                    $incomplete_task_text = ' Incomplete tasks: ' . implode(', ', $incomplete_tasks) . '.';
+                                }
+                                
+                                // Check date restrictions
+                                $today = new DateTime();
+                                $deadline = new DateTime($project['deadline']);
+                                $start_date = new DateTime($project['start_date']);
+                                
+                                // Calculate project duration in months
+                                $duration_months = $start_date->diff($deadline)->m + ($start_date->diff($deadline)->y * 12);
+                                $duration_days = $start_date->diff($deadline)->days;
+                                
+                                // Determine minimum finish date
+                                $min_finish_date = clone $deadline;
+                                if ($duration_months >= 3 || $duration_days >= 90) {
+                                    // For projects 3 months or more, allow 5 days before deadline
+                                    $min_finish_date->modify('-5 days');
+                                } elseif ($duration_days <= 7) {
+                                    // For projects 7 days or less, allow 1 day before deadline
+                                    $min_finish_date->modify('-1 day');
+                                } else {
+                                    // For other projects, must reach deadline
+                                    $min_finish_date = clone $deadline;
+                                }
+                                
+                                $can_finish_by_date = $today >= $min_finish_date;
+                                
+                                // Check profit/loss
                                 $total_project_cost_before_vat = $mat_total + $equip_total + $emp_totals + $overhead_total;
                                 $vat_amount_finish_btn = $total_project_cost_before_vat * 0.12;
                                 $total_project_cost = $total_project_cost_before_vat + $vat_amount_finish_btn;
                                 $profit_loss = $project['budget'] - $total_project_cost;
-                                if ($profit_loss < 0) echo 'disabled title="Cannot finish project: Project is at a loss"';
-                                ?>>
-                                <i class="fas fa-check-circle"></i> <?php echo $profit_loss < 0 ? 'Cannot Finish (Project at Loss)' : 'Finish Project'; ?>
+                                
+                                // Determine if button should be disabled and reason
+                                $finish_disabled = false;
+                                $finish_reason = '';
+                                $days_remaining = $today < $min_finish_date ? $today->diff($min_finish_date)->days : 0;
+                                
+                                if ($profit_loss < 0) {
+                                    $finish_disabled = true;
+                                    $finish_reason = 'Cannot finish project: Project is at a loss';
+                                } elseif (!$all_tasks_completed) {
+                                    $finish_disabled = true;
+                                    $finish_reason = 'Cannot finish project: Not all tasks are completed (100%).' . $incomplete_task_text;
+                                } elseif (!$can_finish_by_date) {
+                                    $finish_disabled = true;
+                                    if ($duration_months >= 3 || $duration_days >= 90) {
+                                        $finish_reason = "Cannot finish project: Can only finish 5 days before deadline. {$days_remaining} day(s) remaining.";
+                                    } elseif ($duration_days <= 7) {
+                                        $finish_reason = "Cannot finish project: Can only finish 1 day before deadline. {$days_remaining} day(s) remaining.";
+                                    } else {
+                                        $finish_reason = "Cannot finish project: Must reach deadline date. {$days_remaining} day(s) remaining.";
+                                    }
+                                }
+                            ?>
+                              <button type="button" class="btn btn-danger me-2" id="cancelProjectBtn" data-bs-toggle="modal" data-bs-target="#cancelProjectModal">
+                                <i class="fas fa-times-circle"></i> Cancel Project
                               </button>
+                              <?php if ($finish_disabled): ?>
+                                <span class="d-inline-block" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" title="<?php echo htmlspecialchars($finish_reason, ENT_QUOTES); ?>">
+                                  <button type="button" class="btn btn-success me-2" id="finishProjectBtn" disabled style="pointer-events: none;">
+                                    <i class="fas fa-check-circle"></i> Cannot Finish
+                                  </button>
+                                </span>
+                              <?php else: ?>
+                                <button
+                                  type="button"
+                                  class="btn btn-success me-2"
+                                  id="finishProjectBtn"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#finishProjectModal"
+                                  data-profit-loss="<?php echo $profit_loss < 0 ? '1' : '0'; ?>"
+                                  data-all-tasks-completed="<?php echo $all_tasks_completed ? '1' : '0'; ?>"
+                                  data-can-finish-date="<?php echo $can_finish_by_date ? '1' : '0'; ?>"
+                                  data-duration-months="<?php echo $duration_months; ?>"
+                                  data-duration-days="<?php echo $duration_days; ?>"
+                                  data-days-remaining="<?php echo $days_remaining; ?>"
+                                >
+                                  <i class="fas fa-check-circle"></i> Finish Project
+                                </button>
+                              <?php endif; ?>
                             <?php endif; ?>
                             <?php if ($project['status'] === 'Finished'): ?>
                               <a href="generate_completion_pdf.php?id=<?php echo $project_id; ?>" class="btn btn-primary" target="_blank">
@@ -3100,6 +3272,16 @@ if (window.location.search.includes('addequip=1')) {
   window.history.replaceState({}, document.title, url.toString());
 }
 
+// Initialize tooltip for finish button if disabled
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all tooltips on the page (Bootstrap 5 way)
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            html: true
+        });
+    });
+});
 
 </body>
 
