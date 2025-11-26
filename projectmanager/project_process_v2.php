@@ -1030,12 +1030,12 @@ function peso($amount) {
                                                     $counter = 1;
                                                     
                                                     // Hardcoded overhead cost names
+                                                    // Note: "Profit" row removed as requested
                                                     $overhead_names = [
                                                         'Mobilization/Demobilization',
                                                         'Others',
                                                         'Misc. Items',
-                                                        'Profit',
-                                                        'Overhead & Supervision',
+                                                        'Profit Overhead & Supervision',
                                                         'Accommodation (Food, Housing)',
                                                         'VAT'
                                                     ];
@@ -2361,21 +2361,23 @@ function peso($amount) {
                                                         $stmt->fetch();
                                                         $stmt->close();
                                                         ?>
+                                                        <?php 
+                                                        $fixed_budget_amount = max(($project_budget ?? 0) - ($total_payments ?? 0), 0);
+                                                        ?>
                                                         <div class="mb-3">
                                                             <label class="form-label fw-bold">Budget Amount (₱)</label>
                                                             <div class="input-group">
                                                                 <span class="input-group-text">₱</span>
-                                                                <input type="number" class="form-control" name="budget_amount" id="budgetAmount" 
-                                                                    placeholder="<?php echo number_format($total_estimation_cost ?? 0, 2, '.', ''); ?>" 
-                                                                    min="<?php echo $total_estimation_cost ?? 0; ?>" 
-                                                                    max="<?php echo $project_budget ?? 0; ?>" 
+                                                                <input type="number" class="form-control" name="budget_amount" id="budgetAmountStep8" 
+                                                                    placeholder="<?php echo number_format($fixed_budget_amount, 2, '.', ''); ?>" 
                                                                     step="0.01" 
-                                                                    value="<?php echo number_format($total_estimation_cost ?? 0, 2, '.', ''); ?>" 
+                                                                    value="<?php echo number_format($fixed_budget_amount, 2, '.', ''); ?>" 
+                                                                    readonly 
                                                                     required>
                                                             </div>
                                                             <div class="form-text">
-                                                                Minimum: <strong>₱<?php echo number_format($total_estimation_cost ?? 0, 2); ?></strong> (Step 2 estimation) | 
-                                                                Maximum: <strong>₱<?php echo number_format($project_budget ?? 0, 2); ?></strong> (Project budget)
+                                                                Request amount is locked to the remaining balance of 
+                                                                <strong>₱<?php echo number_format($fixed_budget_amount, 2); ?></strong>.
                                                             </div>
                                                         </div>
                                                         <div class="d-grid">
@@ -2780,6 +2782,7 @@ function peso($amount) {
         const isStartDateToday = daysDiff === 0;
         const isStartDatePast = daysDiff < 0;
         
+        if (startProjectBtn) {
         startProjectBtn.addEventListener('click', function() {
             console.log('Start Project button clicked');
             // Get current date in Philippines timezone
@@ -2817,7 +2820,9 @@ function peso($amount) {
             const modal = new bootstrap.Modal(document.getElementById('startProjectModal'));
             modal.show();
         });
+        }
         
+        if (confirmStartBtn) {
         confirmStartBtn.addEventListener('click', function() {
             console.log('Confirm Start Project button clicked');
             // Update project status to 'Ongoing'
@@ -2848,6 +2853,7 @@ function peso($amount) {
                 alert('An error occurred while starting the project');
             });
         });
+        }
     });
     </script>
     <script src="js/permits_uploads.js" type="module"></script>
@@ -3358,10 +3364,33 @@ function peso($amount) {
     <!-- Step 8: Budget Request and Proof of Payment JavaScript -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Ensure showErrorModal is available globally (fallback for Step 8)
+        if (typeof window.showErrorModal !== 'function') {
+            window.showErrorModal = function(message) {
+                const errorModalEl = document.getElementById('errorModal');
+                const errorMessageEl = document.getElementById('errorMessage');
+                if (errorModalEl && errorMessageEl && window.bootstrap) {
+                    errorMessageEl.textContent = message;
+                    const modal = new bootstrap.Modal(errorModalEl);
+                    modal.show();
+                } else {
+                    alert(message);
+                }
+            };
+        }
         // Budget Request Form
         const budgetRequestForm = document.getElementById('budgetRequestForm');
         const submitBudgetBtn = document.getElementById('submitBudgetBtn');
         const budgetStatusSection = document.getElementById('budgetStatusSection');
+        const projectBudget = <?php echo $project_budget ?? 0; ?>;
+        const totalPaid = <?php echo $total_payments ?? 0; ?>;
+        const remainingBalance = Math.max(projectBudget - totalPaid, 0);
+        const budgetAmountInputStep8 = document.getElementById('budgetAmountStep8');
+        if (budgetAmountInputStep8) {
+            budgetAmountInputStep8.value = remainingBalance.toFixed(2);
+            budgetAmountInputStep8.placeholder = remainingBalance.toFixed(2);
+            budgetAmountInputStep8.readOnly = true;
+        }
         
         // Debug: Check if elements are found
         console.log('budgetRequestForm:', budgetRequestForm);
@@ -3381,25 +3410,17 @@ function peso($amount) {
                     return;
                 }
                 
-                // Get PHP values for validation
-                const step2Estimation = <?php echo $total_estimation_cost ?? 0; ?>;
-                const projectBudget = <?php echo $project_budget ?? 0; ?>;
-                const totalPaid = <?php echo $total_payments ?? 0; ?>;
-                
-                // Validation 1: Budget amount cannot be less than Step 2 estimation
-                if (budgetAmount < step2Estimation) {
-                    showErrorModal('Budget amount cannot be less than Step 2 estimation (₱' + step2Estimation.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ').');
+                if (remainingBalance <= 0) {
+                    showErrorModal('There is no remaining balance left to request.');
                     return;
                 }
                 
-                // Validation 2: Budget amount cannot exceed project budget
-                if (budgetAmount > projectBudget) {
-                    showErrorModal('Budget amount cannot exceed project budget (₱' + projectBudget.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ').');
+                if (Math.abs(budgetAmount - remainingBalance) > 0.01) {
+                    showErrorModal('Budget request amount must match the remaining balance (₱' + remainingBalance.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ').');
                     return;
                 }
                 
-                // Validation 3: Check if request will cause negative remaining balance (utang)
-                const currentRemainingBalance = projectBudget - totalPaid;
+                // Validation: Check if request will cause negative remaining balance (utang)
                 const newTotalPaid = totalPaid + budgetAmount;
                 const newRemainingBalance = projectBudget - newTotalPaid;
                 

@@ -185,9 +185,14 @@ $ov_res = $con->query("SELECT name, price FROM overhead_costs WHERE project_id =
 if ($ov_res) {
     while ($row = $ov_res->fetch_assoc()) {
         $price = isset($row['price']) ? (float)$row['price'] : 0;
+        // Handle VAT separately and exclude from overhead list/total
         if (strcasecmp($row['name'], 'VAT') === 0) {
             $vat_amount_pdf = $price;
-            continue; // Exclude VAT from overhead list/total
+            continue;
+        }
+        // Exclude plain "Profit" from overhead list/total for PDF export
+        if (strcasecmp($row['name'], 'Profit') === 0) {
+            continue;
         }
         $overheads[] = $row;
         $overhead_total_display += $price;

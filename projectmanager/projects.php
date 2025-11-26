@@ -1107,7 +1107,8 @@ addForecastStyles();
                                 <!-- Forecasted Value -->
                                 <div class="col-md-6 mb-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="mb-0 fw-bold text-primary">Analogous Forecasting</h6>
+                                        <h6 class="mb-0 fw-bold text-primary">Past-Project Based Estimation (For Reference only, Not Actual)</h6>
+                                        
                                         <span class="badge bg-primary bg-opacity-10 text-primary">Beta</span>
                                     </div>
                                     <div class="w-100">

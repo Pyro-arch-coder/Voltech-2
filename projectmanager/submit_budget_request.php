@@ -48,16 +48,7 @@ try {
     $initial_budget = floatval($project['initial_budget'] ?? 0);
     $total_estimation_cost = floatval($project['total_estimation_cost']);
     
-    // Validation 1: Budget amount cannot be less than Step 2 estimation
-    if ($budget_amount < $total_estimation_cost) {
-        echo json_encode([
-            'success' => false, 
-            'message' => 'Budget amount cannot be less than Step 2 estimation (₱' . number_format($total_estimation_cost, 2) . ').'
-        ]);
-        exit();
-    }
-    
-    // Validation 2: Budget amount cannot exceed project budget
+    // Validation: Budget amount cannot exceed project budget
     if ($budget_amount > $project_budget) {
         echo json_encode([
             'success' => false, 

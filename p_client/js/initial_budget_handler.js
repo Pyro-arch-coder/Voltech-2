@@ -449,8 +449,28 @@ document.addEventListener('DOMContentLoaded', function () {
         const projectId = document.querySelector('input[name="project_id"]')?.value;
         if (!projectId) return;
 
-    fetch(`check_pending_payment.php?project_id=${projectId}`, { credentials: 'include' })
-            .then(response => response.json())
+        // Use an explicit page-relative URL and add logging to help diagnose 404/HTML responses on host
+        const pendingUrl = './check_pending_payment.php?project_id=' + encodeURIComponent(projectId);
+        console.log('Checking pending payments at', pendingUrl);
+
+        fetch(pendingUrl, { credentials: 'include' })
+            .then(async response => {
+                const raw = await response.text();
+                console.log('check_pending_payment raw response status:', response.status);
+                console.log('check_pending_payment raw response text:', raw);
+
+                if (!response.ok) {
+                    throw new Error('Server returned ' + response.status + ' for ' + pendingUrl);
+                }
+
+                // Defensively parse JSON and surface helpful error if HTML is returned
+                try {
+                    return JSON.parse(raw);
+                } catch (e) {
+                    const sample = raw ? raw.substring(0, 300) : '';
+                    throw new Error('Invalid JSON response from server: ' + sample);
+                }
+            })
             .then(data => {
                 const uploadStatus = document.getElementById('uploadStatus');
                 if (!uploadStatus) return;
@@ -511,10 +531,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error checking payment status:', error);
                 const uploadStatus = document.getElementById('uploadStatus');
                 if (uploadStatus) {
+                    const message = error && error.message ? error.message : 'Error checking payment status. Please refresh the page and try again.';
                     uploadStatus.innerHTML = `
                         <div class="alert alert-danger">
                             <i class="fas fa-exclamation-circle me-2"></i>
-                            Error checking payment status. Please refresh the page and try again.
+                            ${message}
                         </div>
                     `;
                 }
