@@ -780,11 +780,15 @@
 <?php
 // --- BACKEND FETCH: Employees and Positions --- //
 $positions = [];
+$foreman_position_ids = [];
 $positions_query = "SELECT position_id, title, daily_rate FROM positions";
 $positions_result = $con->query($positions_query);
 if ($positions_result) {
     while ($row = $positions_result->fetch_assoc()) {
         $positions[] = $row;
+        if (isset($row['title']) && strcasecmp($row['title'], 'Foreman') === 0) {
+            $foreman_position_ids[] = (int)$row['position_id'];
+        }
     }
 }
 
@@ -800,13 +804,18 @@ if ($company_type_result) {
 
 // Fetch employees who are not currently working on any project or are already assigned to this project
 $employees = [];
-$employees_query = "SELECT e.employee_id, e.first_name, e.last_name, e.position_id, e.contact_number, e.company_type 
-                   FROM employees e
-                   WHERE e.employee_id NOT IN (
+$availability_condition = "e.employee_id NOT IN (
                        SELECT employee_id 
                        FROM project_add_employee 
                        WHERE status = 'Working' AND project_id != '$project_id'
-                   )
+                   )";
+if (!empty($foreman_position_ids)) {
+    $foreman_ids_list = implode(',', $foreman_position_ids);
+    $availability_condition = "($availability_condition OR e.position_id IN ($foreman_ids_list))";
+}
+$employees_query = "SELECT e.employee_id, e.first_name, e.last_name, e.position_id, e.contact_number, e.company_type 
+                   FROM employees e
+                   WHERE $availability_condition
                    AND e.employee_id NOT IN (
                        SELECT employee_id 
                        FROM project_add_employee 

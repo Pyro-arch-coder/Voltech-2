@@ -20,7 +20,6 @@ if (!$project_id) {
 
 // Handle password change
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
-    $con = new mysqli("localhost", "root", "", "voltech2");
     $response = ['success' => false, 'message' => ''];
     if ($con->connect_error) {
         $response['message'] = 'Database connection failed.';

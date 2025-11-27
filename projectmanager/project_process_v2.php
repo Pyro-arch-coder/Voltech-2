@@ -92,25 +92,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_standard_phase
                 ];
                 
                 $phase_duration = floor($project_duration / count($phases));
+                if ($phase_duration < 1) {
+                    $phase_duration = 1; // Each phase at least a day
+                }
                 $current_start = clone $project_start;
                 
                 foreach ($phases as $index => $phase) {
                     // Calculate end date for this phase
                     $current_end = clone $current_start;
                     $current_end->add(new DateInterval('P' . $phase_duration . 'D'));
-                    
                     // For the last phase, ensure it ends on project deadline
                     if ($index === count($phases) - 1) {
                         $current_end = clone $project_end;
                     }
-                    
                     // Insert phase into database
                     $phase_name = mysqli_real_escape_string($con, $phase);
                     $start_date_str = $current_start->format('Y-m-d');
                     $end_date_str = $current_end->format('Y-m-d');
-                    
                     mysqli_query($con, "INSERT INTO project_timeline (project_id, task_name, start_date, end_date, progress, status, created_at, updated_at) VALUES ('$project_id', '$phase_name', '$start_date_str', '$end_date_str', 0, 'Not Started', NOW(), NOW())");
-                    
                     // Set next phase start date
                     $current_start = clone $current_end;
                     $current_start->add(new DateInterval('P1D')); // Start next day
@@ -1647,8 +1646,10 @@ function peso($amount) {
                                                                     inputmode="numeric" 
                                                                     aria-describedby="budgetMessage"
                                                                     data-min-budget="<?php echo $min_budget_value; ?>" 
-                                                                    value="<?php echo $min_budget_value; ?>" 
-                                                                    <?php if ($pending || $approved) echo 'readonly'; ?>>
+                                                                    value="<?php echo $min_budget_value; ?>"
+                                                                    readonly
+                                                                    tabindex="-1"
+                                                                    style="pointer-events: none; user-select: none;">
                                                             </div>
                                                             <div class="form-text text-muted" id="budgetMessage">
                                                                 Suggested budget based on Step 2 estimation: <strong>₱<?php echo $min_budget_display; ?></strong>

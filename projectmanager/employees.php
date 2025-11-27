@@ -48,10 +48,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech");
-if ($con->connect_error) {
-    die("Connection failed: " . $con->connect_error);
-}
+include_once "../config.php";
 $userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
 $user_email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
 $user_firstname = isset($_SESSION['firstname']) ? $_SESSION['firstname'] : '';

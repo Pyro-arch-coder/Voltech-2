@@ -50,7 +50,7 @@ if (!isset($_SESSION['logged_in']) || !$_SESSION['logged_in'] || $_SESSION['user
     header("Location: ../login.php");
     exit();
 }
-$con = new mysqli("localhost", "root", "", "voltech");
+include_once "../config.php";
 if ($con->connect_error) {
     die("Connection failed: " . $con->connect_error);
 }

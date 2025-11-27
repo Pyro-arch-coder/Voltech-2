@@ -8,12 +8,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['user_level'] != 3) {
     exit();
 }
 
-// Database connection
-$con = new mysqli("localhost", "root", "", "voltech2");
-if ($con->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'Database connection failed: ' . $con->connect_error]);
-    exit();
-}
+include_once "../config.php";
 
 $project_id = isset($_GET['project_id']) ? intval($_GET['project_id']) : null;
 

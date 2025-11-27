@@ -9,13 +9,7 @@ if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
     isset($_POST['change_password'])
 ) {
-    $con = new mysqli("localhost", "root", "", "voltech2");
-    if ($con->connect_error) {
-        $response = ['success' => false, 'message' => 'Database connection failed.'];
-        header('Content-Type: application/json');
-        echo json_encode($response);
-        exit();
-    }
+    require_once '../config.php';
     $userid = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
     $response = ['success' => false, 'message' => ''];
     $current = isset($_POST['current_password']) ? $_POST['current_password'] : '';

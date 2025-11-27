@@ -156,6 +156,56 @@ $stmt->bind_result($project_budget, $initial_budget);
 $stmt->fetch();
 $stmt->close();
 
+// Project snapshot for client-facing project details section
+$project_snapshot = [
+    'name' => 'N/A',
+    'location' => 'N/A',
+    'category' => 'N/A',
+    'foreman' => 'Not Assigned',
+    'floor_size' => 'N/A',
+    'start_date' => null,
+    'end_date' => null
+];
+
+if ($project_id > 0) {
+    $snapshot_stmt = $con->prepare("
+        SELECT 
+            p.project AS project_name,
+            p.location,
+            p.category,
+            p.size AS floor_size,
+            p.start_date,
+            p.deadline,
+            COALESCE(CONCAT(e.first_name, ' ', e.last_name), '') AS foreman_name
+        FROM projects p
+        LEFT JOIN project_add_employee pae 
+               ON p.project_id = pae.project_id 
+              AND pae.position = 'Foreman'
+        LEFT JOIN employees e 
+               ON pae.employee_id = e.employee_id
+        WHERE p.project_id = ?
+        LIMIT 1
+    ");
+    $snapshot_stmt->bind_param('i', $project_id);
+    if ($snapshot_stmt->execute()) {
+        $snapshot_result = $snapshot_stmt->get_result();
+        if ($snapshot_row = $snapshot_result->fetch_assoc()) {
+            $project_snapshot['name'] = $snapshot_row['project_name'] ?? 'N/A';
+            $project_snapshot['location'] = $snapshot_row['location'] ?? 'N/A';
+            $project_snapshot['category'] = $snapshot_row['category'] ?? 'N/A';
+            $project_snapshot['foreman'] = !empty($snapshot_row['foreman_name']) 
+                ? $snapshot_row['foreman_name'] 
+                : 'Not Assigned';
+            $project_snapshot['floor_size'] = isset($snapshot_row['floor_size']) && $snapshot_row['floor_size'] !== '' 
+                ? $snapshot_row['floor_size'] 
+                : 'N/A';
+            $project_snapshot['start_date'] = $snapshot_row['start_date'] ?? null;
+            $project_snapshot['end_date'] = $snapshot_row['deadline'] ?? null;
+        }
+    }
+    $snapshot_stmt->close();
+}
+
 // 2. Get total paid and unpaid amounts for approved billing requests
 $total_paid = 0;
 $total_unpaid = 0;
@@ -457,6 +507,8 @@ function peso($amount) {
                                 <span id="blueprintStatusText">Checking blueprint status...</span>
                             </div>
 
+                            <div class="row g-4">
+                                <div class="col-lg-8">
                             <!-- Action Buttons -->
                             <div class="d-flex justify-content-between align-items-center mb-3 d-none" id="blueprintActionButtons">
                                 <div class="form-check">
@@ -489,6 +541,56 @@ function peso($amount) {
                                     <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
                                     <h5>No blueprints available</h5>
                                     <p class="text-muted">Please wait for the project manager to upload the blueprints.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Inline Chat with Project Manager -->
+                                <div class="col-lg-4">
+                                    <div class="card h-100 shadow-sm">
+                                        <div class="card-header bg-light d-flex align-items-center">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-comments me-2 text-primary"></i>
+                                                Chat with Project Manager
+                                            </h6>
+                                        </div>
+                                        <div class="card-body d-flex flex-column" style="height: 420px;">
+                                            <p class="small text-muted mb-2">
+                                                Use this chat for collaboration, clarifications, and suggestions related to this project.
+                                            </p>
+                                            <div id="miniChatMessages" class="flex-grow-1 mb-3 overflow-auto border rounded p-2 bg-white" style="font-size: 0.9rem;">
+                                                <div class="d-flex justify-content-center align-items-center h-100 text-muted">
+                                                    <div class="text-center">
+                                                        <i class="far fa-comment-dots fa-2x mb-2"></i>
+                                                        <p class="mb-0">No messages yet</p>
+                                                        <small>Start a conversation with your project manager.</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <label class="form-label small text-muted mb-0 flex-grow-1">Message</label>
+                                                    <button type="button"
+                                                            class="btn btn-link btn-sm text-decoration-none"
+                                                            id="miniChatAttachBtn"
+                                                            title="Attach image">
+                                                        <i class="fas fa-paperclip"></i>
+                                                    </button>
+                                                    <input type="file"
+                                                           id="miniChatFileInput"
+                                                           accept="image/*"
+                                                           class="d-none">
+                                                </div>
+                                                <small id="miniChatFileLabel" class="d-none text-muted small mb-1"></small>
+                                                <textarea id="miniChatInput" class="form-control form-control-sm mb-2" rows="2" placeholder="Type a message..."></textarea>
+                                                <div class="d-flex justify-content-end">
+                                                    <button type="button" id="miniChatSendBtn" class="btn btn-primary btn-sm">
+                                                        <i class="fas fa-paper-plane me-1"></i> Send
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -540,6 +642,60 @@ function peso($amount) {
                                             <button type="button" class="btn btn-outline-primary px-3" id="viewCostEstimateBtn">
                                                 <i class="fas fa-file-pdf me-1 text-danger"></i> View Cost Estimate
                                             </button>
+                                        </div>
+                                        <div class="w-100 mt-4 d-flex justify-content-center">
+                                            <div class="bg-light border rounded p-3" style="width: 90%; max-width: 650px;">
+                                                <div class="d-flex align-items-center mb-3">
+                                                    <i class="fas fa-info-circle text-success me-2"></i>
+                                                    <h6 class="mb-0 text-success">Project Details</h6>
+                                                </div>
+                                                <div class="mb-2 d-flex flex-column flex-sm-row">
+                                                    <span class="text-muted me-sm-2">Project Name:</span>
+                                                    <span class="fw-bold text-dark"><?php echo htmlspecialchars($project_snapshot['name']); ?></span>
+                                                </div>
+                                                <div class="mb-2 d-flex flex-column flex-sm-row">
+                                                    <span class="text-muted me-sm-2">Location:</span>
+                                                    <span class="text-dark"><?php echo htmlspecialchars($project_snapshot['location']); ?></span>
+                                                </div>
+                                                <div class="mb-2 d-flex flex-column flex-sm-row">
+                                                    <span class="text-muted me-sm-2">Category:</span>
+                                                    <span class="text-uppercase text-dark"><?php echo htmlspecialchars($project_snapshot['category']); ?></span>
+                                                </div>
+                                                <div class="mb-2 d-flex flex-column flex-sm-row">
+                                                    <span class="text-muted me-sm-2">Floor Size:</span>
+                                                    <span class="text-dark">
+                                                        <?php 
+                                                            echo $project_snapshot['floor_size'] !== 'N/A' 
+                                                                ? htmlspecialchars($project_snapshot['floor_size']) 
+                                                                : 'N/A';
+                                                        ?>
+                                                    </span>
+                                                </div>
+                                                <div class="mb-2 d-flex flex-column flex-sm-row">
+                                                    <span class="text-muted me-sm-2">Start Date:</span>
+                                                    <span class="text-dark">
+                                                        <?php 
+                                                            echo !empty($project_snapshot['start_date']) 
+                                                                ? date('F d, Y', strtotime($project_snapshot['start_date'])) 
+                                                                : 'Not Set';
+                                                        ?>
+                                                    </span>
+                                                </div>
+                                                <div class="mb-2 d-flex flex-column flex-sm-row">
+                                                    <span class="text-muted me-sm-2">End Date:</span>
+                                                    <span class="text-dark">
+                                                        <?php 
+                                                            echo !empty($project_snapshot['end_date']) 
+                                                                ? date('F d, Y', strtotime($project_snapshot['end_date'])) 
+                                                                : 'Not Set';
+                                                        ?>
+                                                    </span>
+                                                </div>
+                                                <div class="d-flex flex-column flex-sm-row">
+                                                    <span class="text-muted me-sm-2">Foreman:</span>
+                                                    <span class="fw-bold text-dark"><?php echo htmlspecialchars($project_snapshot['foreman']); ?></span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -818,7 +974,7 @@ function peso($amount) {
 
                                         <div class="row g-4">
                                             <!-- Original Contract -->
-                                            <div class="col-md-4">
+                                               <div class="col-md-4">
                                                 <div class="card h-100">
                                                     <div class="card-body d-flex flex-column align-items-center justify-content-center p-4 text-center" style="min-height: 200px;">
                                                         <i class="fas fa-file-contract fa-3x text-primary mb-3"></i>
@@ -848,7 +1004,7 @@ function peso($amount) {
                                                             <div class="col-md-6">
                                                                 <label for="contractScheduleDate" class="form-label mb-1">Preferred Date</label>
                                                                 <input type="date" class="form-control" id="contractScheduleDate">
-                                                            </div>
+                                                        </div>
                                                             <div class="col-md-6">
                                                                 <label for="contractScheduleTime" class="form-label mb-1">Preferred Time</label>
                                                                 <input type="time" class="form-control" id="contractScheduleTime">
@@ -873,16 +1029,16 @@ function peso($amount) {
                                                         <p class="small text-muted mb-3">
                                                             View the signed contract uploaded by the project manager.
                                                         </p>
-                                                        <small class="contract-status text-muted mb-2">No file available</small>
+                                                            <small class="contract-status text-muted mb-2">No file available</small>
                                                         <button type="button" class="btn btn-sm btn-outline-success view-contract" data-contract-type="clientsigned" disabled>
-                                                            <i class="fas fa-eye me-1"></i> View
-                                                        </button>
+                                                                <i class="fas fa-eye me-1"></i> View
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                                            </div>
+                                                        </div>
+                                                        </div>
+                                </div>                            
                                
                             <div class="d-flex justify-content-between mt-4">
                                 <button type="button" class="btn btn-outline-secondary prev-step" data-prev="2">
@@ -1626,6 +1782,284 @@ function peso($amount) {
 
     
     document.addEventListener('DOMContentLoaded', function() {
+        // Mini chat (Blueprint step) setup
+        const miniChatMessages = document.getElementById('miniChatMessages');
+        const miniChatInput = document.getElementById('miniChatInput');
+        const miniChatSendBtn = document.getElementById('miniChatSendBtn');
+        const miniChatAttachBtn = document.getElementById('miniChatAttachBtn');
+        const miniChatFileInput = document.getElementById('miniChatFileInput');
+        const miniChatFileLabel = document.getElementById('miniChatFileLabel');
+
+        // Image inline zoom state
+        let miniChatImageZoomed = false;
+
+        const miniChatPmId = <?php echo isset($pm_user_id) ? (int)$pm_user_id : 'null'; ?>;
+        const miniChatPmLevel = 3; // project manager user_level
+        const miniChatCurrentUserId = <?php echo isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 'null'; ?>;
+
+        let miniSelectedFile = null;
+
+        async function loadMiniChatMessages() {
+            if (!miniChatMessages || !miniChatPmId) return;
+
+            try {
+                const response = await fetch(`get_client_messages.php?receiver_id=${encodeURIComponent(miniChatPmId)}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load messages');
+                }
+
+                if (!Array.isArray(data.messages) || data.messages.length === 0) {
+                    miniChatMessages.innerHTML = `
+                        <div class="d-flex flex-column justify-content-center align-items-center h-100 text-muted">
+                            <i class="far fa-comment-dots fa-2x mb-2"></i>
+                            <p class="mb-0">No messages yet</p>
+                            <small>Start a conversation with your project manager.</small>
+                        </div>`;
+                    return;
+                }
+
+                miniChatMessages.innerHTML = '';
+
+                data.messages.forEach(msg => {
+                    const isMe = msg.sender_id == miniChatCurrentUserId;
+                    const wrapper = document.createElement('div');
+                    wrapper.className = `d-flex mb-2 ${isMe ? 'justify-content-end' : 'justify-content-start'}`;
+
+                    let messageContent = msg.message || '';
+
+                    // Detect attached file markup: [File: path]
+                    const fileMatch = messageContent.match(/\[File: (.*?)\]/);
+            let fileHtml = '';
+            if (fileMatch) {
+                const filePath = fileMatch[1];
+                const fileName = filePath.split('/').pop();
+                const fileExt = fileName.split('.').pop().toLowerCase();
+                const isImage = /(jpg|jpeg|png|gif|webp)$/i.test(fileExt);
+
+                // Ensure correct relative path from p_client to the uploads folder
+                let resolvedPath = filePath;
+                if (!/^https?:\/\//i.test(resolvedPath) && !resolvedPath.startsWith('../')) {
+                    resolvedPath = '../' + resolvedPath;
+                }
+
+                if (isImage) {
+                    fileHtml = `
+                        <div class="mt-1">
+                            <img src="${resolvedPath}"
+                                 alt="${fileName}"
+                                 class="img-fluid rounded mini-chat-image"
+                                 data-full-src="${resolvedPath}"
+                                 style="max-height: 150px; cursor: zoom-in;">
+                            <div class="mt-1">
+                                <a href="${resolvedPath}"
+                                   download
+                                   class="small text-decoration-none ${isMe ? 'text-white' : 'text-primary'}">
+                                    <i class="fas fa-download me-1"></i>Download image
+                                </a>
+                            </div>
+                        </div>`;
+                } else {
+                    fileHtml = `
+                        <div class="mt-1">
+                            <a href="${resolvedPath}" target="_blank" class="text-decoration-none ${isMe ? 'text-white' : 'text-primary'}">
+                                <i class="fas fa-file-image me-1"></i>${fileName}
+                            </a>
+                        </div>`;
+                }
+
+                messageContent = messageContent.replace(`[File: ${filePath}]`, '').trim();
+            }
+
+                    // Replace line breaks for remaining text
+                    if (messageContent) {
+                        messageContent = messageContent.replace(/\n/g, '<br>');
+                    }
+
+                    const bubble = document.createElement('div');
+                    bubble.className = `px-3 py-2 rounded-3 ${isMe ? 'bg-primary text-white' : 'bg-light'}`;
+                    bubble.style.maxWidth = '80%';
+                    bubble.innerHTML = `
+                        ${messageContent || ''}
+                        ${fileHtml}
+                    `;
+
+                    const time = document.createElement('div');
+                    time.className = 'small text-muted mt-1';
+                    time.textContent = new Date(msg.date_sent).toLocaleString();
+
+                    const container = document.createElement('div');
+                    container.className = `d-flex flex-column ${isMe ? 'align-items-end' : 'align-items-start'}`;
+                    container.appendChild(bubble);
+                    container.appendChild(time);
+
+                    wrapper.appendChild(container);
+                    miniChatMessages.appendChild(wrapper);
+                });
+
+                miniChatMessages.scrollTop = miniChatMessages.scrollHeight;
+            } catch (error) {
+                console.error('Failed to load mini chat messages:', error);
+            }
+        }
+
+        async function miniUploadFile() {
+            if (!miniSelectedFile) return null;
+
+            const formData = new FormData();
+            formData.append('file', miniSelectedFile);
+
+            const response = await fetch('../includes/upload_file.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            });
+
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Unexpected upload response:', text);
+                throw new Error('Server returned an invalid response');
+            }
+
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Failed to upload file');
+            }
+
+            return result.file_path;
+        }
+
+        async function sendMiniChatMessage() {
+            if (!miniChatPmId || !miniChatInput) return;
+
+            let message = miniChatInput.value.trim();
+
+            if (!message && !miniSelectedFile) return;
+
+            miniChatSendBtn.disabled = true;
+
+            try {
+                let filePath = '';
+
+                if (miniSelectedFile) {
+                    filePath = await miniUploadFile();
+                    if (!filePath) {
+                        throw new Error('Failed to upload image');
+                    }
+
+                    if (message) {
+                        message += '\n[File: ' + filePath + ']';
+                    } else {
+                        message = '[File: ' + filePath + ']';
+                    }
+                }
+
+                const formData = new FormData();
+                formData.append('receiver_id', miniChatPmId);
+                formData.append('user_level', miniChatPmLevel);
+                formData.append('message', message);
+                formData.append('table', 'pm_messages');
+
+                const response = await fetch('send_message.php', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to send message');
+                }
+
+                miniChatInput.value = '';
+                miniSelectedFile = null;
+                if (miniChatFileLabel) {
+                    miniChatFileLabel.classList.add('d-none');
+                    miniChatFileLabel.textContent = '';
+                }
+
+                await loadMiniChatMessages();
+            } catch (error) {
+                console.error('Failed to send mini chat message:', error);
+                alert('Failed to send message. Please try again.');
+            } finally {
+                miniChatSendBtn.disabled = false;
+            }
+        }
+
+        if (miniChatAttachBtn && miniChatFileInput) {
+            miniChatAttachBtn.addEventListener('click', function() {
+                miniChatFileInput.click();
+            });
+
+            miniChatFileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) {
+                    miniSelectedFile = null;
+                    if (miniChatFileLabel) {
+                        miniChatFileLabel.classList.add('d-none');
+                        miniChatFileLabel.textContent = '';
+                    }
+                    return;
+                }
+
+                if (!file.type.startsWith('image/')) {
+                    alert('Only image files are allowed.');
+                    e.target.value = '';
+                    return;
+                }
+
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Image size must not exceed 5MB.');
+                    e.target.value = '';
+                    return;
+                }
+
+                miniSelectedFile = file;
+                if (miniChatFileLabel) {
+                    miniChatFileLabel.textContent = `Attached: ${file.name}`;
+                    miniChatFileLabel.classList.remove('d-none');
+                }
+            });
+        }
+
+        if (miniChatMessages) {
+            miniChatMessages.addEventListener('click', function (e) {
+                const img = e.target.closest('.mini-chat-image');
+                if (!img) return;
+
+                // Toggle inline zoom inside the chat bubble
+                const expanded = img.dataset.expanded === 'true';
+                if (expanded) {
+                    img.style.maxHeight = '150px';
+                    img.style.maxWidth = '100%';
+                    img.style.cursor = 'zoom-in';
+                    img.dataset.expanded = 'false';
+                } else {
+                    img.style.maxHeight = '400px';
+                    img.style.maxWidth = '100%';
+                    img.style.cursor = 'zoom-out';
+                    img.dataset.expanded = 'true';
+                }
+            });
+        }
+
+        if (miniChatSendBtn && miniChatInput && miniChatPmId) {
+            miniChatSendBtn.addEventListener('click', sendMiniChatMessage);
+            miniChatInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMiniChatMessage();
+                }
+            });
+
+            // Initial load + periodic refresh
+            loadMiniChatMessages();
+            setInterval(loadMiniChatMessages, 10000);
+        }
+
         // Contract-related elements
         const generateContractBtn = document.getElementById('generateContractBtn');
         const contractScheduleDate = document.getElementById('contractScheduleDate');

@@ -646,10 +646,16 @@ if ($userid) {
     });
     // Add Estimate Expense Comparison Chart
     const estimateExpenseCtx = document.getElementById('estimateExpenseChart').getContext('2d');
+    // Helper to truncate long labels for better readability
+    function truncateLabel(label) {
+        if (typeof label !== 'string') return label;
+        return label.length > 8 ? label.substring(0, 8) + '…' : label;
+    }
+
     const estimateExpenseChart = new Chart(estimateExpenseCtx, {
         type: 'line',
         data: {
-            labels: <?php echo json_encode($est_labels); ?>,
+            labels: <?php echo json_encode($est_labels); ?>.map(truncateLabel),
             datasets: [
                 {
                     label: 'Estimated Expense (₱)',
