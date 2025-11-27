@@ -1097,7 +1097,7 @@ addForecastStyles();
                                     <label for="category" class="form-label">Category <span class="text-danger">*</span></label>
                                     <select class="form-control" id="category" name="category" required>
                                         <option value="" selected disabled>Select Category</option>
-                                        <option value="Building">Building</option>
+                                        
                                         <option value="Building Electrical">Building Electrical</option>
                                         <option value="Building Renovation">Building Renovation</option>
                                         <option value="Building Electrical/Renovation">Building Electrical/Renovation</option>

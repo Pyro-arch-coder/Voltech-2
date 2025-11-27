@@ -124,8 +124,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_standard_phase
 }
 
 $project_name = '';
+$contract_signing_datetime = null;
 if ($project_id > 0) {
-    $project_query = "SELECT project, start_date, deadline FROM projects WHERE project_id = ?";
+    $project_query = "SELECT project, start_date, deadline, contract_signing_datetime FROM projects WHERE project_id = ?";
     if ($stmt = $con->prepare($project_query)) {
         $stmt->bind_param("i", $project_id);
         $stmt->execute();
@@ -137,6 +138,11 @@ if ($project_id > 0) {
             // Convert dates to YYYY-MM-DD format for date inputs
             $start_date = date('Y-m-d', strtotime($project['start_date']));
             $deadline = date('Y-m-d', strtotime($project['deadline']));
+            
+            // Contract signing schedule (may be null)
+            $contract_signing_datetime = !empty($project['contract_signing_datetime'])
+                ? $project['contract_signing_datetime']
+                : null;
         }
         $stmt->close();
     }
@@ -1754,11 +1760,11 @@ function peso($amount) {
                                 <h4 class="mb-4">Step 4: Contract Signing</h4>
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    Please upload the required contract PDFs for signing.
+                                    Please generate the contract and upload the client-signed copy for record keeping.
                                 </div>
                                 <div class="card mb-4">
                                     <div class="card-body">
-                                        <h5 class="card-title mb-4">Upload Contracts</h5>
+                                        <h5 class="card-title mb-4">Contract</h5>
                                         <input type="hidden" id="projectIdInput" value="<?php echo isset($project_id) ? $project_id : ''; ?>">
                                         <div class="row g-4">
                                             <!-- Original Contract -->
@@ -1766,9 +1772,9 @@ function peso($amount) {
                                                 <div class="card h-100">
                                                     <div class="card-body d-flex flex-column align-items-center justify-content-center p-4 text-center" style="min-height: 200px;">
                                                         <i class="fas fa-file-contract fa-3x text-primary mb-3"></i>
-                                                        <h6 class="mb-3">Generate Contract</h6>
+                                                        <h6 class="mb-3">Download Contract</h6>
                                                         <button type="button" class="btn btn-primary" id="generateContractBtn">
-                                                            <i class="fas fa-magic me-1"></i> Generate Contract
+                                                            <i class="fas fa-magic me-1"></i> Download Contract
                                                         </button>
                                                     </div>
                                                     <div class="card-footer bg-transparent border-top-0 pt-0 text-center">
@@ -1776,44 +1782,53 @@ function peso($amount) {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- Your Contract -->
+
+                                            <!-- Client Appointment Schedule (read-only view) -->
                                             <div class="col-md-4">
-                                                <div class="card h-100 border-2 border-dashed" id="yourDropZone">
-                                                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-4 text-center" style="min-height: 200px;">
-                                                        <i class="fas fa-signature fa-3x text-success mb-3"></i>
-                                                        <h6 class="mb-2">Your Signed Contract</h6>
-                                                        <p class="small text-muted mb-3">Drag & drop your PDF here</p>
-                                                        <p class="small text-muted mb-0">or</p>
-                                                        <button type="button" class="btn btn-sm btn-outline-success mt-2" id="browseYourBtn">
-                                                            <i class="fas fa-folder-open me-1"></i> Browse Files
-                                                        </button>
-                                                        <input type="file" class="d-none" id="yourContract" name="your_contract" accept=".pdf">
-                                                    </div>
-                                                    <div class="card-footer bg-transparent border-top-0 pt-0">
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <small class="text-muted file-info" id="yourFileInfo">No file selected</small>
-                                                            <div class="btn-group">
-                                                                <button type="button" class="btn btn-sm btn-outline-success" id="uploadYourBtn" disabled>
-                                                                    <i class="fas fa-upload me-1"></i> Upload
-                                                                </button>
-                                                                <button type="button" class="btn btn-sm btn-outline-info" id="viewYourBtn" disabled>
-                                                                    <i class="fas fa-eye"></i>
-                                                                </button>
+                                                <div class="card h-100">
+                                                    <div class="card-body">
+                                                        <h6 class="mb-3">
+                                                            <i class="fas fa-calendar-alt me-2 text-success"></i>
+                                                            Client Contract Signing Schedule
+                                                        </h6>
+                                                        <p class="small text-muted mb-3">View the date and time selected by the client for contract signing.</p>
+                                                        <?php if (!empty($contract_signing_datetime)): ?>
+                                                            <?php
+                                                                $cs_dt = new DateTime($contract_signing_datetime);
+                                                                $cs_date = $cs_dt->format('Y-m-d');
+                                                                $cs_time = $cs_dt->format('H:i');
+                                                                $cs_display = $cs_dt->format('F j, Y \\a\\t g:i A');
+                                                            ?>
+                                                            <div class="row g-3 align-items-end">
+                                                                <div class="col-md-6">
+                                                                    <label class="form-label mb-1">Appointed Date</label>
+                                                                    <input type="date" class="form-control" value="<?php echo $cs_date; ?>" disabled>
+                                                                </div>
+                                                                <div class="col-md-6">
+                                                                    <label class="form-label mb-1">Appointed Time</label>
+                                                                    <input type="time" class="form-control" value="<?php echo $cs_time; ?>" disabled>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                        <div class="progress mt-2" style="height: 5px; display: none;" id="yourProgress">
-                                                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-                                                        </div>
+                                                            <small class="d-block mt-2 text-success fw-semibold">
+                                                                Client selected: <?php echo $cs_display; ?>
+                                                            </small>
+                                                        <?php else: ?>
+                                                            <div class="py-3 text-center text-muted">
+                                                                <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                                                                <p class="mb-0">No contract signing schedule has been set by the client yet.</p>
+                                                            </div>
+                                                        <?php endif; ?>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- Client Contract -->
+
+                                            <!-- Uploaded Contract (for viewing the final signed file) -->
                                             <div class="col-md-4">
                                                 <div class="card h-100 border-2 border-dashed" id="clientDropZone">
                                                     <div class="card-body d-flex flex-column align-items-center justify-content-center p-4 text-center" style="min-height: 200px;">
                                                         <i class="fas fa-user-check fa-3x text-info mb-3"></i>
-                                                        <h6 class="mb-2">Client Signed Contract</h6>
-                                                        <p class="small text-muted mb-3">Drag & drop your PDF here</p>
+                                                        <h6 class="mb-2">Contractor and Client Signed Contract</h6>
+                                                        <p class="small text-muted mb-3">Drag & drop the signed PDF here</p>
                                                         <p class="small text-muted mb-0">or</p>
                                                         <button type="button" class="btn btn-sm btn-outline-info mt-2" id="browseClientBtn">
                                                             <i class="fas fa-folder-open me-1"></i> Browse Files
@@ -1841,10 +1856,6 @@ function peso($amount) {
                                         </div>
                                     </div>
                                 </div>
-                                <div id="contractAlert" class="alert alert-warning mt-3 d-none">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Please upload Your Signed Contract and the Client Signed Contract to proceed.
-                                </div>
                                 <div class="d-flex justify-content-between mt-4">
                                     <button type="button" class="btn btn-secondary prev-step" data-prev="3">
                                         <i class="fas fa-arrow-left me-1"></i> Previous
@@ -1866,6 +1877,37 @@ function peso($amount) {
                                         <h5 class="card-title mb-4">Upload Permits</h5>
                                         <input type="hidden" id="projectIdInputPermits" value="<?php echo $project_id; ?>">
                                         <div class="row g-4">
+                                            <!-- Barangay Clearance -->
+                                            <div class="col-md-4">
+                                                <div class="card h-100 border-2 border-dashed" id="barangayDropZone">
+                                                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-4 text-center" style="min-height: 200px;">
+                                                        <i class="fas fa-home fa-3x text-info mb-3"></i>
+                                                        <h6 class="mb-2">Barangay Clearance <span class="badge bg-danger ms-1">Required</span></h6>
+                                                        <p class="small text-muted mb-3">Drag & drop your file here</p>
+                                                        <p class="small text-muted mb-0">or</p>
+                                                        <button type="button" class="btn btn-sm btn-outline-info mt-2" id="browseBarangayBtn">
+                                                            <i class="fas fa-folder-open me-1"></i> Browse Files
+                                                        </button>
+                                                        <input type="file" class="d-none" id="barangayClearance" name="barangay_clearance" accept=".pdf,image/*">
+                                                    </div>
+                                                    <div class="card-footer bg-transparent border-top-0 pt-0">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <small class="text-muted file-info" id="barangayFileInfo">No file selected</small>
+                                                            <div class="btn-group">
+                                                                <button type="button" class="btn btn-sm btn-outline-info" id="uploadBarangayBtn" disabled>
+                                                                    <i class="fas fa-upload me-1"></i> Upload
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-outline-primary" id="viewBarangayBtn" disabled>
+                                                                    <i class="fas fa-eye"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="progress mt-2" style="height: 5px; display: none;" id="barangayProgress">
+                                                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             <!-- LGU Clearance -->
                                             <div class="col-md-4">
                                                 <div class="card h-100 border-2 border-dashed" id="lguDropZone">
@@ -1990,37 +2032,7 @@ function peso($amount) {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- Barangay Clearance -->
-                                            <div class="col-md-4">
-                                                <div class="card h-100 border-2 border-dashed" id="barangayDropZone">
-                                                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-4 text-center" style="min-height: 200px;">
-                                                        <i class="fas fa-home fa-3x text-info mb-3"></i>
-                                                        <h6 class="mb-2">Barangay Clearance</h6>
-                                                        <p class="small text-muted mb-3">Drag & drop your file here</p>
-                                                        <p class="small text-muted mb-0">or</p>
-                                                        <button type="button" class="btn btn-sm btn-outline-info mt-2" id="browseBarangayBtn">
-                                                            <i class="fas fa-folder-open me-1"></i> Browse Files
-                                                        </button>
-                                                        <input type="file" class="d-none" id="barangayClearance" name="barangay_clearance" accept=".pdf,image/*">
-                                                    </div>
-                                                    <div class="card-footer bg-transparent border-top-0 pt-0">
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <small class="text-muted file-info" id="barangayFileInfo">No file selected</small>
-                                                            <div class="btn-group">
-                                                                <button type="button" class="btn btn-sm btn-outline-info" id="uploadBarangayBtn" disabled>
-                                                                    <i class="fas fa-upload me-1"></i> Upload
-                                                                </button>
-                                                                <button type="button" class="btn btn-sm btn-outline-primary" id="viewBarangayBtn" disabled>
-                                                                    <i class="fas fa-eye"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                        <div class="progress mt-2" style="height: 5px; display: none;" id="barangayProgress">
-                                                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            
                                         </div>
                                     </div>
                                 </div>
@@ -3163,7 +3175,7 @@ function peso($amount) {
             return isValid;
         }
         
-        // Validate permits step - require at least LGU permit
+        // Validate permits step - require LGU and Barangay permits
         async function validatePermitsStep() {
             const projectId = new URLSearchParams(window.location.search).get('project_id');
             if (!projectId) {
@@ -3176,11 +3188,14 @@ function peso($amount) {
                 const result = await response.json();
                 
                 if (result.success && Array.isArray(result.permits)) {
-                    // Check if LGU permit exists
+                    // Check if LGU and Barangay permits exist
                     const lguPermit = result.permits.find(permit => permit.permit_type === 'lgu');
-                    
+                    const brgyPermit = result.permits.find(permit => permit.permit_type === 'barangay');
+
+                    let missing = [];
+
                     if (!lguPermit || !lguPermit.file_path) {
-                        // Show alert and highlight LGU drop zone
+                        // Highlight LGU drop zone
                         const lguDropZone = document.getElementById('lguDropZone');
                         if (lguDropZone) {
                             lguDropZone.classList.add('border-danger');
@@ -3188,14 +3203,29 @@ function peso($amount) {
                                 lguDropZone.classList.remove('border-danger');
                             }, 3000);
                         }
-                        
-                        alert('Please upload the LGU Clearance permit before proceeding to the next step.');
+                        missing.push('LGU Clearance');
+                    }
+
+                    if (!brgyPermit || !brgyPermit.file_path) {
+                        // Highlight Barangay drop zone
+                        const brgyDropZone = document.getElementById('barangayDropZone');
+                        if (brgyDropZone) {
+                            brgyDropZone.classList.add('border-danger');
+                            setTimeout(() => {
+                                brgyDropZone.classList.remove('border-danger');
+                            }, 3000);
+                        }
+                        missing.push('Barangay Clearance');
+                    }
+
+                    if (missing.length > 0) {
+                        alert('Please upload the following required permits before proceeding: ' + missing.join(' and ') + '.');
                         return false;
                     }
-                    
+
                     return true;
                 } else {
-                    alert('Please upload the LGU Clearance permit before proceeding to the next step.');
+                    alert('Please upload the LGU and Barangay Clearance permits before proceeding to the next step.');
                     return false;
                 }
             } catch (error) {

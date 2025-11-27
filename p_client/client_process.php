@@ -818,13 +818,13 @@ function peso($amount) {
 
                                         <div class="row g-4">
                                             <!-- Original Contract -->
-                                               <div class="col-md-4">
+                                            <div class="col-md-4">
                                                 <div class="card h-100">
                                                     <div class="card-body d-flex flex-column align-items-center justify-content-center p-4 text-center" style="min-height: 200px;">
                                                         <i class="fas fa-file-contract fa-3x text-primary mb-3"></i>
-                                                        <h6 class="mb-3">Generate Contract</h6>
+                                                        <h6 class="mb-3">Download Contract</h6>
                                                         <button type="button" class="btn btn-primary" id="generateContractBtn">
-                                                            <i class="fas fa-magic me-1"></i> Generate Contract
+                                                            <i class="fas fa-magic me-1"></i> Download Contract
                                                         </button>
                                                     </div>
                                                     <div class="card-footer bg-transparent border-top-0 pt-0 text-center">
@@ -833,68 +833,56 @@ function peso($amount) {
                                                 </div>
                                             </div>
 
-
-                                            <!-- Project Manager Contract -->
+                                            <!-- Contract Signing Schedule -->
                                             <div class="col-md-4">
-                                                <div class="card h-100" data-contract-type="yoursigned">
-                                                    <div class="card-body d-flex flex-column align-items-center justify-content-center p-4 text-center" style="min-height: 200px;">
-                                                        <i class="fas fa-user-tie fa-3x text-success mb-3"></i>
-                                                        <h6 class="mb-2">Project Manager Contract</h6>
-                                                        <p class="small text-muted mb-3">Project manager's contract will be available here</p>
-                                                        <div class="d-flex flex-column align-items-center">
-                                                            <small class="contract-status text-muted mb-2">No file available</small>
-                                                            <button type="button" class="btn btn-sm btn-outline-success view-contract" data-contract-type="yoursigned" disabled>
-                                                                <i class="fas fa-eye me-1"></i> View
-                                                            </button>
+                                                <div class="card h-100">
+                                                    <div class="card-body">
+                                                        <h6 class="mb-3">
+                                                            <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                                            Choose Contract Signing Schedule
+                                                        </h6>
+                                                        <p class="small text-muted">
+                                                            Select your preferred date and time for contract signing. The project manager will review and confirm your appointment.
+                                                        </p>
+                                                        <div class="row g-3">
+                                                            <div class="col-md-6">
+                                                                <label for="contractScheduleDate" class="form-label mb-1">Preferred Date</label>
+                                                                <input type="date" class="form-control" id="contractScheduleDate">
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <label for="contractScheduleTime" class="form-label mb-1">Preferred Time</label>
+                                                                <input type="time" class="form-control" id="contractScheduleTime">
+                                                            </div>
                                                         </div>
+                                                        <button type="button" class="btn btn-outline-primary mt-3" id="saveContractScheduleBtn">
+                                                            <i class="fas fa-save me-1"></i> Save Schedule
+                                                        </button>
+                                                        <small id="contractScheduleStatus" class="d-block mt-2 text-muted">
+                                                            No schedule selected yet.
+                                                        </small>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <!-- Your Signed Contract -->
+                                            <!-- Client Signed Contract uploaded by Project Manager -->
                                             <div class="col-md-4">
-                                                <div class="card h-100 border-2 border-dashed" id="clientDropZone" data-contract-type="clientsigned">
+                                                <div class="card h-100" data-contract-type="clientsigned">
                                                     <div class="card-body d-flex flex-column align-items-center justify-content-center p-4 text-center" style="min-height: 200px;">
-                                                        <i class="fas fa-signature fa-3x text-info mb-3"></i>
-                                                        <h6 class="mb-2">Your Signed Contract</h6>
-                                                        <p class="small text-muted mb-3">Drag & drop your PDF here</p>
-                                                        <p class="small text-muted mb-0">or</p>
-                                                        <button type="button" class="btn btn-sm btn-outline-info mt-2" id="browseClientBtn">
-                                                            <i class="fas fa-folder-open me-1"></i> Browse Files
+                                                        <i class="fas fa-file-signature fa-3x text-success mb-3"></i>
+                                                        <h6 class="mb-2">Contractor and Client Signed Contract</h6>
+                                                        <p class="small text-muted mb-3">
+                                                            View the signed contract uploaded by the project manager.
+                                                        </p>
+                                                        <small class="contract-status text-muted mb-2">No file available</small>
+                                                        <button type="button" class="btn btn-sm btn-outline-success view-contract" data-contract-type="clientsigned" disabled>
+                                                            <i class="fas fa-eye me-1"></i> View
                                                         </button>
-                                                        <input type="file" class="d-none" id="clientContract" name="client_contract" accept=".pdf">
-                                                        <div class="d-flex flex-column align-items-center mt-2">
-                                                            <small class="contract-status text-muted mb-2">No file available</small>
-                                                            <button type="button" class="btn btn-sm btn-outline-info view-contract" data-contract-type="clientsigned" disabled>
-                                                                <i class="fas fa-eye me-1"></i> View
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <div class="card-footer bg-transparent border-top-0 pt-0">
-                                                        <div class="d-flex justify-content-between align-items-center">
-                                                            <small class="text-muted file-info" id="clientFileInfo">No file selected</small>
-                                                            <div class="btn-group">
-                                                                <button type="button" class="btn btn-sm btn-outline-info" id="uploadClientBtn" disabled>
-                                                                    <i class="fas fa-upload me-1"></i> Upload
-                                                                </button>
-                                                                <button type="button" class="btn btn-sm btn-outline-primary" id="viewClientContractBtn" disabled>
-                                                                    <i class="fas fa-eye"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                        <div class="progress mt-2" style="height: 5px; display: none;" id="clientProgress">
-                                                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
-                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div id="contractAlert" class="alert alert-warning mt-3 d-none">
-                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                    Please upload Your Signed Contract and the Client Signed Contract to proceed.
-                                </div>                            
                                
                             <div class="d-flex justify-content-between mt-4">
                                 <button type="button" class="btn btn-outline-secondary prev-step" data-prev="2">
@@ -1638,6 +1626,13 @@ function peso($amount) {
 
     
     document.addEventListener('DOMContentLoaded', function() {
+        // Contract-related elements
+        const generateContractBtn = document.getElementById('generateContractBtn');
+        const contractScheduleDate = document.getElementById('contractScheduleDate');
+        const contractScheduleTime = document.getElementById('contractScheduleTime');
+        const saveContractScheduleBtn = document.getElementById('saveContractScheduleBtn');
+        const contractScheduleStatus = document.getElementById('contractScheduleStatus');
+
         // Get the current step from the server when the page loads
         function fetchCurrentStep() {
             // Get project_id from URL
@@ -1711,6 +1706,96 @@ function peso($amount) {
             });
         }
         
+        // Contract Signing Schedule (saved to backend so project manager can view)
+        function getProjectIdForSchedule() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('project_id') || window.currentProjectId || null;
+        }
+
+        async function loadContractSchedule() {
+            if (!contractScheduleDate || !contractScheduleTime) return;
+
+            const projectId = getProjectIdForSchedule();
+            if (!projectId) return;
+
+            try {
+                const response = await fetch(`get_contract_schedule.php?project_id=${encodeURIComponent(projectId)}`);
+                const data = await response.json();
+
+                if (data.success && data.schedule) {
+                    if (data.schedule.date) contractScheduleDate.value = data.schedule.date;
+                    if (data.schedule.time) contractScheduleTime.value = data.schedule.time;
+
+                    if (contractScheduleStatus && data.schedule.date && data.schedule.time) {
+                        contractScheduleStatus.textContent = `Saved schedule: ${data.schedule.date} at ${data.schedule.time}`;
+                        contractScheduleStatus.classList.remove('text-muted');
+                        contractScheduleStatus.classList.add('text-success');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load contract schedule:', error);
+            }
+        }
+
+        async function saveContractSchedule() {
+            if (!contractScheduleDate || !contractScheduleTime) return;
+
+            const date = contractScheduleDate.value;
+            const time = contractScheduleTime.value;
+
+            if (!date || !time) {
+                if (typeof showAlert === 'function') {
+                    showAlert('Please select both a date and time for your contract signing.', 'warning');
+                }
+                return;
+            }
+
+            const projectId = getProjectIdForSchedule();
+            if (!projectId) {
+                if (typeof showAlert === 'function') {
+                    showAlert('Project ID not found. Unable to save schedule.', 'danger');
+                }
+                return;
+            }
+
+            try {
+                const formData = new FormData();
+                formData.append('project_id', projectId);
+                formData.append('date', date);
+                formData.append('time', time);
+
+                const response = await fetch('save_contract_schedule.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.message || 'Failed to save schedule');
+                }
+
+                if (contractScheduleStatus) {
+                    contractScheduleStatus.textContent = `Saved schedule: ${date} at ${time}`;
+                    contractScheduleStatus.classList.remove('text-muted');
+                    contractScheduleStatus.classList.add('text-success');
+                }
+
+                if (typeof showAlert === 'function') {
+                    showAlert('Your preferred contract signing schedule has been saved.', 'success');
+                }
+            } catch (error) {
+                console.error('Failed to save contract schedule:', error);
+                if (typeof showAlert === 'function') {
+                    showAlert('Error saving schedule. Please try again.', 'danger');
+                }
+            }
+        }
+
+        if (saveContractScheduleBtn) {
+            saveContractScheduleBtn.addEventListener('click', saveContractSchedule);
+        }
+
+        loadContractSchedule();
 
         // Save the current step to the server
         function saveCurrentStep(step) {

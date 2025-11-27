@@ -824,8 +824,14 @@ if ($employees_result) {
 <div class="modal fade" id="addEmployeeModal" tabindex="-1" role="dialog" aria-labelledby="addEmployeeModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="addEmployeeModalLabel">Add Employee(s)</h5>
+      <div class="modal-header d-flex align-items-center">
+        <h5 class="modal-title me-auto" id="addEmployeeModalLabel">Add Employee(s)</h5>
+        <button type="button"
+                class="btn btn-success btn-sm me-2"
+                data-bs-toggle="modal"
+                data-bs-target="#quickAddEmployeeModal">
+          <i class="fas fa-user-plus me-1"></i> Register New Employee
+        </button>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form method="post" action="save_project_employee_estimation.php" id="addEmployeeTableForm">
@@ -929,9 +935,73 @@ if ($employees_result) {
       </form>
     </div>
   </div>
+<!-- Quick Add Employee Modal -->
+<div class="modal fade" id="quickAddEmployeeModal" tabindex="-1" aria-labelledby="quickAddEmployeeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="quickAddEmployeeModalLabel">Register New Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="quickAddEmployeeForm">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">First Name</label>
+              <input type="text" name="first_name" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Last Name</label>
+              <input type="text" name="last_name" class="form-control" required>
+            </div>
+          </div>
+          <div class="row g-3 mt-2">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Position</label>
+              <select name="position_id" class="form-select" required>
+                <option value="">Select Position</option>
+                <?php foreach ($positions as $pos): ?>
+                  <option value="<?php echo htmlspecialchars($pos['position_id']); ?>">
+                    <?php echo htmlspecialchars($pos['title']); ?> (₱<?php echo number_format($pos['daily_rate'], 2); ?>)
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Employee Type</label>
+              <select name="company_type" class="form-select" required>
+                <option value="">Select Employee Type</option>
+                <option value="Company Employee">Company Employee</option>
+                <option value="Outsourced Personnel">Outsourced Personnel</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-3 mt-2">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Contact Number</label>
+              <input type="text" name="contact_number" class="form-control" placeholder="09XXXXXXXXX">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Facebook Link (Optional)</label>
+              <input type="url" name="fb_link" class="form-control" placeholder="https://facebook.com/username">
+            </div>
+          </div>
+          <div class="mt-3">
+            <small class="text-muted">
+              New employees will be saved to your employee list and will appear in this table after the page reloads.
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success">
+            <i class="fas fa-save me-1"></i> Save Employee
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
-
-
 
 <script>
 function toggleAllEmployees(source) {
@@ -966,4 +1036,58 @@ function filterEmployeeTable() {
     }
   });
 }
+</script>
+
+<script>
+// Quick add employee via AJAX
+document.addEventListener('DOMContentLoaded', function() {
+  const quickForm = document.getElementById('quickAddEmployeeForm');
+  if (!quickForm) return;
+
+  quickForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn ? submitBtn.innerHTML : '';
+
+    const formData = new FormData(this);
+
+    try {
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Saving...';
+      }
+
+      const response = await fetch('quick_add_employee.php', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        alert(data.message || 'Failed to add employee.');
+        return;
+      }
+
+      alert('Employee registered successfully. The list will now refresh.');
+
+      const modalEl = document.getElementById('quickAddEmployeeModal');
+      if (modalEl && window.bootstrap) {
+        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.hide();
+      }
+
+      window.location.reload();
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      alert('An error occurred while adding the employee. Please try again.');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+      }
+    }
+  });
+});
 </script>

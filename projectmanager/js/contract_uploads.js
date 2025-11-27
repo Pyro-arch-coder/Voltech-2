@@ -1,16 +1,6 @@
 // Contract Upload Functionality
+// Note: Only the client-signed contract is now uploaded in this step.
 const contracts = [
-    {
-        id: 'yoursigned',
-        dropZone: document.getElementById('yourDropZone'),
-        fileInput: document.getElementById('yourContract'),
-        browseBtn: document.getElementById('browseYourBtn'),
-        uploadBtn: document.getElementById('uploadYourBtn'),
-        viewBtn: document.getElementById('viewYourBtn'),
-        fileInfo: document.getElementById('yourFileInfo'),
-        progress: document.getElementById('yourProgress'),
-        progressBar: document.querySelector('#yourProgress .progress-bar')
-    },
     {
         id: 'clientsigned',
         dropZone: document.getElementById('clientDropZone'),
@@ -112,6 +102,7 @@ async function loadExistingContracts() {
 
 // Function to initialize view button click handler
 function setupViewButton(contract) {
+    if (!contract.viewBtn) return;
     // Remove any existing click handlers to prevent duplicates
     const newViewBtn = contract.viewBtn.cloneNode(true);
     contract.viewBtn.parentNode.replaceChild(newViewBtn, contract.viewBtn);
@@ -368,32 +359,23 @@ function handleFiles(files, contract) {
 
 // Function to check if required contracts are uploaded
 function checkRequiredContracts() {
-    const yourContract = contracts.find(c => c.id === 'yoursigned');
     const clientContract = contracts.find(c => c.id === 'clientsigned');
     const nextButton = document.querySelector('button.next-step[data-next="5"]');
     const alertElement = document.getElementById('contractAlert');
     if (!nextButton || !alertElement) return;
-    const isYourContractUploaded = yourContract && yourContract.fileUrl;
     const isClientContractUploaded = clientContract && clientContract.fileUrl;
-    if (isYourContractUploaded && isClientContractUploaded) {
+
+    if (isClientContractUploaded) {
         nextButton.disabled = false;
         alertElement.classList.add('d-none');
     } else {
         nextButton.disabled = true;
         alertElement.classList.remove('d-none');
     }
-    let message = 'Please upload ';
-    if (!isYourContractUploaded && !isClientContractUploaded) {
-        message += 'Your Signed Contract and the Client Signed Contract';
-    } else if (!isYourContractUploaded) {
-        message += 'Your Signed Contract';
-    } else {
-        message += 'the Client Signed Contract';
-    }
-    message += ' to proceed.';
-    const alertMessage = alertElement.querySelector('i').nextSibling;
-    if (alertMessage) {
-        alertMessage.textContent = message;
+
+    const alertTextContainer = alertElement.querySelector('span') || alertElement;
+    if (!isClientContractUploaded && alertTextContainer) {
+        alertTextContainer.textContent = 'Please upload the Client Signed Contract to proceed.';
     }
 }
 

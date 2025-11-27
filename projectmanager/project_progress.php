@@ -358,9 +358,19 @@ if ($userid) {
                                             <i class="fas fa-edit"></i> Edit
                                         </button>
                                         <form method="post" style="display:inline;">
+                                            <input type="hidden" name="update_division" value="1">
+                                            <input type="hidden" name="division_id" value="<?php echo $div['id']; ?>">
+                                            <input type="hidden" name="progress" value="100">
+                                            <button type="submit" class="btn btn-success btn-sm">
+                                                <i class="fas fa-check-circle"></i> Complete
+                                            </button>
+                                        </form>
+                                        <form method="post" style="display:inline;">
                                             <input type="hidden" name="delete_division" value="1">
                                             <input type="hidden" name="division_id" value="<?php echo $div['id']; ?>">
-                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this division?')"><i class="fas fa-trash"></i> Delete</button>
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this division?')">
+                                                <i class="fas fa-trash"></i> Delete
+                                            </button>
                                         </form>
                                     </td>
                                 </tr>
