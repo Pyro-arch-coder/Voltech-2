@@ -1107,7 +1107,7 @@ addForecastStyles();
                                 <!-- Forecasted Value -->
                                 <div class="col-md-6 mb-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="mb-0 fw-bold text-primary">Past-Project Based Estimation (For Reference only, Not Actual)</h6>
+                                        <h6 class="mb-0 fw-bold text-primary">Budget Estimation (For Reference only, Not Actual)</h6>
                                         
                                         <span class="badge bg-primary bg-opacity-10 text-primary">Beta</span>
                                     </div>
@@ -1120,7 +1120,7 @@ addForecastStyles();
                                             title="Enter project size and select a category to see forecast"
                                         >
                                             <div class="forecast-amount text-muted">
-                                                <i class="fas fa-calculator me-2"></i> FORECAST COST
+                                                <i class="fas fa-calculator me-2"></i> BUDGET ESTIMATION
                                             </div>
                                             <div class="forecast-details small text-muted mt-1 text-center">
                                                 Enter size & select category

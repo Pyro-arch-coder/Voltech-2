@@ -147,6 +147,29 @@ if ($project_id > 0) {
     }
 }
 
+// Fetch client (project owner) information for inline chat
+$client_user_id = null;
+$client_name = '';
+if ($project_id > 0) {
+    $client_query = "SELECT u.id, u.firstname, u.lastname 
+                     FROM projects p
+                     JOIN users u ON p.client_email = u.email
+                     WHERE p.project_id = ?
+                     LIMIT 1";
+    if ($client_stmt = $con->prepare($client_query)) {
+        $client_stmt->bind_param("i", $project_id);
+        if ($client_stmt->execute()) {
+            $client_result = $client_stmt->get_result();
+            if ($client_result && $client_result->num_rows > 0) {
+                $client_row = $client_result->fetch_assoc();
+                $client_user_id = (int)$client_row['id'];
+                $client_name = trim(($client_row['firstname'] ?? '') . ' ' . ($client_row['lastname'] ?? ''));
+            }
+        }
+        $client_stmt->close();
+    }
+}
+
 // Set success messages
 $success_message = '';
 if (isset($_GET['added'])) {
@@ -474,7 +497,7 @@ function peso($amount) {
                     <div class="card-body">
                         <form id="projectProcessForm" method="post" action="">
                             <div class="step-content" id="step1">
-                                <div class="row justify-content-center">
+                                <div class="row g-4">
                                     <div class="col-lg-8">
                                         <div class="card border-0 shadow-sm mb-4">
                                             <div class="card-header bg-primary text-white">
@@ -516,6 +539,55 @@ function peso($amount) {
                                             </div>
                                         </div>
                                     </div>
+                                    
+                                    <?php if (!empty($client_user_id)): ?>
+                                    <div class="col-lg-4">
+                                        <div class="card h-100 shadow-sm">
+                                            <div class="card-header bg-light d-flex align-items-center">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-comments me-2 text-primary"></i>
+                                                    Chat with Client
+                                                </h6>
+                                            </div>
+                                            <div class="card-body d-flex flex-column" style="height: 550px;">
+                                                <p class="small text-muted mb-2">
+                                                    Use this chat for collaboration, clarifications, and suggestions related to this project.
+                                                </p>
+                                                <div id="pmMiniChatMessages" class="flex-grow-1 mb-3 overflow-auto border rounded p-2 bg-white" style="font-size: 0.9rem;">
+                                                    <div class="d-flex justify-content-center align-items-center h-100 text-muted">
+                                                        <div class="text-center">
+                                                            <i class="far fa-comment-dots fa-2x mb-2"></i>
+                                                            <p class="mb-0">No messages yet</p>
+                                                            <small>Start a conversation with your client.</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div class="d-flex align-items-center mb-1">
+                                                        <label class="form-label small text-muted mb-0 flex-grow-1">Message</label>
+                                                        <button type="button"
+                                                                class="btn btn-link btn-sm text-decoration-none"
+                                                                id="pmMiniChatAttachBtn"
+                                                                title="Attach image">
+                                                            <i class="fas fa-paperclip"></i>
+                                                        </button>
+                                                        <input type="file"
+                                                               id="pmMiniChatFileInput"
+                                                               accept="image/*"
+                                                               class="d-none">
+                                                    </div>
+                                                    <small id="pmMiniChatFileLabel" class="d-none text-muted small mb-1"></small>
+                                                    <textarea id="pmMiniChatInput" class="form-control form-control-sm mb-2" rows="2" placeholder="Type a message..."></textarea>
+                                                    <div class="d-flex justify-content-end">
+                                                        <button type="button" id="pmMiniChatSendBtn" class="btn btn-primary btn-sm">
+                                                            <i class="fas fa-paper-plane me-1"></i> Send
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <?php endif; ?>
                                 </div>
                                 
                                 <div class="d-flex justify-content-end mt-4">
@@ -535,7 +607,7 @@ function peso($amount) {
                                              <div class="card-header bg-primary text-white py-2">
                                                  <div class="d-flex align-items-center">
                                                      <i class="fas fa-chart-line me-2"></i>
-                                                     <h6 class="mb-0">Forecasted Budget</h6>
+                                                     <h6 class="mb-0">Budget Estimation</h6>
                                                  </div>
                                              </div>
                                              <div class="card-body text-center py-3">
@@ -2066,9 +2138,6 @@ function peso($amount) {
                                             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                                                 <h5 class="card-title mb-0"><i class="fas fa-tasks me-2"></i>Project Timeline</h5>
                                                 <div>
-                                                    <button type="button" class="btn btn-light btn-sm me-2" data-bs-toggle="modal" data-bs-target="#addDivisionModal">
-                                                        <i class="fas fa-plus me-1"></i> Add Task
-                                                    </button>
                                                     <form method="post" style="display: inline;">
                                                         <button type="submit" name="create_standard_phases" class="btn btn-info btn-sm me-2">
                                                             <i class="fas fa-magic me-1"></i> Auto-Create Phases
@@ -2463,7 +2532,7 @@ function peso($amount) {
                                                     <div class="d-flex justify-content-between mb-1">
                                                         <small class="text-muted">Budget Usage</small>
                                                         <small class="text-<?php echo $budget_percentage > 90 ? 'danger' : 'muted'; ?> fw-bold">
-                                                            <?php echo number_format($budget_percentage, 1); ?>%
+                                                            <?php echo number_format($budget_percentage, 0); ?>%
                                                         </small>
                                                     </div>
                                                     <div class="progress" style="height: 8px;">
@@ -3390,6 +3459,284 @@ function peso($amount) {
             });
         }
         });
+    </script>
+    
+    <!-- Inline Chat (Step 1: Upload Blueprint) -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const miniChatMessages = document.getElementById('pmMiniChatMessages');
+        const miniChatInput = document.getElementById('pmMiniChatInput');
+        const miniChatSendBtn = document.getElementById('pmMiniChatSendBtn');
+        const miniChatAttachBtn = document.getElementById('pmMiniChatAttachBtn');
+        const miniChatFileInput = document.getElementById('pmMiniChatFileInput');
+        const miniChatFileLabel = document.getElementById('pmMiniChatFileLabel');
+
+        const miniChatClientId = <?php echo $client_user_id ? (int)$client_user_id : 'null'; ?>;
+        const miniChatCurrentUserId = <?php echo isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 'null'; ?>;
+
+        let miniSelectedFile = null;
+
+        if (!miniChatMessages || !miniChatClientId) {
+            return;
+        }
+
+        async function loadMiniChatMessages() {
+            try {
+                const response = await fetch(`get_client_messages.php?receiver_id=${encodeURIComponent(miniChatClientId)}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load messages');
+                }
+
+                if (!Array.isArray(data.messages) || data.messages.length === 0) {
+                    miniChatMessages.innerHTML = `
+                        <div class="d-flex flex-column justify-content-center align-items-center h-100 text-muted">
+                            <i class="far fa-comment-dots fa-2x mb-2"></i>
+                            <p class="mb-0">No messages yet</p>
+                            <small>Start a conversation with your client.</small>
+                        </div>`;
+                    return;
+                }
+
+                miniChatMessages.innerHTML = '';
+
+                data.messages.forEach(msg => {
+                    const isMe = !!msg.is_me || msg.sender_id == miniChatCurrentUserId;
+                    const wrapper = document.createElement('div');
+                    wrapper.className = `d-flex mb-2 ${isMe ? 'justify-content-end' : 'justify-content-start'}`;
+
+                    let messageContent = msg.message || '';
+
+                    // Detect attached file markup: [File: path]
+                    const fileMatch = messageContent.match(/\[File: (.*?)\]/);
+                    let fileHtml = '';
+                    if (fileMatch) {
+                        const filePath = fileMatch[1];
+                        const fileName = filePath.split('/').pop();
+                        const fileExt = fileName.split('.').pop().toLowerCase();
+                        const isImage = /(jpg|jpeg|png|gif|webp)$/i.test(fileExt);
+
+                        let resolvedPath = filePath;
+                        if (!/^https?:\/\//i.test(resolvedPath) && !resolvedPath.startsWith('../')) {
+                            resolvedPath = '../' + resolvedPath;
+                        }
+
+                        if (isImage) {
+                            fileHtml = `
+                                <div class="mt-1">
+                                    <img src="${resolvedPath}"
+                                         alt="${fileName}"
+                                         class="img-fluid rounded mini-chat-image"
+                                         data-full-src="${resolvedPath}"
+                                         style="max-height: 150px; cursor: zoom-in;">
+                                    <div class="mt-1">
+                                        <a href="${resolvedPath}"
+                                           download
+                                           class="small text-decoration-none ${isMe ? 'text-white' : 'text-primary'}">
+                                            <i class="fas fa-download me-1"></i>Download image
+                                        </a>
+                                    </div>
+                                </div>`;
+                        } else {
+                            fileHtml = `
+                                <div class="mt-1">
+                                    <a href="${resolvedPath}" target="_blank" class="text-decoration-none ${isMe ? 'text-white' : 'text-primary'}">
+                                        <i class="fas fa-file-image me-1"></i>${fileName}
+                                    </a>
+                                </div>`;
+                        }
+
+                        messageContent = messageContent.replace(`[File: ${filePath}]`, '').trim();
+                    }
+
+                    // Replace line breaks for remaining text
+                    if (messageContent) {
+                        messageContent = messageContent.replace(/\n/g, '<br>');
+                    }
+
+                    const bubble = document.createElement('div');
+                    bubble.className = `px-3 py-2 rounded-3 ${isMe ? 'bg-primary text-white' : 'bg-light'}`;
+                    bubble.style.maxWidth = '80%';
+                    bubble.innerHTML = `
+                        ${messageContent || ''}
+                        ${fileHtml}
+                    `;
+
+                    const time = document.createElement('div');
+                    time.className = 'small text-muted mt-1';
+                    time.textContent = new Date(msg.date_sent).toLocaleString();
+
+                    const container = document.createElement('div');
+                    container.className = `d-flex flex-column ${isMe ? 'align-items-end' : 'align-items-start'}`;
+                    container.appendChild(bubble);
+                    container.appendChild(time);
+
+                    wrapper.appendChild(container);
+                    miniChatMessages.appendChild(wrapper);
+                });
+
+                miniChatMessages.scrollTop = miniChatMessages.scrollHeight;
+            } catch (error) {
+                console.error('Failed to load mini chat messages:', error);
+            }
+        }
+
+        async function miniUploadFile() {
+            if (!miniSelectedFile) return null;
+
+            const formData = new FormData();
+            formData.append('file', miniSelectedFile);
+
+            const response = await fetch('../includes/upload_file.php', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            });
+
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Unexpected upload response:', text);
+                throw new Error('Server returned an invalid response');
+            }
+
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Failed to upload file');
+            }
+
+            return result.file_path;
+        }
+
+        async function sendMiniChatMessage() {
+            if (!miniChatClientId || !miniChatInput) return;
+
+            let message = miniChatInput.value.trim();
+
+            if (!message && !miniSelectedFile) return;
+
+            miniChatSendBtn.disabled = true;
+
+            try {
+                let filePath = '';
+
+                if (miniSelectedFile) {
+                    filePath = await miniUploadFile();
+                    if (!filePath) {
+                        throw new Error('Failed to upload image');
+                    }
+
+                    if (message) {
+                        message += '\n[File: ' + filePath + ']';
+                    } else {
+                        message = '[File: ' + filePath + ']';
+                    }
+                }
+
+                const formData = new FormData();
+                formData.append('receiver_id', miniChatClientId);
+                formData.append('user_level', 6); // Client user_level
+                formData.append('message', message);
+                formData.append('table', 'pm_client_messages');
+
+                const response = await fetch('send_message.php', {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                });
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to send message');
+                }
+
+                miniChatInput.value = '';
+                miniSelectedFile = null;
+                if (miniChatFileLabel) {
+                    miniChatFileLabel.classList.add('d-none');
+                    miniChatFileLabel.textContent = '';
+                }
+
+                await loadMiniChatMessages();
+            } catch (error) {
+                console.error('Failed to send mini chat message:', error);
+                alert('Failed to send message. Please try again.');
+            } finally {
+                miniChatSendBtn.disabled = false;
+            }
+        }
+
+        if (miniChatAttachBtn && miniChatFileInput) {
+            miniChatAttachBtn.addEventListener('click', function() {
+                miniChatFileInput.click();
+            });
+
+            miniChatFileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) {
+                    miniSelectedFile = null;
+                    if (miniChatFileLabel) {
+                        miniChatFileLabel.classList.add('d-none');
+                        miniChatFileLabel.textContent = '';
+                    }
+                    return;
+                }
+
+                if (!file.type.startsWith('image/')) {
+                    alert('Only image files are allowed.');
+                    e.target.value = '';
+                    return;
+                }
+
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Image size must not exceed 5MB.');
+                    e.target.value = '';
+                    return;
+                }
+
+                miniSelectedFile = file;
+                if (miniChatFileLabel) {
+                    miniChatFileLabel.textContent = `Attached: ${file.name}`;
+                    miniChatFileLabel.classList.remove('d-none');
+                }
+            });
+        }
+
+        if (miniChatMessages) {
+            miniChatMessages.addEventListener('click', function (e) {
+                const img = e.target.closest('.mini-chat-image');
+                if (!img) return;
+
+                const expanded = img.dataset.expanded === 'true';
+                if (expanded) {
+                    img.style.maxHeight = '150px';
+                    img.style.maxWidth = '100%';
+                    img.style.cursor = 'zoom-in';
+                    img.dataset.expanded = 'false';
+                } else {
+                    img.style.maxHeight = '400px';
+                    img.style.maxWidth = '100%';
+                    img.style.cursor = 'zoom-out';
+                    img.dataset.expanded = 'true';
+                }
+            });
+        }
+
+        if (miniChatSendBtn && miniChatInput && miniChatClientId) {
+            miniChatSendBtn.addEventListener('click', sendMiniChatMessage);
+            miniChatInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMiniChatMessage();
+                }
+            });
+
+            // Initial load + periodic refresh
+            loadMiniChatMessages();
+            setInterval(loadMiniChatMessages, 10000);
+        }
+    });
     </script>
     
     <!-- Step 8: Budget Request and Proof of Payment JavaScript -->

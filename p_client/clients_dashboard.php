@@ -402,7 +402,7 @@ if ($userid) {
                                         echo '<tr class="border-bottom">
                                                 <td class="text-muted" style="width: 40px;">' . $counter++ . '.</td>
                                                 <td class="fw-bold pe-4">' . htmlspecialchars($project['project']) . '</td>
-                                                <td style="width: auto; padding-left: 0;"><span class="badge bg-primary">' . htmlspecialchars($project['size']) . '</span></td>
+                                                <td style="width: auto; padding-left: 0;"><span class="badge bg-primary">' . intval($project['size']) . '</span></td>
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <div class="progress flex-grow-1 me-2" style="height: 8px;">

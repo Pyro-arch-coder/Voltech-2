@@ -6969,3 +6969,207 @@
 )
 
 [2025-11-19 19:49:44] Budget update debug - Current budget: 18176.00, Current initial: 0.00, Percentage: 50, Calculated: 9088
+[2025-11-28 09:22:46] === New Request ===
+[2025-11-28 09:22:46] POST data: Array
+(
+    [project_id] => 46
+    [payment_method] => cash
+    [fixed_amount] => 17952.00
+)
+
+[2025-11-28 09:22:46] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Construction_Agreement_Project3324.pdf
+            [full_path] => Construction_Agreement_Project3324.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpFB87.tmp
+            [error] => 0
+            [size] => 48423
+        )
+
+)
+
+[2025-11-28 09:22:46] SESSION data: Array
+(
+    [csrf_token] => a8b654ea178ee44ee76855ee3bb98c320a25bb16a888a96e84a24c315e61bae3
+    [last_activity] => 1764317615
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-11-28 09:22:46] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 46
+            [payment_method] => cash
+            [fixed_amount] => 17952.00
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-11-28 09:22:46] POST data: Array
+(
+    [project_id] => 46
+    [payment_method] => cash
+    [fixed_amount] => 17952.00
+)
+
+[2025-11-28 09:22:46] File upload details: Array
+(
+    [name] => Construction_Agreement_Project3324.pdf
+    [size] => 48423
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpFB87.tmp
+)
+
+[2025-11-28 09:23:38] === New Request ===
+[2025-11-28 09:23:38] POST data: Array
+(
+    [project_id] => 46
+    [payment_method] => cash
+    [fixed_amount] => 17952
+)
+
+[2025-11-28 09:23:38] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Construction_Agreement_Project3324.pdf
+            [full_path] => Construction_Agreement_Project3324.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\phpC4A4.tmp
+            [error] => 0
+            [size] => 48423
+        )
+
+)
+
+[2025-11-28 09:23:38] SESSION data: Array
+(
+    [csrf_token] => a8b654ea178ee44ee76855ee3bb98c320a25bb16a888a96e84a24c315e61bae3
+    [last_activity] => 1764317615
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-11-28 09:23:38] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 46
+            [payment_method] => cash
+            [fixed_amount] => 17952
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-11-28 09:23:38] POST data: Array
+(
+    [project_id] => 46
+    [payment_method] => cash
+    [fixed_amount] => 17952
+)
+
+[2025-11-28 09:23:38] File upload details: Array
+(
+    [name] => Construction_Agreement_Project3324.pdf
+    [size] => 48423
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\phpC4A4.tmp
+)
+
+[2025-11-28 09:23:38] Error: Failed to update project. Please check if the budget value is different from current value. in C:\xampp\htdocs\Voltech-2\p_client\fixed_budget_handler.php on line 191
+[2025-11-28 09:23:38] Stack trace: #0 {main}
+[2025-11-28 09:23:59] === New Request ===
+[2025-11-28 09:23:59] POST data: Array
+(
+    [project_id] => 46
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-11-28 09:23:59] FILES data: Array
+(
+    [payment_proof] => Array
+        (
+            [name] => Construction_Agreement_Project3324.pdf
+            [full_path] => Construction_Agreement_Project3324.pdf
+            [type] => application/pdf
+            [tmp_name] => C:\xampp\tmp\php1892.tmp
+            [error] => 0
+            [size] => 48423
+        )
+
+)
+
+[2025-11-28 09:23:59] SESSION data: Array
+(
+    [csrf_token] => a8b654ea178ee44ee76855ee3bb98c320a25bb16a888a96e84a24c315e61bae3
+    [last_activity] => 1764317615
+    [email] => SantosLaurence@gmail.com
+    [user_id] => 70
+    [user_level] => 6
+    [firstname] => Laurence
+    [lastname] => Santos
+    [name] => Laurence Santos
+    [logged_in] => 1
+)
+
+[2025-11-28 09:23:59] Incoming request: Array
+(
+    [POST] => Array
+        (
+            [project_id] => 46
+            [payment_method] => cash
+            [percentage] => 50
+        )
+
+    [FILES] => Array
+        (
+            [0] => payment_proof
+        )
+
+)
+
+[2025-11-28 09:23:59] POST data: Array
+(
+    [project_id] => 46
+    [payment_method] => cash
+    [percentage] => 50
+)
+
+[2025-11-28 09:23:59] File upload details: Array
+(
+    [name] => Construction_Agreement_Project3324.pdf
+    [size] => 48423
+    [type] => application/pdf
+    [error] => 0
+    [tmp_name] => C:\xampp\tmp\php1892.tmp
+)
+
+[2025-11-28 09:23:59] Budget update debug - Current budget: 17952.00, Current initial: 17952.00, Percentage: 50, Calculated: 8976
